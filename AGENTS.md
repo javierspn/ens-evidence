@@ -40,7 +40,14 @@ Stack: Python 3.12, stdlib + PyYAML + Jinja2. No framework.
 
 ## Status
 
-Scaffold only — every `src/` module and both mapping files are stubs. The mapping table is
-deliberately empty: per DESIGN.md's build order, it gets authored from real Semgrep and
-Trivy output on a real repository, never from imagination. Spec Kit has not been
-initialised yet (`.specify/memory/constitution.md` is seeded by hand).
+Scaffold plus data files — every `src/` module is still a stub.
+
+Spec Kit is initialised (`/speckit-specify`, `/speckit-plan`, `/speckit-tasks`,
+`/speckit-implement`; note the dash, not the dot DESIGN.md uses) and the constitution is
+ratified at 1.0.0.
+
+`mapping/ens_rd311.yml` and `mapping/severity.yml` are authored from a real 179-finding
+scan of three repositories — see [docs/scan-baseline.md](docs/scan-baseline.md), which also
+lists the five gaps that run left open (no CVEs anywhere, empty SBOMs, secrets as an
+unplanned finding class, thin `op.acc.5` evidence, unverified measure titles). Read it
+before extending either data file.

@@ -45,6 +45,9 @@ default:
   measures: [unmapped]
 ```
 
+What the engines actually emit — and the four design assumptions that did not survive
+contact with real SARIF — is recorded in [docs/scan-baseline.md](docs/scan-baseline.md).
+
 Mapping and severity policy are **data files, not code** — reviewable, diffable, and a future framework (NIS2, ISO 27001, CRA) is a new file, not a rewrite.
 
 **Baseline** (`.ens-baseline.yml`): fingerprints of reviewed-and-accepted findings; re-runs report only what's new. Fingerprint = hash(rule ID + normalised snippet + position relative to enclosing function) — **never file+line** (one added import would invalidate everything below it).

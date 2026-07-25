@@ -1,16 +1,52 @@
-# Severity policy: each engine's own scale -> our canonical scale. Data, not code.
+# Severity policy: each engine's own signal -> our canonical scale. Data, not code.
 #
-# Canonical scale is what `--fail-on` compares against and what the report groups by.
-# TODO(001-core-pipeline): fill the per-engine tables from observed scanner output —
-# confirm the exact severity strings each engine emits in its SARIF before trusting them.
+# The canonical scale is what `--fail-on` compares against and what the report groups by.
+#
+# PROVENANCE: authored 2026-07-25 from real Semgrep 1.171.0 and Trivy 0.72.0 SARIF over
+# three repositories (see docs/scan-baseline.md). The two engines disagree about where
+# severity lives, so each gets its own strategy — this file is why `strategy` exists at
+# all rather than one flat table of severity strings:
+#
+#   * Trivy   — every rule carries properties."security-severity" (observed: 2.0, 5.5,
+#               8.0, 9.5) plus a HIGH/CRITICAL tag. Numeric, CVSS-shaped, trustworthy.
+#   * Semgrep — NO rule carries security-severity, and results carry no `level` either.
+#               The only signal is the rule's defaultConfiguration.level
+#               (error / warning / note) plus a "<X> CONFIDENCE" string inside
+#               properties.tags.
+#
+# Read severity from the RULE (tool.driver.rules[]), never from the result object.
 
 version: 1
 
 canonical: [critical, high, medium, low, info]
 
 engines:
-  semgrep: {}
-  trivy: {}
+  # Numeric band lookup on properties."security-severity". Bands are CVSS v3 boundaries;
+  # observed values land at 2.0 -> low, 5.5 -> medium, 8.0 -> high, 9.5 -> critical.
+  trivy:
+    strategy: security_severity_bands
+    bands:
+      critical: 9.0
+      high: 7.0
+      medium: 4.0
+      low: 0.1
 
-# Anything not listed above resolves here rather than being silently dropped.
+  # SARIF level, then a one-step downgrade when the rule tags itself LOW CONFIDENCE.
+  # Rationale: `dynamic-urllib-use-detected` and `direct-use-of-jinja2` are both
+  # LOW CONFIDENCE audit rules that fired on code review turned up as acceptable; without
+  # the downgrade they sit at the same level as a confirmed raw-SQL execution.
+  semgrep:
+    strategy: sarif_level_with_confidence
+    levels:
+      error: high
+      warning: medium
+      note: low
+      none: info
+    confidence_adjust:
+      LOW CONFIDENCE: -1     # one step down the canonical scale
+      MEDIUM CONFIDENCE: 0
+      HIGH CONFIDENCE: 0
+
+# Anything an engine emits that the tables above do not cover resolves here rather than
+# being silently dropped — a finding with unknown severity is still a finding.
 default: medium

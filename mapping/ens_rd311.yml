@@ -1,30 +1,79 @@
-# THE asset: tool:rule-id -> ENS measures. Data, not code.
+# THE asset: "<tool>:<rule-id>" -> ENS measures. Data, not code.
 #
-# Scope — canonical measure list (constitution rule 3: identical here, in the README,
-# in the constitution and in the report header; divergence is a release blocker):
+# Scope — canonical measure list (constitution principle III: identical here, in the
+# README, in the constitution and in the report header; divergence is a release blocker):
 #
 #   mp.sw.1 · mp.sw.2 · mp.s.2 · op.exp.2 · op.exp.4 · op.acc.5
 #
-# Titles are working labels until verified against the BOE consolidated text of
-# RD 311/2022 Anexo II (pre-release task). Measure IDs and our own wording only —
-# never bulk-copy CCN-STIC or BOE text (rule 5).
+# Measure titles are working labels until verified against the BOE consolidated text of
+# RD 311/2022 Anexo II (pre-release task). Measure IDs and our own wording only — never
+# bulk-copy CCN-STIC or BOE text (principle V).
 #
-# EMPTY ON PURPOSE. Per DESIGN.md's build order, rules are authored from real Semgrep and
-# Trivy output on a real repository (step 2), never from imagination. Until then every
-# finding falls through to `unmapped` and lands in the appendix for human review.
+# PROVENANCE: authored 2026-07-25 from a real scan of three repositories
+# (repo-a, repo-b, repo-c) with Semgrep 1.171.0 `p/default` and Trivy 0.72.0
+# `--scanners vuln,misconfig,secret` — 179 findings, 28 distinct rule ids. Every `match`
+# below was observed firing; nothing here is invented. See docs/scan-baseline.md for the
+# inventory and the engine quirks it revealed.
 #
-# Shape, matched first-to-last on the string "<tool>:<rule-id>":
-#
-#   rules:
-#     - match: "semgrep:.*sql-injection.*"
-#       measures: [mp.sw.1, mp.s.2]
-#     - match: "trivy:CVE-.*"
-#       measures: [op.exp.4, mp.sw.2]
+# Rules are matched FIRST-TO-LAST against the string "<tool>:<rule-id>"; the first match
+# wins, so specific patterns precede catch-alls. Unmatched findings take `default`
+# (`unmapped`) and surface in the report appendix for human review.
 
 version: 1
 framework: ENS RD 311/2022
 
-rules: []
+rules:
+  # --- credentials in the repository -------------------------------------------------
+  # Trivy's secret scanner. Observed: a GitHub fine-grained PAT (severity 9.5) in an
+  # agent config file. Mapping to op.acc.5 is the least certain call in this file —
+  # verify against the Anexo II text before release.
+  - match: "trivy:.*-pat$"
+    measures: [op.acc.5]
+  - match: "trivy:(github|gitlab|aws|gcp|azure|slack|stripe|private)-.*"
+    measures: [op.acc.5]
+
+  # --- known vulnerabilities in dependencies -----------------------------------------
+  # NOT YET OBSERVED: all three scanned repos lack a lockfile Trivy understands, so zero
+  # CVEs fired. Kept because the id shape is stable and documented; confirm against a
+  # repo with a lockfile before relying on it (docs/scan-baseline.md, gap 2).
+  - match: "trivy:CVE-.*"
+    measures: [op.exp.4, mp.sw.2]
+  - match: "trivy:(GHSA|DLA|DSA|RUSTSEC)-.*"
+    measures: [op.exp.4, mp.sw.2]
+
+  # --- web application defects (SAST, web-facing) ------------------------------------
+  - match: "semgrep:python\\.flask\\..*"
+    measures: [mp.sw.1, mp.s.2]
+  - match: "semgrep:.*\\.xss\\..*"
+    measures: [mp.sw.1, mp.s.2]
+  - match: "semgrep:.*(sql-injection|execute-raw-query|sqlalchemy).*"
+    measures: [mp.sw.1, mp.s.2]
+
+  # --- application code defects (SAST, not specifically web) -------------------------
+  - match: "semgrep:python\\.lang\\.security\\..*"
+    measures: [mp.sw.1]
+  - match: "semgrep:.*\\.security\\.audit\\..*"
+    measures: [mp.sw.1]
+
+  # --- CI/CD pipeline and supply chain -----------------------------------------------
+  # Mutable action tags, shell injection in workflow steps, missing Renovate release-age
+  # floor: defects in how software is built and promoted, not in the product's own code.
+  - match: "semgrep:yaml\\.github-actions\\..*"
+    measures: [mp.sw.2]
+  - match: "semgrep:package_managers\\.renovate\\..*"
+    measures: [mp.sw.2, op.exp.4]
+
+  # --- container image and orchestration configuration -------------------------------
+  # Trivy KSV-* (Kubernetes) and DS-* (Dockerfile), plus Semgrep's overlapping
+  # dockerfile/kubernetes rules. Runtime hardening posture -> security configuration.
+  - match: "trivy:KSV-.*"
+    measures: [op.exp.2]
+  - match: "trivy:DS-.*"
+    measures: [op.exp.2]
+  - match: "semgrep:dockerfile\\..*"
+    measures: [op.exp.2]
+  - match: "semgrep:yaml\\.kubernetes\\..*"
+    measures: [op.exp.2]
 
 default:
   measures: [unmapped]
