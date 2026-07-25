@@ -1,0 +1,10 @@
+# ast-grep config for this repo.
+#
+# The rules are VENDORED into .ast-grep/rules/ rather than referenced from
+# ~/.claude/ast-grep/: CI runners have no home directory of javier's, and a gate
+# that only works on one laptop is not a gate. The global Edit/Write hook prefers
+# a repo-local sgconfig.yml when it finds one, so laptop and CI run the same rules.
+#
+# Keep in sync with ~/.claude/ast-grep/rules/ when a rule is tuned.
+ruleDirs:
+  - .ast-grep/rules

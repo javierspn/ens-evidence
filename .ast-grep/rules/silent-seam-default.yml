@@ -1,0 +1,31 @@
+# An injected seam read with a default, or tolerated as None.
+#
+# WHY: three production outages shared one shape — a seam whose default is safe
+# in tests and wrong in prod, chosen silently. iso-06 shipped an unwired licence
+# repo, portal-14 a drifted schema, portal-17 an in-memory SQLite. Each failed as
+# "nothing here" — an empty 200 — rather than as an error, and each sat live for
+# weeks because nothing distinguishes "no data" from "not connected".
+#
+# This does not mean every hit is a bug: an optional seam is a legitimate design.
+# It means each hit must be a DECISION — is the prod default correct, and does an
+# unwired seam fail loudly or return empty? Use this to enumerate the surface,
+# then check each one against how it is wired in the real entrypoint.
+id: silent-seam-default
+language: python
+severity: info
+message: >-
+  Injected seam with a silent fallback. Confirm the prod path wires it
+  explicitly — an unwired seam should fail closed, not return empty.
+note: >-
+  Cross-check each hit against the worker's __main__/create_app: the failure mode
+  to avoid is a 200 with no data, which no status-only smoke check will catch.
+rule:
+  any:
+    # getattr(app.state, "seam", <default>) — absent seam yields the default.
+    - pattern: getattr($OBJ.app.state, $SEAM, $DEFAULT)
+    # A seam checked for None and substituted with an empty/other value.
+    - pattern: |
+        if $SEAM is None:
+            return $DEFAULT
+    # `x or Fallback()` — a falsy injected value silently becomes the default.
+    - pattern: $SEAM or $FALLBACK()

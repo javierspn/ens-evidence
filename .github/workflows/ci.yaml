@@ -1,0 +1,117 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  # NO TEST JOB YET — deliberately absent, not forgotten.
+  # tests/ currently holds fixtures and mapping-cases.yml but no python tests, so
+  # `pytest tests/` exits 5 ("no tests collected") and CI reads that as failure.
+  # A job that is red from day one gets switched off, and then the whole gate set
+  # goes with it. Add this back with the first real test:
+  #
+  #   test:
+  #     runs-on: ubuntu-latest
+  #     steps:
+  #       - uses: actions/checkout@v4
+  #       - uses: actions/setup-python@v5
+  #         with:
+  #           python-version: '3.11'
+  #       - name: Install dependencies
+  #         run: pip install -r requirements-dev.txt
+  #       - name: Run tests
+  #         run: pytest tests/ -v --tb=short
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install ruff
+      # Targets are named explicitly: an extension-less command script is
+      # invisible to `ruff check .`, which would then pass without reading it.
+      - run: ruff check src/ tests/
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install bandit pip-audit
+      - name: SAST (OWASP) — bandit, medium+ severity
+        run: bandit -ll -r src/
+      - name: Dependency CVEs — pip-audit
+        run: pip-audit -r requirements-dev.txt
+      # The gitleaks ACTION calls the PR API to post results and 403s under the
+      # default token permissions. The binary just scans.
+      - name: Secret scan
+        env:
+          GITLEAKS_VERSION: 8.24.3
+        run: |
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar xz
+          sudo mv gitleaks /usr/local/bin/
+          gitleaks detect --source . --no-banner --redact --config .gitleaks.toml
+
+  # Structural defect gate. Each rule in .ast-grep/rules/ encodes a production
+  # failure the platform actually had — a discarded exception, a failure logged as
+  # routine, a silently-defaulted seam. Bandit finds insecure code; this finds
+  # code that fails invisibly.
+  #
+  # RATCHET: only files changed in the PR are scanned, so pre-existing debt never
+  # blocks an unrelated PR. A gate that fails on day one for pre-existing reasons
+  # gets switched off, which is how a repo ends up with no gate at all.
+  structural:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # need the base commit to diff against
+
+      - name: Install ast-grep
+        run: |
+          curl -sSL https://github.com/ast-grep/ast-grep/releases/latest/download/app-x86_64-unknown-linux-gnu.zip -o /tmp/sg.zip
+          unzip -q -o /tmp/sg.zip -d /tmp/sg && sudo install /tmp/sg/ast-grep /usr/local/bin/
+          ast-grep --version
+
+      - name: Scan files changed in this PR
+        run: |
+          changed=$(git diff --name-only --diff-filter=ACM \
+            "origin/${{ github.base_ref }}...HEAD" \
+            | grep -E '^src/.*\.py$' \
+            | grep -vE '(^|/)tests?/|/test_|_test\.py$' || true)
+          if [ -z "$changed" ]; then
+            echo "no python sources changed — nothing to scan"
+            exit 0
+          fi
+          echo "scanning:"; echo "$changed" | sed 's/^/  /'
+          # ast-grep picks its parser from the file extension, so an
+          # extension-less command script must be scanned via a .py copy or it
+          # matches nothing and the gate passes vacuously.
+          mkdir -p /tmp/sgshim
+          targets=""
+          for f in $changed; do
+            case "$f" in
+              *.py) targets="$targets $f" ;;
+              *) cp "$f" "/tmp/sgshim/$(basename "$f").py"
+                 targets="$targets /tmp/sgshim/$(basename "$f").py" ;;
+            esac
+          done
+          # shellcheck disable=SC2086
+          ast-grep scan -c sgconfig.yml --json=compact $targets > /tmp/hits.json
+          python3 - <<'PY'
+          import json, sys
+          hits = [h for h in json.load(open("/tmp/hits.json")) if h.get("severity") == "warning"]
+          for h in hits:
+              line = h["range"]["start"]["line"] + 1
+              print(f"::error file={h['file']},line={line}::[{h['ruleId']}] {h['message']}")
+          if hits:
+              print(f"\n{len(hits)} structural finding(s) — see .ast-grep/rules/ for why each rule exists.")
+              sys.exit(1)
+          print("no structural findings in changed files")
+          PY
