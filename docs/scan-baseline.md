@@ -339,3 +339,62 @@ all of which the design must answer before spec 001:
    engine's own message is the right behaviour (already the contract), and per-run
    all-or-nothing means no half-populated report — but the CI failure mode deserves a line in
    the docs.
+
+## Round 6 — five more ecosystems (the generic-tool argument)
+
+Rounds 1–5 optimised for the repos at hand. That is the wrong target: this is a tool other
+people run on code we will never see, so the mapping's breadth is a product requirement, not
+a convenience. Five more public repos, chosen purely to add ecosystems:
+
+| Repo | Stack | Findings | Rule ids | Unmapped before |
+|---|---|---|---|---|
+| [terragoat](https://github.com/bridgecrewio/terragoat) | Terraform / IaC | 638 | 415 | **277** |
+| [railsgoat](https://github.com/OWASP/railsgoat) | Ruby / Rails, Gemfile.lock | 126 | 96 | 19 |
+| [DVWA](https://github.com/digininja/DVWA) | PHP | 92 | 22 | **67** |
+| [mdBook](https://github.com/rust-lang/mdBook) | Rust, Cargo.lock | 28 | 3 | 0 |
+| [dotnet/samples](https://github.com/dotnet/samples) (core subset) | C# | 23 | 5 | 0 |
+
+**363 unmapped findings across 186 rule ids** — by far the largest gap of any round, and it
+would have shipped invisibly. Families added:
+
+| Family | Now → |
+|---|---|
+| `trivy:(AWS|AZU|GCP|DIG|GITHUB|OPNSTK|CLDSTK|NIF|AVD)-*` cloud checks | `op.exp.2` |
+| `semgrep:terraform.*`, `cloudformation`, `ansible`, `helm`, `bicep` | `op.exp.2` |
+| `php.lang.security.injection.*`, `*cors*`, `php.(laravel|symfony|wordpress).*` | `mp.sw.1` + `mp.s.2` |
+| `ruby.(rails|rack|sinatra).*` | `mp.sw.1` + `mp.s.2` |
+| `(php|ruby|rust|csharp|kotlin|scala|swift|c|cpp|elixir).lang.*` | `mp.sw.1` |
+
+Rust and C# produced zero unmapped findings — but on 3 and 5 rule ids respectively, which is
+too thin to call coverage. Treat those two as unverified rather than clean.
+
+A third must-fall-through probe fell: `semgrep:terraform.aws.security.aws-s3-bucket-public-read`
+was excluded as "IaC namespace not covered", and terragoat fired its sibling. **Three of the
+original six probes have now been contradicted by real data.** The remaining probes were
+rewritten around unknown *engines* (`gitleaks:`, `checkov:`, a fictitious one) because the
+language catch-alls absorb unknown rules within a known engine — after ten repos, unknown
+engine is the only reliable route to the appendix, and that is the shape spec 002's fixture
+should take.
+
+## Corpus totals
+
+15 repositories · 23 SARIF documents · **1718 findings · 822 distinct `tool:rule` ids · 0
+unmapped**
+
+| Measure | Findings |
+|---|---|
+| `mp.sw.2` | 800 |
+| `op.exp.4` | 722 |
+| `mp.sw.1` | 580 |
+| `op.exp.2` | 332 |
+| `mp.s.2` | 291 |
+| `op.exp.3` | 67 |
+
+Ecosystems covered: Python (Django, Flask, FastAPI, SQLAlchemy), JavaScript/TypeScript
+(Express), Java (Spring, servlets), Go, Ruby (Rails), PHP, Rust, C#, Terraform, CloudFormation
+shapes, Kubernetes, Docker/Compose, GitHub Actions, and the package ecosystems Trivy reads
+(pip, npm, Maven, Go modules, Cargo, RubyGems).
+
+Not covered, and honest about it: Elixir, Scala, Kotlin, Swift, C/C++ (patterns exist for
+their `*.lang.*` namespaces but no repo has exercised them), plus every engine other than
+Semgrep and Trivy.

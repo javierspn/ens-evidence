@@ -166,13 +166,58 @@ cases:
       scan k8s and Dockerfiles"; govwa ships a compose file with the same hardening
       settings. Two of six probes were wrong — the list encodes assumptions, not facts.
 
+  # --- observed on the multi-ecosystem corpus (railsgoat, DVWA, terragoat, mdBook,
+  # dotnet samples) ------------------------------------------------------------------
+  - id: "semgrep:php.lang.security.injection.tainted-sql-string.tainted-sql-string"
+    measures: [mp.sw.1, mp.s.2]
+    observed: true
+    note: DVWA; PHP injection rules sit under php.lang.security, not a framework namespace
+
+  - id: "semgrep:php.lang.security.md5-loose-equality.md5-loose-equality"
+    measures: [mp.sw.1]
+    observed: true
+    note: not web-specific — pins that only the injection/cors subtrees get mp.s.2
+
+  - id: "semgrep:ruby.rails.security.brakeman.check-unscoped-find.check-unscoped-find"
+    measures: [mp.sw.1, mp.s.2]
+    observed: true
+
+  - id: "semgrep:ruby.lang.security.weak-hashes-md5.weak-hashes-md5"
+    measures: [mp.sw.1]
+    observed: true
+
+  - id: "trivy:AWS-0079"
+    measures: [op.exp.2]
+    observed: true
+    note: terragoat; cloud checks were 277 of the 363 findings this corpus left unmapped
+
+  - id: "trivy:AZU-0022"
+    measures: [op.exp.2]
+    observed: true
+
+  - id: "semgrep:terraform.aws.security.aws-rds-backup-no-retention.aws-rds-backup-no-retention"
+    measures: [op.exp.2]
+    observed: true
+    note: >-
+      was a MUST-fall-through probe ("IaC namespace not covered"). terragoat fired it. Third
+      probe proven wrong.
+
 # --- must fall through to the unmapped appendix --------------------------------------
 # No engine/ecosystem coverage yet. If one of these starts matching, either the mapping
 # grew a rule too broad or the scope list changed — both need a deliberate commit.
 unmapped:
-  - id: "trivy:AVD-AWS-0001"
-    note: cloud misconfiguration — Checkov/Terraform territory, v2 at the earliest
-  - id: "semgrep:terraform.aws.security.aws-s3-bucket-public-read"
-    note: IaC namespace not covered
   - id: "gitleaks:aws-access-token"
-    note: engine deferred to v2 (004-v2-engines)
+    note: engine deferred to v2 (004-v2-engines) — an unknown ENGINE, not an unknown rule
+  - id: "checkov:CKV_AWS_20"
+    note: same, v2 engine
+  - id: "mysteryengine:SOME-RULE-1"
+    note: >-
+      a wholly unknown engine. After ten repos, unknown-ENGINE is the only reliable way to
+      reach the appendix — the language catch-alls absorb unknown rules within known engines.
+      Spec 002's fixture should be built from this shape.
+  - id: "semgrep:ocaml.lang.security.foo.bar"
+    note: >-
+      unknown LANGUAGE inside a known engine. Three earlier probes of this kind were proven
+      wrong by real scans (docker-compose, generic.secrets, and the terraform/AVD cloud ids),
+      so this one is a live hypothesis, not a fact — if OCaml findings ever appear, map them
+      rather than trusting this line.

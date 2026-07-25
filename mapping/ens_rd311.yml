@@ -68,6 +68,16 @@ rules:
   # Go web tiers.
   - match: "semgrep:go\\.(gin|echo|net-http|beego|fiber)\\..*"
     measures: [mp.sw.1, mp.s.2]
+  # PHP and Ruby web tiers. PHP injection/CORS/XSS rules live under php.lang.security.*
+  # rather than a framework namespace, so the injection subtree is called out explicitly.
+  - match: "semgrep:php\\.lang\\.security\\.injection\\..*"
+    measures: [mp.sw.1, mp.s.2]
+  - match: "semgrep:php\\.lang\\.security\\..*cors.*"
+    measures: [mp.sw.1, mp.s.2]
+  - match: "semgrep:php\\.(laravel|symfony|wordpress)\\..*"
+    measures: [mp.sw.1, mp.s.2]
+  - match: "semgrep:ruby\\.(rails|rack|sinatra)\\..*"
+    measures: [mp.sw.1, mp.s.2]
   # Content served over cleartext — a web-service transport defect, not a code defect.
   - match: "semgrep:html\\.security\\.plaintext-http-link.*"
     measures: [mp.s.2]
@@ -83,6 +93,12 @@ rules:
   - match: "semgrep:javascript\\.(browser|audit|lang)\\..*"
     measures: [mp.sw.1]
   - match: "semgrep:typescript\\..*"
+    measures: [mp.sw.1]
+  # Other languages outside a web framework. Observed: php md5-loose-equality / exec-use /
+  # eval-use, ruby weak-hashes-md5, rust and csharp rules.
+  - match: "semgrep:(php|ruby|rust|csharp|kotlin|scala|swift|c|cpp|elixir)\\.lang\\..*"
+    measures: [mp.sw.1]
+  - match: "semgrep:(php|ruby|rust|csharp)\\..*\\.security\\..*"
     measures: [mp.sw.1]
   # Java and Go outside a web framework. Observed: httpservlet-path-traversal (java.lang),
   # raw-html-format (go.lang).
@@ -116,6 +132,17 @@ rules:
     measures: [op.exp.3]
   - match: "trivy:KSV-0125$"          # image from an untrusted registry
     measures: [op.exp.3]
+
+  # --- cloud and IaC configuration ---------------------------------------------------
+  # Trivy's cloud checks (AWS-*, AZU-*, GCP-* …) and Semgrep's IaC namespaces. Same nature
+  # as container hardening: the security configuration of deployed infrastructure.
+  # Observed on terragoat: 277 findings across 186 ids that were previously invisible.
+  - match: "trivy:(AWS|AZU|GCP|DIG|GITHUB|OPNSTK|CLDSTK|NIF|AVD)-.*"
+    measures: [op.exp.2]
+  - match: "semgrep:terraform\\..*"
+    measures: [op.exp.2]
+  - match: "semgrep:(cloudformation|ansible|helm|bicep)\\..*"
+    measures: [op.exp.2]
 
   # --- container image and orchestration configuration -------------------------------
   # Trivy KSV-* (Kubernetes) and DS-* (Dockerfile), plus Semgrep's overlapping
