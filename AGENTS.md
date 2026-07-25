@@ -46,7 +46,7 @@ Spec Kit is initialised (`/speckit-specify`, `/speckit-plan`, `/speckit-tasks`,
 `/speckit-implement`; note the dash, not the dot DESIGN.md uses) and the constitution is
 ratified at 1.1.0.
 
-`mapping/ens_rd311.yml` and `mapping/severity.yml` are authored from real scans of eight
+`mapping/ens_rd311.yml` and `mapping/severity.yml` are authored from real scans of ten
 repositories — 939 findings, 339 rule ids: five private (three app/GitOps, two with
 lockfiles for CVE and SBOM coverage) and five public vulnerable apps spanning
 Python/Django/Flask, Express/TypeScript, Java/Spring and Go. See
