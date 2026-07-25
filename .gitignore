@@ -1,0 +1,11 @@
+# Run store: generated evidence, immutable and append-only. Belongs in the user's artifact
+# store, never in git.
+out/
+
+# Local config for scanning this repo
+.ens-evidence.yml
+
+__pycache__/
+*.py[cod]
+.venv/
+.ruff_cache/

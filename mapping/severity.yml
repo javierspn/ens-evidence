@@ -1,0 +1,16 @@
+# Severity policy: each engine's own scale -> our canonical scale. Data, not code.
+#
+# Canonical scale is what `--fail-on` compares against and what the report groups by.
+# TODO(001-core-pipeline): fill the per-engine tables from observed scanner output —
+# confirm the exact severity strings each engine emits in its SARIF before trusting them.
+
+version: 1
+
+canonical: [critical, high, medium, low, info]
+
+engines:
+  semgrep: {}
+  trivy: {}
+
+# Anything not listed above resolves here rather than being silently dropped.
+default: medium

@@ -1,0 +1,30 @@
+# THE asset: tool:rule-id -> ENS measures. Data, not code.
+#
+# Scope — canonical measure list (constitution rule 3: identical here, in the README,
+# in the constitution and in the report header; divergence is a release blocker):
+#
+#   mp.sw.1 · mp.sw.2 · mp.s.2 · op.exp.2 · op.exp.4 · op.acc.5
+#
+# Titles are working labels until verified against the BOE consolidated text of
+# RD 311/2022 Anexo II (pre-release task). Measure IDs and our own wording only —
+# never bulk-copy CCN-STIC or BOE text (rule 5).
+#
+# EMPTY ON PURPOSE. Per DESIGN.md's build order, rules are authored from real Semgrep and
+# Trivy output on a real repository (step 2), never from imagination. Until then every
+# finding falls through to `unmapped` and lands in the appendix for human review.
+#
+# Shape, matched first-to-last on the string "<tool>:<rule-id>":
+#
+#   rules:
+#     - match: "semgrep:.*sql-injection.*"
+#       measures: [mp.sw.1, mp.s.2]
+#     - match: "trivy:CVE-.*"
+#       measures: [op.exp.4, mp.sw.2]
+
+version: 1
+framework: ENS RD 311/2022
+
+rules: []
+
+default:
+  measures: [unmapped]

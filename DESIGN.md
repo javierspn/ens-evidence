@@ -16,7 +16,7 @@ Titles are working labels until verified against the BOE consolidated text of RD
 
 ## Architecture
 
-![Pipeline](pipeline.svg)
+![Pipeline](docs/diagrams/pipeline.svg)
 
 Four stations:
 
@@ -55,7 +55,7 @@ Mapping and severity policy are **data files, not code** — reviewable, diffabl
 
 ## Trust boundary
 
-![Trust boundary](trust-boundary.svg)
+![Trust boundary](docs/diagrams/trust-boundary.svg)
 
 Everything runs **inside the user's CI**. Source code and finding details never leave their infrastructure; outputs land in their artifact store. There is no server, no upload, no account. A finding list is a targeting package — not holding it removes the token-permission, DPA, residency, and honeypot problems in one design decision, and "your code never leaves your infrastructure" is verifiable by the user.
 

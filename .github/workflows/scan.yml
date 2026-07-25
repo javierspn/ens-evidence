@@ -1,0 +1,23 @@
+# The tool scans itself and publishes its own report — the credibility artifact.
+#
+# Placeholder: wired up in spec 003-bundle-and-ci, once the CLI exists. Kept disabled
+# (workflow_dispatch only) so it cannot fail red on every push meanwhile.
+name: self-scan
+
+on:
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # TODO(003-bundle-and-ci): install pinned engine binaries (Semgrep, Trivy), then:
+      #   ens-evidence scan . --fail-on high
+      # and upload out/latest/ as a build artifact. Three lines in a consumer's CI is the
+      # target shape; here we prove it on our own repo.
+      - name: not implemented yet
+        run: |
+          echo "self-scan lands with spec 003-bundle-and-ci" >&2
+          exit 1
