@@ -100,7 +100,7 @@ out/
 │   ├── findings.jsonl
 │   ├── report.md / report.pdf
 │   ├── sbom.cdx.json
-│   └── run.json               # engine versions, mapping version, baseline hash
+│   └── run.json               # engine versions, Trivy DB + checks-bundle versions, rules mode+SHA, mapping version+hash, baseline hash, config hash
 └── latest -> 2026-07-25_a3f9c1d
 ```
 
@@ -181,6 +181,35 @@ of `c.lang.security.double-free`. The mapping is keyed on `tool:rule-id`, so `no
 strips the rules-root prefix to canonical form before the mapper sees anything. Unnormalised,
 every local-mode finding would land in the unmapped appendix under a machine-specific,
 non-reproducible key.
+
+## Drift: the inputs that change, and the update discipline
+
+The tool's verdict-relevant inputs are not static — the 21-repo baseline exercise caught every
+one of them moving. The reconciliation with Principle I is this: **reproducing past evidence is
+not the same as freezing time.** A past report never needs re-scanning — the immutable run store
+already holds it. Determinism applies *within* a run key; across time, freshness is the point
+(a stale vulnerability DB is precisely what `op.exp.4` exists to catch). So the policy is: pin
+what can be pinned, record what cannot, update deliberately, and never let staleness be silent.
+
+| Input | Drifts because | Policy | Recorded in `run.json` | Update path |
+|---|---|---|---|---|
+| Engine binaries (Semgrep, Trivy) | releases | user pins in CI image | version strings | user bumps image; skip key changes |
+| Trivy vulnerability DB | updates daily, version absent from SARIF | **not pinned** — currency is the point | DB version/digest from Trivy's cache metadata | automatic; recorded, part of skip key |
+| Trivy misconfig checks bundle | fetched/cached separately from the binary | same as DB | bundle version from cache | automatic; recorded |
+| Semgrep rules (pinned mode) | rules added/fixed upstream | pinned by `--sha` | repo URL + SHA + per-language counts | deliberate SHA bump — see loop below |
+| Semgrep rules (registry mode) | versionless | allowed, flagged non-reproducible | mode + config names | n/a; coverage table says so |
+| `mapping/ens_rd311.yml` + `severity.yml` | new rule ids appear as rules evolve | ships with the tool, versioned | mapping version + content hash | tool release; unmapped appendix is the drift detector |
+| ENS legal text (RD 311/2022) | BOE amendments | measure list verified 2026-07-25 | verification date in report header | re-verify on any BOE consolidation; scope change = principle III four-file commit |
+
+**The rules-bump loop** (how "update its core info" actually happens without breaking evidence):
+bump the `semgrep-rules` SHA in a branch → CI scans the fixture corpus → any **new unmapped ids
+must be mapped (or explicitly probed) before merge** → mapping version bumps in the same commit.
+The unmapped appendix is thus not just a report section; it is the mechanism that forces mapping
+maintenance to keep pace with rule drift. Same loop, slower cadence, for engine-version bumps.
+
+**Staleness is reported, never inferred.** The coverage table states the rules SHA and its
+commit date, the DB version and its date, and the BOE verification date. An auditor sees how
+old every moving part was at scan time; the tool does not nag, it discloses.
 
 **Packaging:** `pip install` / `uvx` first; then a Dockerfile bundling the engines (the real distribution unit — "three lines in your `.gitlab-ci.yml`" needs pre-installed engines); a thin GitHub Action wrapper last.
 

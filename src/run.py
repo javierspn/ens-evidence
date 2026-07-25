@@ -6,7 +6,9 @@ refuses without an explicit licence acknowledgement (--accept-rules-license /
 ENS_EVIDENCE_ACCEPT_RULES_LICENSE / accept_rules_license in config), exiting 2 after printing
 the terms — never a prompt. Rule files are never modified, mirrored, bundled or published:
 Semgrep Rules License v1.0 forbids redistribution. run.json records mode, repo URL, SHA and
-per-language rule counts.
+per-language rule counts — plus engine versions, Trivy's vulnerability-DB and checks-bundle
+versions (absent from SARIF; read from Trivy's cache metadata), mapping version+hash, baseline
+hash and config hash. Every drifting input is disclosed; see DESIGN.md "Drift".
 
 Owns the run store under ``out/<date>_<git-short-sha>/`` (immutable, append-only), the skip
 key (git SHA + engine versions + mapping hash + baseline hash + config hash), and config

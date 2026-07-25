@@ -65,6 +65,12 @@ verification.
   artifact, modify, or re-namespace rule files, and the self-scan workflow must exclude the
   rules root from anything it uploads. `run.json` records mode, repo URL, SHA and per-language
   rule counts.
+- **Drifting inputs are pinned, recorded, or both — never silent.** Verdict-relevant inputs
+  change over time (Trivy's daily vulnerability DB and checks bundle, Semgrep rules, the
+  mapping, the BOE text). Reproducing past evidence is the run store's job, not re-scanning's;
+  within a run, every moving part's version is recorded in `run.json` and disclosed in the
+  coverage table. Rules-SHA and engine bumps go through the fixture loop: new unmapped ids must
+  be mapped before the bump merges.
 - **Engines run hermetically or Principle I is a fiction.** Trivy must run `--offline-scan`
   (it otherwise resolves Maven POMs over the network and dies on rate limits); Semgrep rules
   must be vendored or image-pinned, never fetched from a versionless registry config, and the
@@ -111,7 +117,14 @@ changed and why, and bump the version below. Principle III means a scope-list ch
 touches the README, `mapping/ens_rd311.yml` and the report header in that same commit.
 Runtime guidance for agents working on the repo lives in [AGENTS.md](../../AGENTS.md).
 
-**Version**: 1.3.0 | **Ratified**: 2026-07-25 | **Last Amended**: 2026-07-25
+**Version**: 1.4.0 | **Ratified**: 2026-07-25 | **Last Amended**: 2026-07-25
+
+Amendment 1.4.0 — drift discipline. The baseline exercise showed every verdict-relevant input
+moves (vuln DB daily, rules upstream, mapping in response, the legal text on BOE consolidation).
+Added the constraint that such inputs are pinned and/or recorded and disclosed, with the
+unmapped appendix serving as the forcing function for mapping updates. Clarified that
+cross-time identical output is a non-goal: the immutable run store reproduces the past, scans
+serve the present.
 
 Amendment 1.3.0 — Principle VI now reads "five verbs on the finding path plus the `rules`
 bootstrap group". The sixth verb is not scope creep, it is licence compliance: Semgrep's rules

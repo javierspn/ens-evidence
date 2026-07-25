@@ -87,6 +87,10 @@ so treat that list as live hypotheses; the surviving ones are unknown *engines*,
 language catch-alls absorb unknown rules inside a known engine. Changing a mapping rule without updating it should break the
 suite; that is the point.
 
+Drift: verdict-relevant inputs move over time (Trivy DB daily, semgrep-rules upstream, the
+mapping, the BOE text). DESIGN.md "Drift" holds the policy — pin or record, disclose in the
+coverage table, and gate rules-SHA bumps on zero new unmapped ids in the fixture corpus.
+
 Scope is six measures: `mp.sw.1 · mp.sw.2 · mp.s.2 · op.exp.2 · op.exp.3 · op.exp.4`,
 verified against the BOE text. `op.acc.5` was dropped in constitution 1.1.0 — do not
 reintroduce it without a scanner that can actually evidence an authentication mechanism.
