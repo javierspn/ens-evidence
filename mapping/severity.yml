@@ -7,8 +7,12 @@
 # severity lives, so each gets its own strategy — this file is why `strategy` exists at
 # all rather than one flat table of severity strings:
 #
-#   * Trivy   — every rule carries properties."security-severity" (observed: 2.0, 5.5,
-#               8.0, 9.5) plus a HIGH/CRITICAL tag. Numeric, CVSS-shaped, trustworthy.
+#   * Trivy   — every rule carries properties."security-severity" AND a severity word in
+#               properties.tags. For misconfiguration checks they agree. For CVEs they do
+#               NOT: CVE-2024-56201 ships security-severity "8.8" (that field is the CVSS
+#               v3 base score) while Trivy's own tag says MEDIUM. Trust the tag — it is
+#               Trivy's verdict, including its vendor-severity overrides; the CVSS score is
+#               a component of that verdict, not a substitute for it.
 #   * Semgrep — NO rule carries security-severity, and results carry no `level` either.
 #               The only signal is the rule's defaultConfiguration.level
 #               (error / warning / note) plus a "<X> CONFIDENCE" string inside
@@ -21,10 +25,18 @@ version: 1
 canonical: [critical, high, medium, low, info]
 
 engines:
-  # Numeric band lookup on properties."security-severity". Bands are CVSS v3 boundaries;
-  # observed values land at 2.0 -> low, 5.5 -> medium, 8.0 -> high, 9.5 -> critical.
+  # Severity word from properties.tags first; numeric bands on security-severity only as a
+  # fallback when no severity tag is present. Observed tags: CRITICAL, HIGH, MEDIUM, LOW.
   trivy:
-    strategy: security_severity_bands
+    strategy: severity_tag_then_bands
+    tags:
+      CRITICAL: critical
+      HIGH: high
+      MEDIUM: medium
+      LOW: low
+      UNKNOWN: info
+    # Fallback only. Bands are CVSS v3 boundaries; observed values 2.0 / 3.7 / 5.3 / 5.5 /
+    # 7.4 / 7.5 / 7.8 / 8.0 / 8.6 / 8.8 / 9.5.
     bands:
       critical: 9.0
       high: 7.0

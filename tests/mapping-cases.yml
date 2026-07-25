@@ -1,0 +1,84 @@
+# Mapping contract: "<tool>:<rule-id>" -> expected measures. Data-driven test input for
+# mapper.py (spec 002). Editing mapping/ens_rd311.yml without updating this file should
+# turn the test suite red — that is the point.
+#
+# `observed: true` means the rule id was seen firing in a real scan
+# (docs/scan-baseline.md). The rest are shape probes: plausible ids from engines and
+# ecosystems we do not cover yet, kept to pin the fall-through behaviour.
+#
+# The `unmapped` block is the part that has no fixture yet in the scan corpus — every id in
+# the 28-rule inventory matched a rule, so without these cases the `unmapped` appendix
+# would ship untested.
+
+version: 1
+
+cases:
+  # --- observed in real scans --------------------------------------------------------
+  - id: "trivy:CVE-2024-56201"
+    measures: [op.exp.4, mp.sw.2]
+    observed: true
+    note: jinja2 3.1.4, repo-d — the CVE family, verified only after a lockfile repo was scanned
+
+  - id: "semgrep:python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query"
+    measures: [mp.sw.1, mp.s.2]
+    observed: true
+
+  - id: "semgrep:python.flask.security.xss.audit.direct-use-of-jinja2.direct-use-of-jinja2"
+    measures: [mp.sw.1, mp.s.2]
+    observed: true
+
+  - id: "semgrep:python.django.security.django-no-csrf-token.django-no-csrf-token"
+    measures: [mp.sw.1, mp.s.2]
+    observed: true
+    note: fell through to unmapped until the django namespace was added — this case is why
+
+  - id: "semgrep:python.lang.security.audit.exec-detected.exec-detected"
+    measures: [mp.sw.1]
+    observed: true
+
+  - id: "semgrep:yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag"
+    measures: [mp.sw.2]
+    observed: true
+
+  - id: "semgrep:package_managers.renovate.renovate-missing-minimum-release-age.renovate-missing-minimum-release-age"
+    measures: [mp.sw.2, op.exp.4]
+    observed: true
+
+  - id: "semgrep:dockerfile.security.missing-user.missing-user"
+    measures: [op.exp.2]
+    observed: true
+
+  - id: "semgrep:yaml.kubernetes.security.run-as-non-root.run-as-non-root"
+    measures: [op.exp.2]
+    observed: true
+
+  - id: "trivy:DS-0002"
+    measures: [op.exp.2]
+    observed: true
+
+  - id: "trivy:KSV-0118"
+    measures: [op.exp.2]
+    observed: true
+
+  - id: "trivy:github-fine-grained-pat"
+    measures: [op.acc.5]
+    observed: true
+    note: >-
+      DISPUTED. op.acc.5 is "Mecanismo de autenticación (usuarios externos)" per the BOE
+      text — external-user authentication design, which a leaked credential is not.
+      Pending a scope decision; see docs/scan-baseline.md gap 4.
+
+# --- must fall through to the unmapped appendix --------------------------------------
+# No engine/ecosystem coverage yet. If one of these starts matching, either the mapping
+# grew a rule too broad or the scope list changed — both need a deliberate commit.
+unmapped:
+  - id: "trivy:AVD-AWS-0001"
+    note: cloud misconfiguration — Checkov/Terraform territory, v2 at the earliest
+  - id: "semgrep:terraform.aws.security.aws-s3-bucket-public-read"
+    note: IaC namespace not covered
+  - id: "semgrep:generic.secrets.security.detected-generic-api-key"
+    note: Semgrep's own secret rules; p/secrets fired none of these in the real corpus
+  - id: "gitleaks:aws-access-token"
+    note: engine deferred to v2 (004-v2-engines)
+  - id: "semgrep:yaml.docker-compose.security.no-new-privileges"
+    note: docker-compose namespace not covered; deliberate, we scan k8s and Dockerfiles

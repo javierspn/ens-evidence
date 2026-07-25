@@ -100,24 +100,90 @@ Link: [DS-0002](https://avd.aquasec.com/misconfig/ds-0002)
 Parse nothing out of this. Take severity and title from the rule object; keep the blob out
 of the report (principle: our template text, not scanner passthrough).
 
+## Round 2 — closing the gaps (2026-07-25, same day)
+
+### CVEs and SBOM verified on lockfile repos
+
+Scanned `repo-d` and `repo-e`, which pin dependencies in `requirements.txt`:
+
+| Repo | CVE findings | distinct CVEs | SBOM components |
+|---|---|---|---|
+| repo-d | 17 | 12 | 44 (41 library, 3 application) |
+| repo-e | 17 | 17 | — |
+
+`trivy:CVE-.*` is now observed, not assumed. Trivy severity words on these: CRITICAL
+through LOW, and the SBOM populates properly once a lockfile exists.
+
+### Trivy's two severity fields disagree on CVEs
+
+`CVE-2024-56201` (jinja2 3.1.4) ships:
+
+```json
+{"security-severity": "8.8", "cvssv3_baseScore": 8.8, "cvssv40_baseScore": 5.4,
+ "tags": ["vulnerability", "security", "MEDIUM"]}
+```
+
+`security-severity` **is the CVSS v3 base score**, not Trivy's verdict — the tag says
+MEDIUM. On misconfiguration checks the two agree, which is why round 1 (misconfig only) did
+not catch this. `severity.yml` now reads the tag first and treats the numeric bands as a
+fallback; a naive band lookup would have graded this finding `high`.
+
+### Broader Semgrep rulesets do not help
+
+`--config p/default --config p/secrets --config p/jwt` on repo-d: 17 findings, 5 rules.
+Not one secret rule and not one JWT rule fired. One genuinely new rule appeared —
+`python.django.security.django-no-csrf-token` — which **fell through to `unmapped`**,
+exposing that the mapping only covered `python.lang.*` and `.security.audit.*`, not the web
+framework namespaces. Fixed; `tests/mapping-cases.yml` pins it.
+
+### Measure titles verified against the BOE
+
+Extracted from the consolidated PDF of RD 311/2022 (`BOE-A-2022-7191`), Anexo II:
+
+| Code | Published heading |
+|---|---|
+| `mp.sw.1` | Desarrollo de aplicaciones |
+| `mp.sw.2` | Aceptación y puesta en servicio |
+| `mp.s.2` | Protección de servicios y aplicaciones web |
+| `op.exp.2` | Configuración de seguridad |
+| `op.exp.4` | Mantenimiento y actualizaciones de seguridad |
+| `op.acc.5` | **Mecanismo de autenticación (usuarios externos)** |
+
+All six exist. Five match what the design assumed. **`op.acc.5` does not**: it governs the
+authentication mechanism for users external to the organisation — a design and operational
+control, not something a static scanner can observe. Neighbours for reference: `op.acc.6` is
+the same measure for organisation users; `op.exp.1` is *Inventario de activos*; `op.exp.3`
+is *Gestión de la configuración de seguridad*.
+
+Consequence: mapping a leaked credential to `op.acc.5` is wrong, and `op.acc.5` has no
+plausible automated evidence source at all. This needs a scope decision (principle III makes
+it a four-file change), so the mapping keeps the disputed rule, flagged, until then.
+
 ## Gaps this run did not close
 
-1. **No CVEs, anywhere.** All three repos lack a lockfile Trivy understands, so the SCA
-   half of the v1 engine story is unexercised and `trivy:CVE-.*` in the mapping file is
-   unverified. Scan a repo with `uv.lock` / `package-lock.json` / `go.sum` before spec 002
-   claims anything about `op.exp.4`.
-2. **SBOMs are empty** (0–1 components) for the same reason. DESIGN.md bills Trivy as
-   "SCA + SBOM"; on repos like these it delivers misconfiguration findings only. Per
-   principle IV the report must state *no lockfile found → no dependency analysis*, or an
-   empty SBOM will read as good news.
-3. **Secret detection is a finding class the design does not mention.** DESIGN.md defers
-   gitleaks to v2, but Trivy's secret scanner already fires today — and produced the single
-   highest-severity finding of the whole exercise (9.5). Decide whether secrets are a v1
-   class; `mapping/ens_rd311.yml` currently maps them to `op.acc.5`, the least certain call
-   in that file.
-4. **`op.acc.5` has thin evidence.** Only the secret finding maps there. No authn/authz
-   code defect fired in any of the three repos, so a repo with real login code is needed to
-   judge whether the measure is usefully covered.
-5. **Measure titles remain unverified** against the BOE consolidated text of Anexo II. All
-   mapping decisions above are by measure ID and our own reading; the pre-release gate
-   stands.
+1. ~~No CVEs, anywhere.~~ **Closed** — verified on repo-d and repo-e (round 2).
+2. ~~SBOMs are empty.~~ **Closed** — 44 components on a lockfile repo. The reporting
+   obligation stands though: with no lockfile, the run must say *no lockfile found → no
+   dependency analysis* (principle IV), or an empty SBOM reads as good news. That is spec
+   002 work, tracked there rather than here.
+3. **Secrets as a v1 finding class — adopted.** Trivy's secret scanner fires today at no
+   extra dependency cost and produced the highest-severity finding in the corpus, so v1
+   keeps `--scanners vuln,misconfig,secret`. gitleaks stays deferred to v2 as a *second*
+   secret engine, not the first. What remains open is which measure secrets map to — see 4.
+4. **`op.acc.5` is the wrong measure, and its replacement is a scope decision.** The BOE
+   heading is *Mecanismo de autenticación (usuarios externos)*: no static-analysis finding
+   can evidence it, and the leaked-credential mapping is a category error. Options, all
+   four-file changes under principle III:
+   - swap `op.acc.5` → `op.exp.1` *Inventario de activos*, which the CycloneDX SBOM
+     evidences directly and well;
+   - swap → `op.exp.3` *Gestión de la configuración de seguridad*, pairing with op.exp.2;
+   - keep `op.acc.5` and report it as "no automated evidence available", which is honest
+     but makes one of six measures dead weight.
+   Until decided, `trivy:*-pat` keeps mapping to `op.acc.5` with a DISPUTED note in
+   `tests/mapping-cases.yml`.
+5. ~~Measure titles unverified.~~ **Closed** — all six verified against the consolidated BOE
+   text; five confirmed, one (`op.acc.5`) contradicted the design's assumption. Re-verify if
+   the scope list changes.
+6. **New:** no repo in the corpus exercises `mp.s.2` beyond template-level findings
+   (jinja2, CSRF). A repo with real HTTP routing and session handling would test whether the
+   web-service measure gets useful evidence.

@@ -42,7 +42,11 @@ rules:
     measures: [op.exp.4, mp.sw.2]
 
   # --- web application defects (SAST, web-facing) ------------------------------------
-  - match: "semgrep:python\\.flask\\..*"
+  # Web frameworks: a defect here is both an application-development defect and a web
+  # service exposure. Observed: flask xss/jinja2, django-no-csrf-token.
+  - match: "semgrep:python\\.(flask|django|fastapi|aiohttp|tornado)\\..*"
+    measures: [mp.sw.1, mp.s.2]
+  - match: "semgrep:javascript\\.(express|nextjs)\\..*"
     measures: [mp.sw.1, mp.s.2]
   - match: "semgrep:.*\\.xss\\..*"
     measures: [mp.sw.1, mp.s.2]
