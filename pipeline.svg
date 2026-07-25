@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" viewBox="0 0 680 560" role="img">
+<title>ENS evidence pipeline</title>
+<desc>Repository flows into v1 scanners (Semgrep, Trivy) and dashed v2 scanners, then normaliser, baseline, mapping table, and four outputs; the SBOM comes directly from Trivy.</desc>
+<style>
+text{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif}
+.th{font-size:14px;font-weight:500}.ts{font-size:12px;font-weight:400}
+.gy rect{fill:#F1EFE8;stroke:#5F5E5A}.gy .th{fill:#2C2C2A}.gy .ts{fill:#5F5E5A}
+.pu rect{fill:#EEEDFE;stroke:#534AB7}.pu .th{fill:#26215C}.pu .ts{fill:#534AB7}
+.te rect{fill:#E1F5EE;stroke:#0F6E56}.te .th{fill:#04342C}.te .ts{fill:#0F6E56}
+.arr{stroke:#5F5E5A;stroke-width:1;fill:none}
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#5F5E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+<g class="gy"><rect x="270" y="30" width="140" height="44" rx="8" stroke-width="0.5"/>
+<text class="th" x="340" y="52" text-anchor="middle" dominant-baseline="central">Code repository</text></g>
+
+<path class="arr" d="M340 74 L340 90 L145 90 L145 108" marker-end="url(#a)"/>
+<path class="arr" d="M340 74 L340 108" marker-end="url(#a)"/>
+<path class="arr" d="M340 74 L340 90 L520 90 L520 108" marker-end="url(#a)"/>
+
+<g class="gy"><rect x="70" y="110" width="150" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="145" y="128" text-anchor="middle" dominant-baseline="central">Semgrep · v1</text>
+<text class="ts" x="145" y="148" text-anchor="middle" dominant-baseline="central">own code (SAST)</text></g>
+<g class="gy"><rect x="250" y="110" width="150" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="325" y="128" text-anchor="middle" dominant-baseline="central">Trivy · v1</text>
+<text class="ts" x="325" y="148" text-anchor="middle" dominant-baseline="central">CVEs + SBOM</text></g>
+<g class="gy"><rect x="430" y="110" width="180" height="56" rx="8" stroke-width="0.5" stroke-dasharray="4 3"/>
+<text class="th" x="520" y="128" text-anchor="middle" dominant-baseline="central">gitleaks · Checkov</text>
+<text class="ts" x="520" y="148" text-anchor="middle" dominant-baseline="central">v2, same seam</text></g>
+
+<path class="arr" d="M145 166 L145 190 L300 190 L300 208" marker-end="url(#a)"/>
+<path class="arr" d="M325 166 L325 208" marker-end="url(#a)"/>
+<path class="arr" d="M520 166 L520 190 L380 190 L380 208" marker-end="url(#a)"/>
+
+<g class="pu"><rect x="225" y="210" width="230" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="340" y="228" text-anchor="middle" dominant-baseline="central">Normalise (SARIF → JSONL)</text>
+<text class="ts" x="340" y="248" text-anchor="middle" dominant-baseline="central">dedupe · severity · stable IDs</text></g>
+
+<path class="arr" d="M340 266 L340 288" marker-end="url(#a)"/>
+
+<g class="pu"><rect x="225" y="290" width="230" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="340" y="308" text-anchor="middle" dominant-baseline="central">Apply baseline</text>
+<text class="ts" x="340" y="328" text-anchor="middle" dominant-baseline="central">only new findings pass</text></g>
+
+<path class="arr" d="M340 346 L340 368" marker-end="url(#a)"/>
+
+<g class="te"><rect x="225" y="370" width="230" height="56" rx="8" stroke-width="1"/>
+<text class="th" x="340" y="388" text-anchor="middle" dominant-baseline="central">Mapping table</text>
+<text class="ts" x="340" y="408" text-anchor="middle" dominant-baseline="central">regex → ENS measures</text></g>
+
+<path class="arr" d="M340 426 L340 444 L125 444 L125 458" marker-end="url(#a)"/>
+<path class="arr" d="M340 426 L340 444 L275 444 L275 458" marker-end="url(#a)"/>
+<path class="arr" d="M340 426 L340 444 L420 444 L420 458" marker-end="url(#a)"/>
+<path class="arr" d="M400 138 L565 138 L565 458" marker-end="url(#a)"/>
+
+<g class="te"><rect x="50" y="460" width="150" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="125" y="478" text-anchor="middle" dominant-baseline="central">Evidence report</text>
+<text class="ts" x="125" y="498" text-anchor="middle" dominant-baseline="central">ES · top-10 first</text></g>
+<g class="te"><rect x="220" y="460" width="110" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="275" y="478" text-anchor="middle" dominant-baseline="central">bundle.md</text>
+<text class="ts" x="275" y="498" text-anchor="middle" dominant-baseline="central">paste anywhere</text></g>
+<g class="gy"><rect x="350" y="460" width="140" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="420" y="478" text-anchor="middle" dominant-baseline="central">Unmapped</text>
+<text class="ts" x="420" y="498" text-anchor="middle" dominant-baseline="central">human review</text></g>
+<g class="gy"><rect x="510" y="460" width="110" height="56" rx="8" stroke-width="0.5"/>
+<text class="th" x="565" y="478" text-anchor="middle" dominant-baseline="central">SBOM</text>
+<text class="ts" x="565" y="498" text-anchor="middle" dominant-baseline="central">from Trivy</text></g>
+</svg>
