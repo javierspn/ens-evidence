@@ -104,7 +104,7 @@ out/
 └── latest -> 2026-07-25_a3f9c1d
 ```
 
-Re-runs never overwrite: the sequence of reports over time IS the evidence trail. Skip key = git SHA + engine versions + mapping hash + baseline hash + config hash; same key → skip whole run, exit 0. `--force` re-runs and must produce byte-identical JSONL (the determinism self-test). **Partial engine-output reuse is forbidden** — Semgrep is cross-file, lockfile bumps change Trivy's world, mapping edits change reports with zero code changes; all-or-nothing per run.
+Re-runs never overwrite: the sequence of reports over time IS the evidence trail. Skip key = git SHA + engine versions + Trivy DB & checks-bundle versions + rules SHA/mode + mapping hash + baseline hash + config hash; same key → skip whole run, exit 0 (so a DB update alone makes the next scan a real scan, not a skip). `--force` re-runs and must produce byte-identical JSONL (the determinism self-test). **Partial engine-output reuse is forbidden** — Semgrep is cross-file, lockfile bumps change Trivy's world, mapping edits change reports with zero code changes; all-or-nothing per run.
 
 ## Rule sourcing and licensing
 
