@@ -14,9 +14,17 @@ jobs:
       - uses: actions/checkout@v4
 
       # TODO(003-bundle-and-ci): install pinned engine binaries (Semgrep, Trivy), then:
+      #   ens-evidence rules fetch --sha <commit> --accept-rules-license
       #   ens-evidence scan . --fail-on high
       # and upload out/latest/ as a build artifact. Three lines in a consumer's CI is the
       # target shape; here we prove it on our own repo.
+      #
+      # LICENCE CONSTRAINT — do not break when wiring this up:
+      # rules are fetched at run time into .ens-rules/ and MUST NOT appear in any uploaded
+      # artifact, cache key payload, or committed file. Upload out/latest/ only, never the
+      # repository root. Semgrep Rules License v1.0 forbids redistribution, and a public
+      # build artifact containing rule files is redistribution. See DESIGN.md
+      # "Rule sourcing and licensing".
       - name: not implemented yet
         run: |
           echo "self-scan lands with spec 003-bundle-and-ci" >&2

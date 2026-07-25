@@ -31,6 +31,21 @@ ens-evidence report             # re-render from the last scan's JSONL, no re-sc
 ens-evidence explain <id>       # one finding: matching regex, measures, and why
 ```
 
+## Rules bootstrap (once per environment)
+
+Semgrep's rules are licensed so that the **operator** holds their own copy — the tool never
+ships them. Registry mode works out of the box but is thin for some languages and not
+reproducible; pinned mode is the CI-grade option:
+
+```bash
+ens-evidence rules fetch --sha <commit> --accept-rules-license   # clones into .ens-rules/
+ens-evidence rules status                                        # mode, SHA, rules per language
+```
+
+Without the acknowledgement flag (or `ENS_EVIDENCE_ACCEPT_RULES_LICENSE=1`) the command prints
+the licence terms and exits 2 without fetching. Never commit `.ens-rules/`, never copy it into
+an image or a published artifact, never edit the rule files.
+
 ## Exit codes
 
 | code | meaning |
@@ -40,6 +55,14 @@ ens-evidence explain <id>       # one finding: matching regex, measures, and why
 | 2 | tool error (e.g. a missing engine binary — the message names it) |
 
 The gate fires on **new-since-baseline** only.
+
+## Coverage is not uniform — check it before trusting a clean report
+
+Semgrep's free registry ships roughly two rules each for C, C++, Swift, Kotlin and Elixir. A
+scan of such a codebase can return zero findings because nothing ran. Every report carries a
+coverage table (languages detected, rules run per language, languages not analysed, dependency
+analysis skipped when no lockfile) — read it before reporting "no findings", and prefer pinned
+rules mode for those languages.
 
 ## Worked example
 

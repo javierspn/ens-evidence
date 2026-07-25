@@ -44,7 +44,7 @@ Scaffold plus data files — every `src/` module is still a stub.
 
 Spec Kit is initialised (`/speckit-specify`, `/speckit-plan`, `/speckit-tasks`,
 `/speckit-implement`; note the dash, not the dot DESIGN.md uses) and the constitution is
-ratified at 1.2.0.
+ratified at 1.3.0.
 
 `mapping/ens_rd311.yml` and `mapping/severity.yml` are authored from real scans of twenty-one
 repositories — 1794 findings, 840 rule ids, 0 unmapped: five private and sixteen public,
@@ -52,9 +52,23 @@ spanning Python, JS/TS, Java, Go, Ruby, PHP, Scala, Terraform, Kubernetes, Docke
 **C, C++, Swift, Kotlin and Elixir are not analysed in registry mode** — Semgrep's free
 registry ships ~2 rules each, so a clean report there means no rules ran (constitution 1.2.0
 requires the report to say so). Running the public `semgrep-rules` directories locally closes
-most of that gap (C: 0 → 12 findings), but those rules are under a licence that forbids
-redistribution, so we never bundle them — the user clones them at a pinned SHA. Local rule ids
-are path-derived and MUST be canonicalised in `normalise.py` before mapping. This is a
+most of that gap (C: 0 → 12 findings), via `ens-evidence rules fetch --sha <commit>
+--accept-rules-license`.
+
+**Licence rules you must not break** (Semgrep Rules License v1.0 — no redistribution, no
+offering as a service, licensee's own internal use only; full reasoning in DESIGN.md
+"Rule sourcing and licensing"):
+
+- never bundle rules in the image, the pip package or a release asset — engines only;
+- never mirror, cache-in-a-published-artifact, or vendor them into this repo (`.ens-rules/` is
+  git-ignored);
+- never modify, reformat or re-namespace rule files, and never strip their notices;
+- never offer scanning as a service using them;
+- the self-scan workflow uploads `out/latest/` only — never the repo root, which would carry
+  `.ens-rules/` into a public artifact.
+
+Local rule ids are path-derived and MUST be canonicalised in `normalise.py` before mapping,
+otherwise every local-mode finding lands in the unmapped appendix under a machine-specific key. This is a
 generic tool: breadth of ecosystem coverage is a product requirement, so when a new language
 or engine appears, extend the mapping rather than letting a catch-all swallow it. See
 [docs/scan-baseline.md](docs/scan-baseline.md), which also

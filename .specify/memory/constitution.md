@@ -33,8 +33,9 @@ Measure IDs and our own wording only.
 
 ### VI. Keep it small
 
-This is a free OSS tool: five verbs, two engines, six measures, data-file extensibility.
-Feature additions need a validated reason, not restlessness.
+This is a free OSS tool: five verbs on the finding path (`scan`, `baseline update`, `bundle`,
+`report`, `explain`) plus the `rules` bootstrap group, two engines, six measures, data-file
+extensibility. Feature additions need a validated reason, not restlessness.
 
 ## Scope — canonical measure list
 
@@ -57,6 +58,13 @@ verification.
 - **Engines are subprocesses**, never Python imports: the user pins versions in their CI
   image, the dependency tree stays tiny, engines stay swappable via SARIF. A missing binary
   exits 2 with a message naming it.
+- **Rules are never distributed by us.** `semgrep-rules` is under the Semgrep Rules License
+  v1.0: no redistribution, no offering as a service, use permitted for the licensee's own
+  internal business purposes. The operator fetches their own copy via `ens-evidence rules
+  fetch --sha <commit> --accept-rules-license`; we never bundle, mirror, cache in a published
+  artifact, modify, or re-namespace rule files, and the self-scan workflow must exclude the
+  rules root from anything it uploads. `run.json` records mode, repo URL, SHA and per-language
+  rule counts.
 - **Engines run hermetically or Principle I is a fiction.** Trivy must run `--offline-scan`
   (it otherwise resolves Maven POMs over the network and dies on rate limits); Semgrep rules
   must be vendored or image-pinned, never fetched from a versionless registry config, and the
@@ -103,7 +111,13 @@ changed and why, and bump the version below. Principle III means a scope-list ch
 touches the README, `mapping/ens_rd311.yml` and the report header in that same commit.
 Runtime guidance for agents working on the repo lives in [AGENTS.md](../../AGENTS.md).
 
-**Version**: 1.2.0 | **Ratified**: 2026-07-25 | **Last Amended**: 2026-07-25
+**Version**: 1.3.0 | **Ratified**: 2026-07-25 | **Last Amended**: 2026-07-25
+
+Amendment 1.3.0 — Principle VI now reads "five verbs on the finding path plus the `rules`
+bootstrap group". The sixth verb is not scope creep, it is licence compliance: Semgrep's rules
+cannot be shipped with the tool, so the operator must obtain their own copy, pinned to a commit
+SHA, with explicit licence acknowledgement. Constraints added accordingly — never bundle, mirror,
+modify or serve those rules.
 
 Amendment 1.2.0 — Principle IV now requires a per-run coverage table. A 21-repo corpus showed
 the engines produce zero findings for C, Swift, Kotlin and Elixir because the free Semgrep

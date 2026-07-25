@@ -5,6 +5,10 @@ out/
 # Local config for scanning this repo
 .ens-evidence.yml
 
+# Semgrep rules fetched by `ens-evidence rules fetch`. Never commit, never publish:
+# Semgrep Rules License v1.0 forbids redistribution. See DESIGN.md "Rule sourcing".
+.ens-rules/
+
 __pycache__/
 *.py[cod]
 .venv/

@@ -1,4 +1,12 @@
-"""Orchestration + CLI: the five verbs (scan, baseline update, bundle, report, explain).
+"""Orchestration + CLI: five finding-path verbs (scan, baseline update, bundle, report,
+explain) plus the `rules` bootstrap group (fetch, status).
+
+`rules fetch` clones semgrep-rules at a required --sha into the operator's own environment. It
+refuses without an explicit licence acknowledgement (--accept-rules-license /
+ENS_EVIDENCE_ACCEPT_RULES_LICENSE / accept_rules_license in config), exiting 2 after printing
+the terms — never a prompt. Rule files are never modified, mirrored, bundled or published:
+Semgrep Rules License v1.0 forbids redistribution. run.json records mode, repo URL, SHA and
+per-language rule counts.
 
 Owns the run store under ``out/<date>_<git-short-sha>/`` (immutable, append-only), the skip
 key (git SHA + engine versions + mapping hash + baseline hash + config hash), and config

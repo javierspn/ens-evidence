@@ -81,6 +81,13 @@ ens-evidence report             # re-render from last scan's JSONL, no re-scan
 ens-evidence explain <id>       # one finding + which regex matched + which measures + why
 ```
 
+Plus one bootstrap group, outside the finding path (see [Rule sourcing](#rule-sourcing-and-licensing)):
+
+```
+ens-evidence rules fetch        # obtain Semgrep rules into the caller's own environment
+ens-evidence rules status       # which mode, which SHA, rule counts per language
+```
+
 **Exit codes:** `0` = no NEW findings at/above `--fail-on` level (default forgiving) · `1` = new findings at/above it · `2` = tool error. The gate fires on new-since-baseline only.
 
 **Config resolution:** flags → `ENS_EVIDENCE_*` env vars → `.ens-evidence.yml` in the scanned repo → defaults. Nothing interactive, ever. Machine output (JSON) to stdout, human chatter to stderr; under `--json`, errors are JSON too. Every machine document starts `{"schema": "ens-evidence/1"}`.
@@ -99,16 +106,81 @@ out/
 
 Re-runs never overwrite: the sequence of reports over time IS the evidence trail. Skip key = git SHA + engine versions + mapping hash + baseline hash + config hash; same key → skip whole run, exit 0. `--force` re-runs and must produce byte-identical JSONL (the determinism self-test). **Partial engine-output reuse is forbidden** — Semgrep is cross-file, lockfile bumps change Trivy's world, mapping edits change reports with zero code changes; all-or-nothing per run.
 
-**Rules are not ours to ship.** `semgrep-rules` is under the Semgrep Rules License v1.0, which
-forbids redistribution ("does not allow you to distribute the rules, or to make them available
-to others as a service") while permitting the licensee's own internal use. So: the image ships
-engines, never rules; the user clones `semgrep-rules` at a pinned SHA in their own CI (which
-also gives Principle I the reproducibility the versionless registry cannot); `run.json` records
-that SHA. Registry mode (`--config p/…`) stays available, and the coverage table says which mode
-ran. Rules fetched from a local directory carry **path-derived ids**
-(`…semgrep-rules.c.lang.security.double-free`), so `normalise.py` strips the rules-root prefix
-to canonical form before mapping — otherwise every local-mode finding lands in the unmapped
-appendix under a machine-specific key.
+## Rule sourcing and licensing
+
+Semgrep's detection rules are **not ours to ship**. `semgrep-rules` is published under the
+**Semgrep Rules License v1.0**, which states it *"does not allow you to distribute the rules, or
+to make them available to others as a service"*, while granting the licensee a non-exclusive,
+royalty-free right to use them *"for your own internal business purposes"*.
+
+That licence permits the person scanning their own code to hold their own copy. It does not
+permit us to hand them one. Every design decision below follows from that single distinction:
+**this tool never distributes rules; it helps the operator obtain their own, for their own
+internal business purposes.** The operator is the licensee. We are not in the chain of
+distribution, in the same sense that a package manager is not the publisher of what it installs.
+
+### Two modes, both first-class
+
+| Mode | How | Reproducible? | Coverage |
+|---|---|---|---|
+| **Registry** (default) | `--config p/…`; Semgrep's own CLI fetches from Semgrep's own service. No copy exists on our side at any point. | **No** — registry configs are versionless, so rules can change with no input change | Thin for several languages: ~2 rules each for C, Swift, Kotlin, Elixir |
+| **Pinned local** | `ens-evidence rules fetch` clones the official repo at a commit SHA into the operator's environment; scans run `--config <rules-root>` | **Yes** — the SHA fixes the ruleset | Full public rule set (C: 16 rules vs 2; found 12 real memory-safety defects the registry pack missed) |
+
+Registry mode is the legally simplest path — nothing is copied by us or by the tool. Pinned mode
+is what Principle I actually requires, and is the recommended CI configuration.
+
+### `ens-evidence rules fetch`
+
+```
+ens-evidence rules fetch --sha <commit> [--dest .ens-rules] [--accept-rules-license]
+ens-evidence rules status
+```
+
+- **Explicit licence acknowledgement, or it refuses.** Without `--accept-rules-license` (or
+  `ENS_EVIDENCE_ACCEPT_RULES_LICENSE=1`, or `accept_rules_license: true` in
+  `.ens-evidence.yml`) the command prints the licence URL, a one-paragraph summary of the
+  operator's obligations, and exits **2** without fetching. Nothing interactive, ever — this is
+  a flag, not a prompt.
+- **The operator is the fetcher.** The clone runs in their environment, from
+  `github.com/semgrep/semgrep-rules`, over their network, into their filesystem. The tool
+  passes no rules through any infrastructure of ours.
+- **Byte-identical, notices intact.** `fetch` clones and checks out a SHA; it never edits,
+  re-namespaces, strips headers or repackages rule files. The licence requires licensing and
+  copyright notices to survive, and modifications to be prominently marked — we simply do not
+  modify.
+- **Pin recorded.** `rules status` and every `run.json` record mode, repository URL, commit SHA,
+  rules root and per-language rule counts. An auditor can therefore see exactly which rule
+  corpus produced the report.
+- **`--sha` is required, not optional.** No floating `main`: an unpinned fetch would reintroduce
+  the determinism hole that pinning exists to close.
+
+### Guardrails — what would turn "fetch" back into "distribute"
+
+These are release blockers, not preferences:
+
+1. **Never bundle rules** in the Docker image, the pip/uvx package, a GitHub release asset, or
+   any artifact we publish. Images ship engines only.
+2. **Never mirror or cache rules** on infrastructure we control, and never vendor them into this
+   repository. `.ens-rules/` is git-ignored for exactly this reason.
+3. **Never modify rule files**, including reformatting or renaming, and never strip notices.
+4. **Never offer scanning as a service** using these rules. The trust boundary already forbids a
+   server; this is the same line drawn by the licence.
+5. **The self-scan workflow is the trap.** `.github/workflows/scan.yml` publishes its own report
+   as a build artifact — it must fetch rules at run time and must exclude the rules root from
+   everything it uploads.
+
+One judgement call recorded honestly: the licence limits use to the licensee's own internal
+business purposes, and this being a free OSS tool that wraps those rules sits close enough to
+"competing offering" that a future commercial version needs a direct answer from Semgrep rather
+than our reading. Running it on your own code is squarely within the grant.
+
+### Consequence for the mapper
+
+Local rules produce **path-derived ids** — `…semgrep-rules.c.lang.security.double-free` instead
+of `c.lang.security.double-free`. The mapping is keyed on `tool:rule-id`, so `normalise.py`
+strips the rules-root prefix to canonical form before the mapper sees anything. Unnormalised,
+every local-mode finding would land in the unmapped appendix under a machine-specific,
+non-reproducible key.
 
 **Packaging:** `pip install` / `uvx` first; then a Dockerfile bundling the engines (the real distribution unit — "three lines in your `.gitlab-ci.yml`" needs pre-installed engines); a thin GitHub Action wrapper last.
 
@@ -132,7 +204,7 @@ CI-grade equals agent-grade; the CLI works for Claude Code / Codex as-is. Additi
 3. **One scope list**, verbatim in constitution, README, mapping file, report header.
 4. **Say what it can't see:** business logic, authn/authz design, runtime config — and, per run, which languages were actually analysed. Semgrep's free registry ships ~2 rules for C, Swift, Kotlin and Elixir, so a clean report on those codebases means no rules ran, not no defects; every report carries a coverage table (languages detected, rules run per language, languages not analysed, dependency analysis skipped when no lockfile). Static analysis is not an audit — the disclaimer is what makes the output usable as evidence.
 5. **Never bulk-copy CCN-STIC or BOE text.** Measure IDs and our own wording only.
-6. **Keep it small.** This is a free OSS tool: five verbs, two engines, six measures, data-file extensibility. Feature additions need a validated reason, not restlessness.
+6. **Keep it small.** This is a free OSS tool: five verbs on the finding path (plus the `rules` bootstrap group, which the Semgrep Rules License forces on us — see [Rule sourcing](#rule-sourcing-and-licensing)), two engines, six measures, data-file extensibility. Feature additions need a validated reason, not restlessness.
 
 ---
 
