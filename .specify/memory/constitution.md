@@ -37,11 +37,14 @@ Feature additions need a validated reason, not restlessness.
 Principle III binds this list to the README, `mapping/ens_rd311.yml` and the report header.
 Divergence between the four is a release blocker.
 
-> `mp.sw.1` · `mp.sw.2` · `mp.s.2` · `op.exp.2` · `op.exp.4` · `op.acc.5`
+> `mp.sw.1` · `mp.sw.2` · `mp.s.2` · `op.exp.2` · `op.exp.3` · `op.exp.4`
 
 The ENS has ~75 measures; this covers six, and the README says so on its first screen.
-Measure titles are working labels until verified against the BOE consolidated text of
-RD 311/2022 Anexo II — a pre-release task, not an implementation detail.
+All six codes were verified against the consolidated BOE text of RD 311/2022 Anexo II on
+2026-07-25. That check replaced `op.acc.5` (external-user authentication mechanism — no
+static-analysis evidence source exists for it) with `op.exp.3`; see
+[docs/scan-baseline.md](../../docs/scan-baseline.md). A further scope change re-opens the
+verification.
 
 ## Additional Constraints
 
@@ -74,9 +77,9 @@ RD 311/2022 Anexo II — a pre-release task, not an implementation detail.
   specify → plan → tasks → implement. `004-v2-engines` only if v1 earns it.
 - Determinism is an acceptance test, not an aspiration: `--force` must produce
   byte-identical JSONL.
-- Pre-release gates: verify the six measure titles against the BOE text of Anexo II; verify
-  engine rule/usage licences (CodeQL is excluded — needs GitHub Advanced Security for
-  commercial use).
+- Pre-release gates: measure titles verified against the BOE text of Anexo II (done
+  2026-07-25 — redo on any scope change); verify engine rule/usage licences (CodeQL is
+  excluded — needs GitHub Advanced Security for commercial use).
 
 ## Governance
 
@@ -89,4 +92,10 @@ changed and why, and bump the version below. Principle III means a scope-list ch
 touches the README, `mapping/ens_rd311.yml` and the report header in that same commit.
 Runtime guidance for agents working on the repo lives in [AGENTS.md](../../AGENTS.md).
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-25 | **Last Amended**: 2026-07-25
+**Version**: 1.1.0 | **Ratified**: 2026-07-25 | **Last Amended**: 2026-07-25
+
+Amendment 1.1.0 — scope: `op.acc.5` → `op.exp.3`. The BOE heading for op.acc.5 is the
+authentication mechanism for users external to the organisation: a design and operational
+control that no static scanner can observe, so it could never receive evidence. op.exp.3
+(configuration management) is evidenced by findings already in the corpus — mutable image
+tags, untrusted registries, mutable CI action references.

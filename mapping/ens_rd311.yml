@@ -3,11 +3,13 @@
 # Scope — canonical measure list (constitution principle III: identical here, in the
 # README, in the constitution and in the report header; divergence is a release blocker):
 #
-#   mp.sw.1 · mp.sw.2 · mp.s.2 · op.exp.2 · op.exp.4 · op.acc.5
+#   mp.sw.1 · mp.sw.2 · mp.s.2 · op.exp.2 · op.exp.3 · op.exp.4
 #
-# Measure titles are working labels until verified against the BOE consolidated text of
-# RD 311/2022 Anexo II (pre-release task). Measure IDs and our own wording only — never
-# bulk-copy CCN-STIC or BOE text (principle V).
+# All six codes verified against the consolidated BOE text of RD 311/2022 Anexo II on
+# 2026-07-25 (docs/scan-baseline.md). `op.acc.5` was in scope until that check showed it
+# governs external-user authentication, which static analysis cannot evidence; it was
+# replaced by op.exp.3 (configuration management) in constitution 1.1.0. Measure IDs and
+# our own wording only — never bulk-copy CCN-STIC or BOE text (principle V).
 #
 # PROVENANCE: authored 2026-07-25 from a real scan of three repositories
 # (repo-a, repo-b, repo-c) with Semgrep 1.171.0 `p/default` and Trivy 0.72.0
@@ -24,13 +26,15 @@ framework: ENS RD 311/2022
 
 rules:
   # --- credentials in the repository -------------------------------------------------
-  # Trivy's secret scanner. Observed: a GitHub fine-grained PAT (severity 9.5) in an
-  # agent config file. Mapping to op.acc.5 is the least certain call in this file —
-  # verify against the Anexo II text before release.
+  # Trivy's secret scanner. Observed: a GitHub fine-grained PAT (severity 9.5) in an agent
+  # config file. Mapped to mp.sw.1: a credential reaching the repository is a defect in how
+  # the software is developed and handled, not a defect of the authentication mechanism
+  # itself (that would be op.acc.5/6, which are out of scope precisely because no scanner
+  # can evidence them).
   - match: "trivy:.*-pat$"
-    measures: [op.acc.5]
+    measures: [mp.sw.1]
   - match: "trivy:(github|gitlab|aws|gcp|azure|slack|stripe|private)-.*"
-    measures: [op.acc.5]
+    measures: [mp.sw.1]
 
   # --- known vulnerabilities in dependencies -----------------------------------------
   # NOT YET OBSERVED: all three scanned repos lack a lockfile Trivy understands, so zero
@@ -62,10 +66,24 @@ rules:
   # --- CI/CD pipeline and supply chain -----------------------------------------------
   # Mutable action tags, shell injection in workflow steps, missing Renovate release-age
   # floor: defects in how software is built and promoted, not in the product's own code.
+  # Mutable action tags are both a build-promotion defect and a configuration-provenance
+  # one: the same workflow file resolves to different code over time.
+  - match: "semgrep:yaml\\.github-actions\\.security\\.github-actions-mutable-action-tag.*"
+    measures: [mp.sw.2, op.exp.3]
   - match: "semgrep:yaml\\.github-actions\\..*"
     measures: [mp.sw.2]
   - match: "semgrep:package_managers\\.renovate\\..*"
     measures: [mp.sw.2, op.exp.4]
+
+  # --- configuration management: which artefact is actually deployed -----------------
+  # op.exp.3 is the lifecycle measure — knowing and controlling what configuration is in
+  # force. A mutable image tag or an untrusted registry means the deployed artefact is not
+  # determined by the manifest, which is a configuration-management failure rather than a
+  # hardening-setting failure. Must precede the generic KSV-* rule below.
+  - match: "trivy:KSV-0013$"          # image tag ":latest"
+    measures: [op.exp.3]
+  - match: "trivy:KSV-0125$"          # image from an untrusted registry
+    measures: [op.exp.3]
 
   # --- container image and orchestration configuration -------------------------------
   # Trivy KSV-* (Kubernetes) and DS-* (Dockerfile), plus Semgrep's overlapping

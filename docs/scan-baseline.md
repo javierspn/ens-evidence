@@ -155,9 +155,10 @@ control, not something a static scanner can observe. Neighbours for reference: `
 the same measure for organisation users; `op.exp.1` is *Inventario de activos*; `op.exp.3`
 is *Gestión de la configuración de seguridad*.
 
-Consequence: mapping a leaked credential to `op.acc.5` is wrong, and `op.acc.5` has no
-plausible automated evidence source at all. This needs a scope decision (principle III makes
-it a four-file change), so the mapping keeps the disputed rule, flagged, until then.
+Consequence: mapping a leaked credential to `op.acc.5` was wrong, and `op.acc.5` had no
+plausible automated evidence source at all. **Resolved in constitution 1.1.0:** scope swaps
+`op.acc.5` → `op.exp.3` *Gestión de la configuración de seguridad*, and secrets move to
+`mp.sw.1`. See the round-3 section below.
 
 ## Gaps this run did not close
 
@@ -170,20 +171,46 @@ it a four-file change), so the mapping keeps the disputed rule, flagged, until t
    extra dependency cost and produced the highest-severity finding in the corpus, so v1
    keeps `--scanners vuln,misconfig,secret`. gitleaks stays deferred to v2 as a *second*
    secret engine, not the first. What remains open is which measure secrets map to — see 4.
-4. **`op.acc.5` is the wrong measure, and its replacement is a scope decision.** The BOE
-   heading is *Mecanismo de autenticación (usuarios externos)*: no static-analysis finding
-   can evidence it, and the leaked-credential mapping is a category error. Options, all
-   four-file changes under principle III:
-   - swap `op.acc.5` → `op.exp.1` *Inventario de activos*, which the CycloneDX SBOM
-     evidences directly and well;
-   - swap → `op.exp.3` *Gestión de la configuración de seguridad*, pairing with op.exp.2;
-   - keep `op.acc.5` and report it as "no automated evidence available", which is honest
-     but makes one of six measures dead weight.
-   Until decided, `trivy:*-pat` keeps mapping to `op.acc.5` with a DISPUTED note in
-   `tests/mapping-cases.yml`.
+4. ~~`op.acc.5` is the wrong measure.~~ **Closed** — swapped for `op.exp.3` in constitution
+   1.1.0; see round 3.
 5. ~~Measure titles unverified.~~ **Closed** — all six verified against the consolidated BOE
    text; five confirmed, one (`op.acc.5`) contradicted the design's assumption. Re-verify if
    the scope list changes.
 6. **New:** no repo in the corpus exercises `mp.s.2` beyond template-level findings
    (jinja2, CSRF). A repo with real HTTP routing and session handling would test whether the
    web-service measure gets useful evidence.
+
+## Round 3 — scope amendment (constitution 1.1.0)
+
+`op.acc.5` left the scope list, `op.exp.3` *Gestión de la configuración de seguridad* took
+its place. Rationale: op.acc.5 governs the external-user authentication mechanism, a design
+and operational control that no static scanner observes — it would have appeared in every
+report with nothing under it. op.exp.3 is evidenced by findings already in the corpus.
+
+The op.exp.2 / op.exp.3 split is deliberate and worth keeping straight:
+
+- **op.exp.2** — the hardening settings themselves: runs as root, writable root filesystem,
+  capabilities not dropped, seccomp unset, missing `USER`.
+- **op.exp.3** — whether the deployed artefact is the one the manifest names: `:latest`
+  tags (`KSV-0013`), untrusted registries (`KSV-0125`), mutable CI action references
+  (`github-actions-mutable-action-tag`). Configuration you cannot pin is configuration you
+  are not managing.
+
+Secrets moved to `mp.sw.1`: a credential reaching the repository is a
+development-and-handling defect, not a defect of an authentication mechanism.
+
+Evidence distribution over the real 179-finding corpus after the swap:
+
+| Measure | Findings |
+|---|---|
+| `op.exp.2` | 113 |
+| `mp.sw.2` | 40 |
+| `op.exp.3` | 37 |
+| `mp.sw.1` | 22 |
+| `op.exp.4` | 6 |
+| `mp.s.2` | 4 |
+| `unmapped` | 0 |
+
+Two caveats on that table. `op.exp.4` looks thin only because the 179-finding corpus predates
+the lockfile scan — the 34 CVE findings from repo-d and repo-e all land there. And
+`mp.s.2` at 4 remains the weakest measure; see gap 6.

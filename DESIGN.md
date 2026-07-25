@@ -8,9 +8,9 @@ CLI tool. Point it at a repository. It runs open-source security scanners, files
 
 Evidence for exactly these six measures. This list appears identically in the README, the mapping file, and the report header; divergence is a release blocker.
 
-> `mp.sw.1` · `mp.sw.2` · `mp.s.2` · `op.exp.2` · `op.exp.4` · `op.acc.5`
+> `mp.sw.1` · `mp.sw.2` · `mp.s.2` · `op.exp.2` · `op.exp.3` · `op.exp.4`
 
-Titles are working labels until verified against the BOE consolidated text of RD 311/2022 Anexo II (pre-release task). ENS has ~75 measures; this covers six. The README states that on its first screen.
+All six codes verified against the BOE consolidated text of RD 311/2022 Anexo II on 2026-07-25 — that check cost `op.acc.5` its place (see [docs/scan-baseline.md](docs/scan-baseline.md)). ENS has ~75 measures; this covers six. The README states that on its first screen.
 
 ---
 

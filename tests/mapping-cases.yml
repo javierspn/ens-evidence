@@ -37,8 +37,15 @@ cases:
     observed: true
 
   - id: "semgrep:yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag"
+    measures: [mp.sw.2, op.exp.3]
+    observed: true
+    note: 33 findings across the corpus — the largest single evidence source for op.exp.3
+
+  - id: "semgrep:yaml.github-actions.security.run-shell-injection.run-shell-injection"
     measures: [mp.sw.2]
     observed: true
+    note: pins that only the mutable-tag rule gets the op.exp.3 pairing, not the whole
+      github-actions namespace
 
   - id: "semgrep:package_managers.renovate.renovate-missing-minimum-release-age.renovate-missing-minimum-release-age"
     measures: [mp.sw.2, op.exp.4]
@@ -61,12 +68,28 @@ cases:
     observed: true
 
   - id: "trivy:github-fine-grained-pat"
-    measures: [op.acc.5]
+    measures: [mp.sw.1]
     observed: true
     note: >-
-      DISPUTED. op.acc.5 is "Mecanismo de autenticación (usuarios externos)" per the BOE
-      text — external-user authentication design, which a leaked credential is not.
-      Pending a scope decision; see docs/scan-baseline.md gap 4.
+      Was op.acc.5 until constitution 1.1.0. A leaked credential is a development-handling
+      defect; op.acc.5/6 are about the authentication mechanism itself and are out of scope
+      because no scanner can evidence them.
+
+  - id: "trivy:KSV-0013"
+    measures: [op.exp.3]
+    observed: true
+    note: image tag ":latest" — the deployed artefact is not determined by the manifest
+
+  - id: "trivy:KSV-0125"
+    measures: [op.exp.3]
+    observed: true
+    note: untrusted registry — same reasoning as KSV-0013
+
+  - id: "trivy:KSV-0012"
+    measures: [op.exp.2]
+    observed: true
+    note: runs as root — a hardening setting, so op.exp.2 not op.exp.3; pins the ordering
+      of the KSV-0013/0125 rules ahead of the generic KSV catch-all
 
 # --- must fall through to the unmapped appendix --------------------------------------
 # No engine/ecosystem coverage yet. If one of these starts matching, either the mapping

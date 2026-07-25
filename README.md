@@ -10,10 +10,10 @@ evidencias en español.
 
 Se generan evidencias para exactamente estas seis medidas:
 
-> `mp.sw.1` · `mp.sw.2` · `mp.s.2` · `op.exp.2` · `op.exp.4` · `op.acc.5`
+> `mp.sw.1` · `mp.sw.2` · `mp.s.2` · `op.exp.2` · `op.exp.3` · `op.exp.4`
 
-El ENS tiene ~75 medidas: esto cubre seis. Los títulos de las medidas son etiquetas de
-trabajo hasta verificarlos contra el texto consolidado del BOE (Anexo II, RD 311/2022).
+El ENS tiene ~75 medidas: esto cubre seis. Los seis códigos se verificaron contra el texto
+consolidado del BOE (Anexo II, RD 311/2022) el 2026-07-25.
 
 ## Lo que no puede ver
 
@@ -62,7 +62,7 @@ under one of six Spanish ENS measures (RD 311/2022) and renders a Spanish-langua
 evidence report. The report is **evidence for an auditor, never a verdict** — it does not
 claim compliance.
 
-Scope: `mp.sw.1` · `mp.sw.2` · `mp.s.2` · `op.exp.2` · `op.exp.4` · `op.acc.5` — six of
+Scope: `mp.sw.1` · `mp.sw.2` · `mp.s.2` · `op.exp.2` · `op.exp.3` · `op.exp.4` — six of
 roughly 75 ENS measures. Static analysis cannot see business logic, authn/authz design or
 runtime configuration, and the report says so.
 
