@@ -27,6 +27,11 @@ unmapped appendix under a machine-specific key, which is also non-reproducible a
 checkouts. Path bases differ per engine too (Semgrep %SRCROOT%, Trivy ROOTPATH); both
 normalise to repo-relative.
 
+Determinism duties (round 10): sort findings by (path, rule, position) — engine output order
+is not guaranteed; never copy SARIF run metadata (Trivy embeds the absolute scan root in
+originalUriBaseIds); run.json records Trivy's vulnerability-DB version, which is absent from
+the SARIF and drifts daily.
+
 Stub — see specs/001-core-pipeline. Determinism is the acceptance test: same fixture in,
 byte-identical JSONL twice.
 """

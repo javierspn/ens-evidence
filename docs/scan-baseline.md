@@ -582,3 +582,26 @@ So the discriminator is the engine's own `security` tag, checked in `normalise.p
 without it stay in the JSONL but are excluded from per-measure evidence counts. Registry packs
 are security-only, so this only matters in local mode — which is exactly the mode we recommend
 for CI.
+
+## Round 10 — testing determinism itself
+
+Every prior round took engine determinism on faith; Principle I rests on it. Ran both engines
+twice back-to-back on the same tree and compared raw SARIF:
+
+- **Semgrep: byte-identical**, and the file contains no timestamps, no absolute paths, no
+  machine-specific invocation keys.
+- **Trivy: byte-identical on one machine**, but the SARIF embeds the scan root as an absolute
+  URI (`originalUriBaseIds.ROOTPATH: file:///…/Vulnerable-Flask-App/`). Raw Trivy SARIF is
+  therefore not portable across checkouts. Harmless as long as determinism is defined over the
+  **normalised JSONL** — `normalise.py` must never copy that field, and paths reduce to
+  repo-relative anyway.
+
+Two residual risks a same-machine test cannot catch, both spec-001 duties:
+
+1. **Trivy's vulnerability DB drifts daily** and its version is NOT in the SARIF (only the
+   binary version is). Same repo + same binary, months apart → different CVE findings with no
+   input change. `run.json` must record the DB version/digest (from Trivy's cache metadata),
+   and the skip key must include it.
+2. **Result ordering** was stable here, but nothing guarantees it across core counts or engine
+   builds — `normalise.py` sorts findings by (path, rule, position) before writing JSONL, so
+   ordering never depends on the engines.
