@@ -12,4 +12,5 @@ out/
 __pycache__/
 *.py[cod]
 .venv/
+uv.lock          # deps live in requirements-dev.txt; uv is only a local runner here
 .ruff_cache/

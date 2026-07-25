@@ -6,23 +6,21 @@ on:
     branches: [main]
 
 jobs:
-  # NO TEST JOB YET — deliberately absent, not forgotten.
-  # tests/ currently holds fixtures and mapping-cases.yml but no python tests, so
-  # `pytest tests/` exits 5 ("no tests collected") and CI reads that as failure.
-  # A job that is red from day one gets switched off, and then the whole gate set
-  # goes with it. Add this back with the first real test:
-  #
-  #   test:
-  #     runs-on: ubuntu-latest
-  #     steps:
-  #       - uses: actions/checkout@v4
-  #       - uses: actions/setup-python@v5
-  #         with:
-  #           python-version: '3.11'
-  #       - name: Install dependencies
-  #         run: pip install -r requirements-dev.txt
-  #       - name: Run tests
-  #         run: pytest tests/ -v --tb=short
+  # Enabled once tests/test_mapping_contract.py existed. src/ is all stubs, so this
+  # job's real subject is the DATA: mapping regexes that silently stop matching, a
+  # measure drifting out of scope, or the canonical measure list diverging between the
+  # places principle III binds. A python linter cannot see any of that.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
 
   lint:
     runs-on: ubuntu-latest
