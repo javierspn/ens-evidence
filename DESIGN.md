@@ -99,6 +99,17 @@ out/
 
 Re-runs never overwrite: the sequence of reports over time IS the evidence trail. Skip key = git SHA + engine versions + mapping hash + baseline hash + config hash; same key → skip whole run, exit 0. `--force` re-runs and must produce byte-identical JSONL (the determinism self-test). **Partial engine-output reuse is forbidden** — Semgrep is cross-file, lockfile bumps change Trivy's world, mapping edits change reports with zero code changes; all-or-nothing per run.
 
+**Rules are not ours to ship.** `semgrep-rules` is under the Semgrep Rules License v1.0, which
+forbids redistribution ("does not allow you to distribute the rules, or to make them available
+to others as a service") while permitting the licensee's own internal use. So: the image ships
+engines, never rules; the user clones `semgrep-rules` at a pinned SHA in their own CI (which
+also gives Principle I the reproducibility the versionless registry cannot); `run.json` records
+that SHA. Registry mode (`--config p/…`) stays available, and the coverage table says which mode
+ran. Rules fetched from a local directory carry **path-derived ids**
+(`…semgrep-rules.c.lang.security.double-free`), so `normalise.py` strips the rules-root prefix
+to canonical form before mapping — otherwise every local-mode finding lands in the unmapped
+appendix under a machine-specific key.
+
 **Packaging:** `pip install` / `uvx` first; then a Dockerfile bundling the engines (the real distribution unit — "three lines in your `.gitlab-ci.yml`" needs pre-installed engines); a thin GitHub Action wrapper last.
 
 ---

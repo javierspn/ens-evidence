@@ -233,6 +233,21 @@ cases:
     measures: [mp.sw.1]
     observed: true
 
+  # --- observed only with local (non-registry) rules; ids shown in CANONICAL form, which
+  # normalise.py must produce by stripping the rules-root path prefix -----------------
+  - id: "semgrep:c.lang.security.double-free"
+    measures: [mp.sw.1]
+    observed: true
+    note: >-
+      p/c ships 2 rules and found nothing; the public c/ directory has 16 and found 12,
+      including this. Raw local id is
+      "private.tmp.…semgrep-rules.c.lang.security.double-free" — unnormalised it would land
+      in the unmapped appendix under a machine-specific key.
+
+  - id: "semgrep:c.lang.security.use-after-free"
+    measures: [mp.sw.1]
+    observed: true
+
 # --- must fall through to the unmapped appendix --------------------------------------
 # No engine/ecosystem coverage yet. If one of these starts matching, either the mapping
 # grew a rule too broad or the scope list changed — both need a deliberate commit.

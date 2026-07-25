@@ -468,3 +468,72 @@ Genuinely analysed by these engines: Python, JavaScript/TypeScript, Java, Go, Ru
 Scala (barely), Terraform, Kubernetes, Docker/Compose, GitHub Actions, HTML, Android
 manifests, and the package ecosystems Trivy reads (pip, npm, Maven, Go modules, Cargo,
 RubyGems, Composer). **Not analysed by the free rulesets: C, C++, Swift, Kotlin, Elixir.**
+
+## Round 8 — measuring the login-gated gap, and how to close it
+
+Round 7 established that `p/c` runs 2 rules and Semgrep suggests `semgrep login` for more.
+The question is how to *measure* that gap without an account. Method that works, and is
+repeatable for any language:
+
+1. Clone the public rule source, `github.com/semgrep/semgrep-rules`, and count rule files per
+   language directory — that is the upper bound of what exists.
+2. Run the registry pack (`--config p/<lang>`) and read the `Scanning N files with M <lang>
+   rules` line — that is what the free tier actually ships.
+3. Run the same target against the local directory (`--config /path/to/semgrep-rules/<lang>`)
+   and diff both the rule count and the findings.
+
+Results:
+
+| Language | Public rule files | Rules in `p/<lang>` | Findings, registry → local |
+|---|---|---|---|
+| C | 16 | 2 | **0 → 12** |
+| Swift | 4 | 2 | **0 → 2** |
+| Kotlin | 14 | — | 5 → 6 (java+kotlin dirs) |
+| Elixir | 7 | — | 0 → 0 (rules exist, none matched) |
+| Scala | 27 | — | 1 native finding |
+| Rust | 10 | — | untested locally |
+| C# | 52 | — | untested locally |
+| Ruby / PHP / Python / JS / Java / Go / Terraform | 94 / 65 / 331 / 173 / 124 / 77 / 363 | — | already well covered |
+
+So the gap is real and closable: the C findings that `p/c` missed entirely are
+`c.lang.security.double-free` and `c.lang.security.use-after-free` — exactly the memory-safety
+class a C codebase needs. **No account is required to run the public rules directly.**
+
+### Blocker: the rules cannot be redistributed
+
+`semgrep-rules` is under the **Semgrep Rules License v1.0**, which states plainly that it
+*"does not allow you to distribute the rules, or to make them available to others as a
+service"*. Use is permitted for the licensee's *"own internal business purposes"*.
+
+Consequences for packaging — this resolves the pre-release licence gate:
+
+- The Docker image **must not bundle** `semgrep-rules`, and neither may the pip/uvx package.
+  Shipping engines is fine; shipping rules is not.
+- The user fetches rules in their own CI, for their own internal use. Documented bootstrap:
+  clone `semgrep-rules` at a **pinned commit** (e.g. `81634cfc9e68dc5f238a8062909a60ba34500648`,
+  2026-07-24) into a fixed path.
+- Pinning by SHA is also what Principle I needs: it removes the versionless-registry problem
+  from round 5. `run.json` records the rules SHA alongside engine versions.
+- `--config p/…` stays supported for users who prefer the registry and accept the
+  non-reproducibility. The coverage table (constitution 1.2.0) states which mode ran.
+
+### Blocker: local rule ids are filesystem paths
+
+Running a local directory changes the rule id from a stable namespace to a path-derived one:
+
+```
+registry:  c.lang.security.double-free
+local:     private.tmp.claude-501.…scratchpad.semgrep-rules.c.lang.security.double-free
+```
+
+The whole mapping is keyed on `tool:rule-id`, so unnormalised local ids would miss every rule
+and land in the `unmapped` appendix — on a machine-specific string, so the run would not even
+be reproducible across checkouts. `normalise.py` must strip the configured rules-root prefix
+and reduce every id to its canonical form (`c.lang.security.double-free`) before the mapper
+sees it. That is a spec-001 requirement, and it makes registry mode and local mode produce
+identical mapping keys — which is what lets the same `mapping/ens_rd311.yml` serve both.
+
+Because normalisation yields canonical ids, the existing
+`(php|ruby|rust|csharp|kotlin|scala|swift|c|cpp|elixir)\.lang\..*` pattern already files these
+findings under `mp.sw.1`; the C and Swift entries in `tests/mapping-cases.yml` are now
+observed rather than speculative.

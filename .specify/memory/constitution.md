@@ -87,8 +87,10 @@ verification.
 - Determinism is an acceptance test, not an aspiration: `--force` must produce
   byte-identical JSONL.
 - Pre-release gates: measure titles verified against the BOE text of Anexo II (done
-  2026-07-25 — redo on any scope change); verify engine rule/usage licences (CodeQL is
-  excluded — needs GitHub Advanced Security for commercial use).
+  2026-07-25 — redo on any scope change); engine rule/usage licences verified (done
+  2026-07-25: CodeQL excluded — needs GitHub Advanced Security for commercial use; Semgrep
+  Rules License v1.0 forbids redistribution, so rules are never bundled, only fetched by the
+  user at a pinned SHA).
 
 ## Governance
 

@@ -11,6 +11,14 @@ and the baseline would be worthless.
 
 Severity comes from mapping/severity.yml, not from hardcoded tables.
 
+Rule ids must be canonicalised before the mapper sees them. Semgrep returns registry ids as
+"c.lang.security.double-free" but local-directory ids as
+"<rules-root-path-with-dots>.c.lang.security.double-free" — so strip the configured
+rules-root prefix. Unnormalised, every local-mode finding misses the mapping and lands in the
+unmapped appendix under a machine-specific key, which is also non-reproducible across
+checkouts. Path bases differ per engine too (Semgrep %SRCROOT%, Trivy ROOTPATH); both
+normalise to repo-relative.
+
 Stub — see specs/001-core-pipeline. Determinism is the acceptance test: same fixture in,
 byte-identical JSONL twice.
 """
@@ -21,4 +29,9 @@ def normalise(sarif_paths, severity_policy):
 
 
 def fingerprint(rule_id, snippet, enclosing_offset):
+    raise NotImplementedError("spec 001-core-pipeline")
+
+
+def canonical_rule_id(raw_id, rules_root=None):
+    """Strip a local rules-root prefix so local and registry runs share mapping keys."""
     raise NotImplementedError("spec 001-core-pipeline")
