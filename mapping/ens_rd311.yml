@@ -78,8 +78,9 @@ rules:
     measures: [mp.sw.1, mp.s.2]
   - match: "semgrep:ruby\\.(rails|rack|sinatra)\\..*"
     measures: [mp.sw.1, mp.s.2]
-  # Content served over cleartext — a web-service transport defect, not a code defect.
-  - match: "semgrep:html\\.security\\.plaintext-http-link.*"
+  # Served-content defects: cleartext links, missing subresource integrity. Web-service
+  # transport/integrity concerns rather than code defects.
+  - match: "semgrep:html\\.security\\..*"
     measures: [mp.s.2]
   - match: "semgrep:.*\\.xss\\..*"
     measures: [mp.sw.1, mp.s.2]
@@ -94,8 +95,17 @@ rules:
     measures: [mp.sw.1]
   - match: "semgrep:typescript\\..*"
     measures: [mp.sw.1]
-  # Other languages outside a web framework. Observed: php md5-loose-equality / exec-use /
-  # eval-use, ruby weak-hashes-md5, rust and csharp rules.
+  # Mobile app components. Observed on InsecureShop and ovaa: exported Android activities.
+  # Mobile is not a web service, so mp.sw.1 only.
+  - match: "semgrep:(java|kotlin)\\.android\\..*"
+    measures: [mp.sw.1]
+
+  # Other languages outside a web framework. OBSERVED: php (md5-loose-equality, exec-use,
+  # eval-use), ruby (weak-hashes-md5, ssl-mode-no-verify), scala (insecure-random).
+  # UNOBSERVED — patterns are speculative, kept so a future finding is filed rather than
+  # dropped: rust, csharp, kotlin, swift, c, cpp, elixir. Semgrep's free registry ships ~2
+  # rules for several of those languages, so absence of findings means absence of rules, not
+  # absence of defects (docs/scan-baseline.md, round 7).
   - match: "semgrep:(php|ruby|rust|csharp|kotlin|scala|swift|c|cpp|elixir)\\.lang\\..*"
     measures: [mp.sw.1]
   - match: "semgrep:(php|ruby|rust|csharp)\\..*\\.security\\..*"

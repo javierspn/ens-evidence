@@ -44,11 +44,14 @@ Scaffold plus data files — every `src/` module is still a stub.
 
 Spec Kit is initialised (`/speckit-specify`, `/speckit-plan`, `/speckit-tasks`,
 `/speckit-implement`; note the dash, not the dot DESIGN.md uses) and the constitution is
-ratified at 1.1.0.
+ratified at 1.2.0.
 
-`mapping/ens_rd311.yml` and `mapping/severity.yml` are authored from real scans of fifteen
-repositories — 1718 findings, 822 rule ids, 0 unmapped: five private and ten public, spanning
-Python, JS/TS, Java, Go, Ruby, PHP, Rust, C#, Terraform, Kubernetes and Docker. This is a
+`mapping/ens_rd311.yml` and `mapping/severity.yml` are authored from real scans of twenty-one
+repositories — 1794 findings, 840 rule ids, 0 unmapped: five private and sixteen public,
+spanning Python, JS/TS, Java, Go, Ruby, PHP, Scala, Terraform, Kubernetes, Docker and Android.
+**C, C++, Swift, Kotlin and Elixir are NOT analysed** — Semgrep's free registry ships ~2 rules
+each, so a clean report on those codebases means no rules ran (constitution 1.2.0 requires the
+report to say so). This is a
 generic tool: breadth of ecosystem coverage is a product requirement, so when a new language
 or engine appears, extend the mapping rather than letting a catch-all swallow it. See
 [docs/scan-baseline.md](docs/scan-baseline.md), which also
@@ -57,7 +60,7 @@ that **neither engine is hermetic** — Trivy resolves Maven POMs over the netwo
 fetches a versionless ruleset — which Principle I cannot survive. Spec 001 owns it. Read the
 note before extending either data file.
 
-`tests/mapping-cases.yml` is the mapping contract — 37 observed cases plus 4 ids that must
+`tests/mapping-cases.yml` is the mapping contract — 43 observed cases plus 4 ids that must
 fall through to `unmapped`. Three of the original six probes were contradicted by real scans,
 so treat that list as live hypotheses; the surviving ones are unknown *engines*, since the
 language catch-alls absorb unknown rules inside a known engine. Changing a mapping rule without updating it should break the

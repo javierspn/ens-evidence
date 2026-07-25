@@ -395,6 +395,76 @@ Ecosystems covered: Python (Django, Flask, FastAPI, SQLAlchemy), JavaScript/Type
 shapes, Kubernetes, Docker/Compose, GitHub Actions, and the package ecosystems Trivy reads
 (pip, npm, Maven, Go modules, Cargo, RubyGems).
 
-Not covered, and honest about it: Elixir, Scala, Kotlin, Swift, C/C++ (patterns exist for
-their `*.lang.*` namespaces but no repo has exercised them), plus every engine other than
-Semgrep and Trivy.
+Not covered, and honest about it: every engine other than Semgrep and Trivy. For the
+remaining languages see round 7 — the answer turned out to be about the engines, not the
+mapping.
+
+## Round 7 — the languages nobody had exercised, and what they revealed
+
+Six repos chosen to hit C, Swift, Kotlin, Elixir, Scala and Android:
+
+| Repo | Language | Findings | Native-language findings |
+|---|---|---|---|
+| [Damn_Vulnerable_C_Program](https://github.com/hardik05/Damn_Vulnerable_C_Program) | C | 5 | **0** |
+| [iGoat-Swift](https://github.com/OWASP/iGoat-Swift) | Swift / ObjC | 20 | **0** |
+| [analytics](https://github.com/plausible/analytics) | Elixir / Phoenix | 31 | **0** |
+| [InsecureShop](https://github.com/hax0rgb/InsecureShop) | Kotlin / Android | 5 | 5 (Android manifest) |
+| [ovaa](https://github.com/oversecured/ovaa) | Java / Android | 5 | 5 |
+| [gatling](https://github.com/gatling/gatling) | Scala | 10 | **1** |
+
+Only one new mapping gap — `java.android.security.exported_activity` (8 findings), now
+`mp.sw.1`, mobile being not a web service. Also promoted `html.security.*` to `mp.s.2`
+wholesale after `missing-integrity` reached `mp.sw.1` through a catch-all.
+
+**The real finding is that the engines cannot see these languages.** A deliberately
+vulnerable C program yielded zero C findings — its 5 findings were GitHub Actions YAML. iGoat
+(an intentionally insecure iOS app) yielded zero Swift findings: HTML, Ruby, Python and
+Dockerfile hits from support files. Plausible's Elixir codebase yielded zero Elixir findings —
+all JavaScript assets and CVEs.
+
+Running the dedicated rulesets makes the cause explicit:
+
+```
+$ semgrep --config=p/c    → Scanning 11 files with 2 c rules.     0 findings
+$ semgrep --config=p/swift → Scanning 66 files with 2 swift rules. 0 findings
+(need more rules? `semgrep login` for additional free Semgrep Registry rules)
+```
+
+**Two rules per language.** Coverage is gated behind a Semgrep account — the same gate that
+made `matchBasedId/v1` return `"requires login"` in round 1. The tool cannot depend on an
+account, so for C, C++, Swift, Kotlin and Elixir the honest position is: *these languages are
+not analysed*.
+
+### Consequence: the report needs a coverage table, or silence lies
+
+This is Principle IV with teeth. A clean report on a C or Swift codebase is not evidence of
+anything — it means no rules ran. Spec 001/002 must emit, per run:
+
+- languages detected in the repository (file counts by extension);
+- rules actually run per language, from the engines' own output;
+- an explicit *not analysed* list for languages with zero or near-zero rules;
+- the same statement for dependency analysis when no lockfile is present (round 2).
+
+Without it, `ens-evidence scan` on an iOS app produces a Spanish PDF that an auditor would
+reasonably read as "nothing found" — the exact failure mode Principle II exists to prevent.
+The `*.lang.*` patterns for rust/csharp/kotlin/swift/c/cpp/elixir stay in the mapping, marked
+UNOBSERVED, so that a future finding is filed rather than dropped.
+
+## Corpus totals (final)
+
+21 repositories · 35 SARIF documents · **1794 findings · 840 distinct `tool:rule` ids · 0
+unmapped**
+
+| Measure | Findings |
+|---|---|
+| `mp.sw.2` | 832 |
+| `op.exp.4` | 742 |
+| `mp.sw.1` | 574 |
+| `op.exp.2` | 340 |
+| `mp.s.2` | 334 |
+| `op.exp.3` | 78 |
+
+Genuinely analysed by these engines: Python, JavaScript/TypeScript, Java, Go, Ruby, PHP,
+Scala (barely), Terraform, Kubernetes, Docker/Compose, GitHub Actions, HTML, Android
+manifests, and the package ecosystems Trivy reads (pip, npm, Maven, Go modules, Cargo,
+RubyGems, Composer). **Not analysed by the free rulesets: C, C++, Swift, Kotlin, Elixir.**

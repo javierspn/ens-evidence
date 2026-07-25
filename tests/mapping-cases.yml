@@ -202,6 +202,37 @@ cases:
       was a MUST-fall-through probe ("IaC namespace not covered"). terragoat fired it. Third
       probe proven wrong.
 
+  # --- observed on the mobile / systems / BEAM corpus (InsecureShop, ovaa, gatling,
+  # iGoat-Swift, analytics, Damn_Vulnerable_C_Program) -------------------------------
+  - id: "semgrep:java.android.security.exported_activity.exported_activity"
+    measures: [mp.sw.1]
+    observed: true
+    note: 8 findings across InsecureShop and ovaa; mobile is not a web service, so no mp.s.2
+
+  - id: "semgrep:scala.lang.security.audit.insecure-random.insecure-random"
+    measures: [mp.sw.1]
+    observed: true
+    note: the ONLY native Scala finding in the whole corpus
+
+  - id: "semgrep:ruby.lang.security.ssl-mode-no-verify.ssl-mode-no-verify"
+    measures: [mp.sw.1]
+    observed: true
+
+  - id: "semgrep:html.security.audit.missing-integrity.missing-integrity"
+    measures: [mp.s.2]
+    observed: true
+    note: >-
+      was reaching mp.sw.1 through the .security.audit.* catch-all; html.security.* is now
+      explicit, since served-content integrity is a web-service concern
+
+  - id: "semgrep:generic.secrets.security.detected-private-key.detected-private-key"
+    measures: [mp.sw.1]
+    observed: true
+
+  - id: "trivy:private-key"
+    measures: [mp.sw.1]
+    observed: true
+
 # --- must fall through to the unmapped appendix --------------------------------------
 # No engine/ecosystem coverage yet. If one of these starts matching, either the mapping
 # grew a rule too broad or the scope list changed — both need a deliberate commit.

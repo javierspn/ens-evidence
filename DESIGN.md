@@ -119,7 +119,7 @@ CI-grade equals agent-grade; the CLI works for Claude Code / Codex as-is. Additi
 1. **Deterministic.** Same input → same output, every run. No component with variable output may be load-bearing.
 2. **Evidence, not verdict.** The report states what was tested, when, and what was found. It never states compliance.
 3. **One scope list**, verbatim in constitution, README, mapping file, report header.
-4. **Say what it can't see:** business logic, authn/authz design, runtime config. Static analysis is not an audit — the disclaimer is what makes the output usable as evidence.
+4. **Say what it can't see:** business logic, authn/authz design, runtime config — and, per run, which languages were actually analysed. Semgrep's free registry ships ~2 rules for C, Swift, Kotlin and Elixir, so a clean report on those codebases means no rules ran, not no defects; every report carries a coverage table (languages detected, rules run per language, languages not analysed, dependency analysis skipped when no lockfile). Static analysis is not an audit — the disclaimer is what makes the output usable as evidence.
 5. **Never bulk-copy CCN-STIC or BOE text.** Measure IDs and our own wording only.
 6. **Keep it small.** This is a free OSS tool: five verbs, two engines, six measures, data-file extensibility. Feature additions need a validated reason, not restlessness.
 

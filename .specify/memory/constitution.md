@@ -20,7 +20,11 @@ Verbatim in constitution, README, mapping file, report header.
 
 ### IV. Say what it can't see
 
-Business logic, authn/authz design, runtime config. Static analysis is not an audit — the
+Business logic, authn/authz design, runtime config — and, per run, which languages were
+actually analysed. Semgrep's free registry ships ~2 rules for C, Swift, Kotlin and Elixir, so
+a clean report on those codebases means no rules ran, not no defects; every report carries a
+coverage table (languages detected, rules run per language, languages not analysed,
+dependency analysis skipped when no lockfile). Static analysis is not an audit — the
 disclaimer is what makes the output usable as evidence.
 
 ### V. Never bulk-copy CCN-STIC or BOE text
@@ -97,7 +101,13 @@ changed and why, and bump the version below. Principle III means a scope-list ch
 touches the README, `mapping/ens_rd311.yml` and the report header in that same commit.
 Runtime guidance for agents working on the repo lives in [AGENTS.md](../../AGENTS.md).
 
-**Version**: 1.1.0 | **Ratified**: 2026-07-25 | **Last Amended**: 2026-07-25
+**Version**: 1.2.0 | **Ratified**: 2026-07-25 | **Last Amended**: 2026-07-25
+
+Amendment 1.2.0 — Principle IV now requires a per-run coverage table. A 21-repo corpus showed
+the engines produce zero findings for C, Swift, Kotlin and Elixir because the free Semgrep
+registry ships about two rules per language — a deliberately vulnerable C program and an
+intentionally insecure iOS app both came back empty. Silence that reads as "clean" is exactly
+what Principle II forbids, so the report must state what was analysed.
 
 Amendment 1.1.0 — scope: `op.acc.5` → `op.exp.3`. The BOE heading for op.acc.5 is the
 authentication mechanism for users external to the organisation: a design and operational
