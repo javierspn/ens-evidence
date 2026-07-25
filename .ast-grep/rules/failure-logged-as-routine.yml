@@ -1,0 +1,55 @@
+# A failure path that logs at info.
+#
+# WHY: on 2026-07-18 a PAdES-LTA certificate stranded because its handler raised
+# on every delivery and each failure logged one `info` line — indistinguishable
+# from the successful acks around it, so the queue read as quiet. Fixed in
+# core-25. `repo-a/mailer/brevo.py` was then found to have the same shape:
+# transport errors, 5xx, 4xx and a missing messageId all log at info, so a total
+# email outage looks exactly like a successful send.
+#
+# An `info` line inside an except handler, or immediately before a raise, is
+# almost always a failure being filed as routine. Nothing can alert on it.
+id: failure-logged-as-routine
+language: python
+severity: warning
+message: >-
+  Failure logged at info — it will sit in the same stream as successful
+  operations and no alert rule can fire on it. Use warning, or error if it is
+  terminal.
+note: >-
+  Exempt genuinely routine outcomes (an idempotent-skip on IntegrityError is
+  expected, not a failure). If it raises, it is not routine.
+#
+# Cancellation and interrupt handlers are exempt: `except asyncio.CancelledError:`
+# followed by `logger.info("drainer stopping")` is a graceful shutdown, and info
+# is the right level for it. Learned 2026-07-19 from a second repo, where the
+# unrestricted rule called two clean shutdown paths defects.
+# Two shapes, both restricted:
+#   1. an info log inside a BROAD handler. A narrow clause is often a legitimate
+#      expected branch — `except IntegrityError:` logging an idempotent skip is
+#      correct, and info is the right level. `except Exception:` logging at info
+#      is the defect. (cert_store.py was flagged by the unrestricted version and
+#      is correct code.)
+#   2. an info log immediately BEFORE a raise. `precedes`, not `follows`: a log
+#      *after* a raise is unreachable, which is what the first version actually
+#      matched — it could never have fired.
+#
+# Both branches match the STATEMENT, not the call. `precedes` compares siblings,
+# and a call's sibling is not the raise — the enclosing expression_statement's is.
+# Matching the call matched nothing at all, silently.
+rule:
+  kind: expression_statement
+  has:
+    pattern: logger.info($$$)
+    stopBy: neighbor
+  any:
+    - inside:
+        kind: except_clause
+        stopBy: end
+        has:
+          kind: identifier
+          regex: "^(Exception|BaseException)$"
+          stopBy: end
+    - precedes:
+        kind: raise_statement
+        stopBy: neighbor

@@ -1,0 +1,26 @@
+title = "repo-a gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "openbao-token"
+description = "OpenBao/Vault token"
+regex = '''hvs\.[a-zA-Z0-9]{24,}'''
+tags = ["openbao", "secret"]
+
+[[rules]]
+id = "ghcr-pat"
+description = "GitHub PAT (classic)"
+regex = '''ghp_[a-zA-Z0-9]{36}'''
+tags = ["github", "pat"]
+
+[allowlist]
+description = "Known false positives — fixtures and doc strings, never real secrets"
+regexes = [
+  # Test license key fixture (CLAUDE.md, tests).
+  '''89fc947c-95ea-481a-85a1-399fb755787d''',
+  # Spec docs name the token algorithm ("HS256-signed"); the broad default
+  # generic-api-key rule misreads it as a key. It is a doc string, not a secret.
+  '''HS256-signed''',
+]

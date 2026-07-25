@@ -1,0 +1,41 @@
+# An except handler that binds nothing and then logs.
+#
+# WHY: `except Exception:` with no `as exc` discards the type, the message and
+# the traceback. A DB timeout, a malformed payload and a missing env var become
+# indistinguishable in the log. This was the first of the three properties that
+# hid the 2026-07-18 stranded certificate (core-25).
+#
+# Binding the exception is not the same as logging it verbatim: log
+# `type(exc).__name__`, never `str(exc)` — driver and validation errors echo the
+# offending value and can carry a licence key.
+#
+# A handler that binds nothing and does NOT log is usually fine (an intentional
+# `except KeyError: pass`), so this only fires when the handler logs — i.e. it
+# wanted to tell you something and threw away the useful part.
+id: exception-discarded
+language: python
+severity: warning
+message: >-
+  Exception discarded — handler binds no name, so the failure cause is lost.
+  Bind it and log type(exc).__name__ (never str(exc), which can carry payload).
+#
+# Only BROAD handlers fire. `except MailerError:` already tells you what happened
+# — the clause names it — so binding adds nothing. `except Exception:` tells you
+# nothing, which is the whole defect. Validated 2026-07-19 against a second repo,
+# where the unrestricted version flagged `except NoSuchKey:` and
+# `except asyncio.CancelledError:` as bugs; both were correct code, and a rule
+# that cries wolf gets switched off.
+rule:
+  kind: except_clause
+  all:
+    - has:
+        kind: identifier
+        regex: "^(Exception|BaseException)$"
+        stopBy: neighbor
+    - not:
+        has:
+          kind: as_pattern
+          stopBy: neighbor
+    - has:
+        pattern: logger.$LEVEL($$$)
+        stopBy: end

@@ -29,6 +29,40 @@ it rather than restating it. The non-negotiables live in
 - **Keep it small.** Five verbs, two engines, six measures. A feature needs a validated
   reason.
 
+## Gates
+
+Installed 2026-07-25 and each one verified to actually bite, not just run:
+
+| Gate | Where | Subject | Verified by |
+|---|---|---|---|
+| `ast-grep` structural | `.claude/hooks/ast-grep-commit.sh` + `structural` CI job | discarded exceptions, failures logged as routine, silently-defaulted seams | staged a known-bad probe → hook exited **2** with both rules firing |
+| bandit + pip-audit + gitleaks | `.claude/hooks/sec-scan-commit.sh` + `security` CI job | insecure code, dependency CVEs, secrets in history | staged `subprocess(shell=True)` → hook exited **2** (B602) |
+| ruff | `lint` CI job | style/imports, `select` pinned to `["E","F","I","N","W"]` | `ruff check src/ tests/` clean |
+| **mapping contract** | `tests/test_mapping_contract.py` + `test` CI job | the data files — regexes that stop matching, off-scope measures, scope-list divergence | 11 tests, all passing |
+
+The mapping contract is the gate that matters here: `src/` is all stubs, so lint and bandit
+have almost nothing to read, while the mapping and the six-measure scope list are the actual
+asset. It also enforces principle III mechanically — the canonical list must appear verbatim in
+README (×2), DESIGN.md and the constitution, and a test fails if any drifts. Add the report
+header as a fourth case when `templates/` gains one.
+
+Run everything locally before pushing:
+
+```bash
+uv run --with pytest --with pyyaml python -m pytest tests/ -q
+uv run --with ruff ruff check src/ tests/
+uv run --with bandit bandit -ll -r src/
+uv run --with pip-audit pip-audit -r requirements-dev.txt
+gitleaks detect --source . --no-banner --redact --config .gitleaks.toml
+```
+
+**Deliberately NOT installed: the spec-kit gates** (`scripts/spec_*.py`,
+`.github/workflows/spec-*.yaml`) from the `repo-gates` skill. `spec_lint.py` globs
+`specs/**/*.md`, which here means four README placeholders with no frontmatter — it would be
+red from day one, and its `VALID_WORKERS` set is repo-a-specific (`auth`, `portal`, `iso`…).
+Revisit once `/speckit-specify` generates real `spec.md` files, either adapting the worker list
+or letting Spec Kit's own artefacts carry the check.
+
 ## Layout
 
 `src/run.py` orchestration + CLI · `src/normalise.py` SARIF → JSONL, dedupe, severity,
