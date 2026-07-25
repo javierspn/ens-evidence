@@ -47,15 +47,18 @@ Spec Kit is initialised (`/speckit-specify`, `/speckit-plan`, `/speckit-tasks`,
 ratified at 1.1.0.
 
 `mapping/ens_rd311.yml` and `mapping/severity.yml` are authored from real scans of eight
-repositories — 632 findings, 246 rule ids: five private (three app/GitOps, two with
-lockfiles for CVE and SBOM coverage) and three public vulnerable web apps. See
+repositories — 939 findings, 339 rule ids: five private (three app/GitOps, two with
+lockfiles for CVE and SBOM coverage) and five public vulnerable apps spanning
+Python/Django/Flask, Express/TypeScript, Java/Spring and Go. See
 [docs/scan-baseline.md](docs/scan-baseline.md), which also
 records what closed and what is still open. All original gaps are closed; what remains is
-that the `unmapped` appendix has never fired on real data. Read it before extending either
-data file.
+that **neither engine is hermetic** — Trivy resolves Maven POMs over the network, Semgrep
+fetches a versionless ruleset — which Principle I cannot survive. Spec 001 owns it. Read the
+note before extending either data file.
 
-`tests/mapping-cases.yml` is the mapping contract — 24 observed cases plus 4 ids that must
-fall through to `unmapped`. Changing a mapping rule without updating it should break the
+`tests/mapping-cases.yml` is the mapping contract — 30 observed cases plus 3 ids that must
+fall through to `unmapped` (two earlier probes were proven wrong by real scans, so treat the
+list as assumptions). Changing a mapping rule without updating it should break the
 suite; that is the point.
 
 Scope is six measures: `mp.sw.1 · mp.sw.2 · mp.s.2 · op.exp.2 · op.exp.3 · op.exp.4`,

@@ -135,6 +135,37 @@ cases:
     observed: true
     note: generalised the renovate-only rule to package_managers.* after this fired
 
+  # --- observed on the Java/Go corpus (WebGoat, govwa) -------------------------------
+  - id: "semgrep:java.spring.security.unrestricted-request-mapping.unrestricted-request-mapping"
+    measures: [mp.sw.1, mp.s.2]
+    observed: true
+    note: 10 findings on WebGoat — largest Java web source
+
+  - id: "semgrep:java.servlets.security.cookie-issecure-false.cookie-issecure-false"
+    measures: [mp.sw.1, mp.s.2]
+    observed: true
+
+  - id: "semgrep:java.lang.security.httpservlet-path-traversal.httpservlet-path-traversal"
+    measures: [mp.sw.1]
+    observed: true
+
+  - id: "semgrep:go.lang.security.injection.raw-html-format.raw-html-format"
+    measures: [mp.sw.1]
+    observed: true
+
+  - id: "semgrep:html.security.plaintext-http-link.plaintext-http-link"
+    measures: [mp.s.2]
+    observed: true
+    note: cleartext transport for served content — mp.s.2 only, it is not a code defect
+
+  - id: "semgrep:yaml.docker-compose.security.no-new-privileges.no-new-privileges"
+    measures: [op.exp.2]
+    observed: true
+    note: >-
+      the SECOND must-fall-through probe proven wrong. It was excluded as "deliberate, we
+      scan k8s and Dockerfiles"; govwa ships a compose file with the same hardening
+      settings. Two of six probes were wrong — the list encodes assumptions, not facts.
+
 # --- must fall through to the unmapped appendix --------------------------------------
 # No engine/ecosystem coverage yet. If one of these starts matching, either the mapping
 # grew a rule too broad or the scope list changed — both need a deliberate commit.
@@ -145,5 +176,3 @@ unmapped:
     note: IaC namespace not covered
   - id: "gitleaks:aws-access-token"
     note: engine deferred to v2 (004-v2-engines)
-  - id: "semgrep:yaml.docker-compose.security.no-new-privileges"
-    note: docker-compose namespace not covered; deliberate, we scan k8s and Dockerfiles

@@ -178,9 +178,13 @@ plausible automated evidence source at all. **Resolved in constitution 1.1.0:** 
    the scope list changes.
 6. ~~`mp.s.2` has thin evidence.~~ **Closed** — 104 findings on a public vulnerable-app
    corpus; see round 4. The measure stays in scope.
-7. **New:** the `unmapped` appendix has never fired on real data (0 unmapped across 632
-   findings). Its only coverage is synthetic probes in `tests/mapping-cases.yml`, one of
-   which already proved wrong. Spec 002 owns building a deliberate fixture.
+7. ~~The `unmapped` appendix has never fired on real data.~~ **Closed** — the Java/Go corpus
+   produced 30 unmapped findings (round 5). Two of six synthetic probes have now been proven
+   wrong by real data.
+8. **New, and the most important open item:** neither engine is hermetic. Trivy resolves
+   Maven POMs over the network (and failed on a 429); Semgrep fetches a versionless ruleset
+   from its registry. Principle I cannot hold without `--offline-scan` and a vendored,
+   hash-recorded ruleset. Spec 001 owns this.
 
 ## Round 3 — scope amendment (constitution 1.1.0)
 
@@ -273,3 +277,65 @@ Zero unmapped across every corpus scanned so far is *not* reassuring. It means t
 absorb everything, and the appendix that exists to surface "we found something nobody has
 classified" has never fired on real data. Spec 002 should build its unmapped fixture from a
 deliberately alien engine output rather than hoping for a real one.
+
+## Round 5 — Java and Go (the ecosystem question)
+
+Two more public repos, chosen to answer one question: was the mapping Python/JS-biased?
+
+| Repo | Stack | Findings | Rule ids |
+|---|---|---|---|
+| [WebGoat](https://github.com/WebGoat/WebGoat) | Java / Spring / Maven | 252 | 62 |
+| [govwa](https://github.com/0c34/govwa) | Go / go.mod | 55 | 31 |
+
+**Yes, it was biased.** 30 findings fell through to `unmapped` — the first real unmapped
+findings in the whole exercise, after four rounds of zero:
+
+| Unmapped family | n | Now mapped to |
+|---|---|---|
+| `java.spring.security.*` (unrestricted request mapping, tainted SQL/URL/path) | 15 | `mp.sw.1` + `mp.s.2` |
+| `java.servlets.security.*` (insecure cookies) | 3 | `mp.sw.1` + `mp.s.2` |
+| `java.lang.security.*` (servlet path traversal) | 1 | `mp.sw.1` |
+| `go.lang.security.injection.*` (raw HTML format) | 3 | `mp.sw.1` |
+| `html.security.plaintext-http-link` | 6 | `mp.s.2` |
+| `yaml.docker-compose.security.*` | 2 | `op.exp.2` |
+
+The docker-compose family was a **must-fall-through probe** in
+`tests/mapping-cases.yml`, excluded on the reasoning "deliberate, we scan k8s and
+Dockerfiles". govwa ships a compose file with the same hardening settings Kubernetes
+manifests carry. That is the second of six probes proven wrong by real data; the list encodes
+assumptions, not facts, and should be read that way.
+
+So the earlier "0 unmapped is not reassuring" caveat was right, and for the reason given: the
+corpus was homogeneous, not the mapping complete. Java/Go coverage now exists, and the
+remaining blind spots are ecosystems nobody here writes (Ruby, PHP, .NET, Rust) plus IaC.
+
+### The engines are not hermetic — this threatens Principle I
+
+`trivy fs` on WebGoat **failed outright**:
+
+```
+FATAL Error remote Maven repository returned 429 Too Many Requests for
+https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-starter-parent/4.1.0/spring-boot-starter-parent-4.1.0.pom.
+Retry-After: 1777.
+```
+
+Trivy resolves parent POMs over the network to build a Maven dependency tree. Consequences,
+all of which the design must answer before spec 001:
+
+1. **Determinism (Principle I) is conditional on network state.** The same commit scanned
+   twice can yield different findings, or none. `trivy fs --offline-scan` fixes it — the
+   WebGoat scan succeeded immediately with that flag — at the cost of an incomplete Maven
+   tree. v1 should pass `--offline-scan` by default and say so in the report.
+2. **Semgrep has the same problem, less visibly.** `--config=p/default` fetches a versionless
+   ruleset from the registry: the rules can change between runs with no input change, so a
+   re-run months later is not reproducible. Determinism at the level the design promises
+   requires vendoring the ruleset (or pinning a Docker image that contains it) and recording
+   its hash in `run.json`.
+3. **The trust boundary needs a footnote.** "Your code never leaves your infrastructure"
+   stays true — but dependency *coordinates* (group, artifact, version) go to Maven Central,
+   and Semgrep config fetches go to the registry. Both are metadata about the codebase
+   leaving the perimeter. The README claim should be precise about this rather than absolute.
+4. **A rate-limited engine blocks for ~30 minutes.** Retrying is useless. Exit 2 with the
+   engine's own message is the right behaviour (already the contract), and per-run
+   all-or-nothing means no half-populated report — but the CI failure mode deserves a line in
+   the docs.

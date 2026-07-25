@@ -52,6 +52,13 @@ Mapping and severity policy are **data files, not code** — reviewable, diffabl
 
 **Baseline** (`.ens-baseline.yml`): fingerprints of reviewed-and-accepted findings; re-runs report only what's new. Fingerprint = hash(rule ID + normalised snippet + position relative to enclosing function) — **never file+line** (one added import would invalidate everything below it).
 
+**Engines must be run hermetically.** Neither engine is hermetic by default: `trivy fs`
+resolves Maven parent POMs over the network (observed failing with a 429 and a ~30-minute
+block), and `semgrep --config=p/default` fetches a versionless ruleset that can change
+between runs. Determinism therefore requires `--offline-scan`, a vendored/pinned ruleset, and
+the ruleset hash recorded in `run.json`. Dependency coordinates and config fetches are the
+only things that ever cross the perimeter — see [docs/scan-baseline.md](docs/scan-baseline.md).
+
 **No LLM.** The pipeline is fully deterministic. (A closed-enum LLM classifier for unmapped findings is a possible later feature; it must never be load-bearing.)
 
 ---

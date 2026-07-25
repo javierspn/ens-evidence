@@ -61,6 +61,16 @@ rules:
     measures: [mp.sw.1, mp.s.2]
   - match: "semgrep:javascript\\.(express|nextjs)\\..*"
     measures: [mp.sw.1, mp.s.2]
+  # Java web tiers: Spring controllers, servlets. Observed on WebGoat — unrestricted
+  # request mappings, insecure cookies, tainted SQL/URL/path.
+  - match: "semgrep:java\\.(spring|servlets|jsp|jax-rs)\\..*"
+    measures: [mp.sw.1, mp.s.2]
+  # Go web tiers.
+  - match: "semgrep:go\\.(gin|echo|net-http|beego|fiber)\\..*"
+    measures: [mp.sw.1, mp.s.2]
+  # Content served over cleartext — a web-service transport defect, not a code defect.
+  - match: "semgrep:html\\.security\\.plaintext-http-link.*"
+    measures: [mp.s.2]
   - match: "semgrep:.*\\.xss\\..*"
     measures: [mp.sw.1, mp.s.2]
   - match: "semgrep:.*(sql-injection|execute-raw-query|sqlalchemy).*"
@@ -73,6 +83,12 @@ rules:
   - match: "semgrep:javascript\\.(browser|audit|lang)\\..*"
     measures: [mp.sw.1]
   - match: "semgrep:typescript\\..*"
+    measures: [mp.sw.1]
+  # Java and Go outside a web framework. Observed: httpservlet-path-traversal (java.lang),
+  # raw-html-format (go.lang).
+  - match: "semgrep:java\\.lang\\..*"
+    measures: [mp.sw.1]
+  - match: "semgrep:go\\.lang\\..*"
     measures: [mp.sw.1]
   - match: "semgrep:.*\\.security\\.audit\\..*"
     measures: [mp.sw.1]
@@ -111,6 +127,11 @@ rules:
   - match: "semgrep:dockerfile\\..*"
     measures: [op.exp.2]
   - match: "semgrep:yaml\\.kubernetes\\..*"
+    measures: [op.exp.2]
+  # docker-compose was excluded as "deliberate, we scan k8s and Dockerfiles" — govwa proved
+  # that wrong: compose files carry the same hardening settings (no-new-privileges,
+  # writable filesystem).
+  - match: "semgrep:yaml\\.docker-compose\\..*"
     measures: [op.exp.2]
 
 default:

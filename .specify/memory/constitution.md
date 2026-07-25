@@ -53,6 +53,11 @@ verification.
 - **Engines are subprocesses**, never Python imports: the user pins versions in their CI
   image, the dependency tree stays tiny, engines stay swappable via SARIF. A missing binary
   exits 2 with a message naming it.
+- **Engines run hermetically or Principle I is a fiction.** Trivy must run `--offline-scan`
+  (it otherwise resolves Maven POMs over the network and dies on rate limits); Semgrep rules
+  must be vendored or image-pinned, never fetched from a versionless registry config, and the
+  ruleset hash goes in `run.json`. Any network dependency in the finding path is a
+  determinism defect.
 - **Mapping and severity are data files, not code.** A future framework (NIS2, ISO 27001,
   CRA) is a new data file, never a rewrite.
 - **No LLM in the pipeline.** A closed-enum classifier for unmapped findings is a possible
