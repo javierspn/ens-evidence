@@ -11,6 +11,14 @@ and the baseline would be worthless.
 
 Severity comes from mapping/severity.yml, not from hardcoded tables.
 
+Only security findings are evidence. Semgrep's rule metadata carries the discriminator:
+properties.tags contains "security". Namespace is NOT a proxy for it —
+`csharp.lang.best-practice.structured-logging` IS tagged security (CWE-117, OWASP A09), while
+`java.android.best-practice.manifest-usesCleartextTraffic-ignored` has empty tags. Findings
+without the tag are recorded in the JSONL but excluded from the per-measure evidence counts, so
+a best-practice suggestion never inflates an ENS measure. This only shows up in local-rules
+mode: the registry packs are security-only.
+
 Rule ids must be canonicalised before the mapper sees them. Semgrep returns registry ids as
 "c.lang.security.double-free" but local-directory ids as
 "<rules-root-path-with-dots>.c.lang.security.double-free" — so strip the configured

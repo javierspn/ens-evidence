@@ -248,6 +248,38 @@ cases:
     measures: [mp.sw.1]
     observed: true
 
+  # --- observed in local-rules mode across every available language ------------------
+  - id: "semgrep:swift.sqllite.swift-potential-sqlite-injection"
+    measures: [mp.sw.1]
+    observed: true
+    note: >-
+      the only unmapped id of round 9. Swift rules are not under swift.lang.*, and
+      "sql-injection" does not match "sqlite-injection" — hence the language-wide fallback.
+
+  - id: "semgrep:csharp.lang.security.missing-hsts-header"
+    measures: [mp.sw.1, mp.s.2]
+    observed: true
+    note: transport header on served content, so it pairs with mp.s.2
+
+  - id: "semgrep:rust.lang.security.args"
+    measures: [mp.sw.1]
+    observed: true
+
+  - id: "semgrep:scala.lang.security.audit.tainted-sql-string"
+    measures: [mp.sw.1]
+    observed: true
+    note: >-
+      deliberately NOT mp.s.2. The `sql-injection|execute-raw-query|sqlalchemy` pattern does not
+      match "tainted-sql-string", and that is the right outcome: SQL injection reached through a
+      web framework namespace (java.spring, python.django) pairs with mp.s.2, but the same defect
+      class in a batch job or library is a development defect only. Widening the injection
+      pattern would file non-web code under a web-services measure.
+
+  - id: "semgrep:php.lang.security.weak-crypto"
+    measures: [mp.sw.1]
+    observed: true
+    note: 21 findings on DVWA, the largest single local-rules count
+
 # --- must fall through to the unmapped appendix --------------------------------------
 # No engine/ecosystem coverage yet. If one of these starts matching, either the mapping
 # grew a rule too broad or the scope list changed — both need a deliberate commit.

@@ -537,3 +537,48 @@ Because normalisation yields canonical ids, the existing
 `(php|ruby|rust|csharp|kotlin|scala|swift|c|cpp|elixir)\.lang\..*` pattern already files these
 findings under `mp.sw.1`; the C and Swift entries in `tests/mapping-cases.yml` are now
 observed rather than speculative.
+
+## Round 9 — local-rules mode across every language we have
+
+Pinned-local mode had only been exercised on C, Swift and Kotlin. Ran the remaining public rule
+directories against repos already cloned — no new corpus needed:
+
+| Rule dir | Target | Findings | Canonical ids |
+|---|---|---|---|
+| `php` | DVWA | 90 | 13 |
+| `ruby` | railsgoat | 39 | 22 |
+| `csharp` | dotnet/samples (core) | 13 | 2 |
+| `c` | Damn_Vulnerable_C_Program | 12 | 2 |
+| `kotlin` | InsecureShop | 6 | 2 |
+| `rust` | mdBook | 4 | 1 |
+| `scala` | gatling | 2 | 2 |
+| `swift` | iGoat-Swift | 2 | 1 |
+| `elixir` | plausible/analytics | 0 | 0 |
+
+168 findings. Two things came out of it.
+
+### Rule namespaces are not `<lang>.lang.*`
+
+`swift.sqllite.swift-potential-sqlite-injection` was the only unmapped id — the Swift rules do
+not live under `swift.lang.*`, so every `\.lang\.` pattern missed them. Note also that the
+generic `sql-injection` pattern does not match `sqlite-injection`. Fixed with a language-wide
+fallback (`(php|ruby|rust|csharp|kotlin|scala|swift|c|cpp|elixir|dart|perl)\..*` → `mp.sw.1`)
+placed *after* the web-framework rules so those keep their `mp.s.2` pairing. Also added a
+transport rule: anything matching `missing-hsts-header|insecure-transport|cleartext`, plus
+`csharp.(dotnet|aspnet)`, pairs `mp.sw.1` with `mp.s.2`.
+
+### Local mode includes non-security rules — and the namespace does not tell you which
+
+Local directories ship `best-practice`, `correctness` and `performance` rules alongside
+security ones. Filing those under an ENS measure would inflate the evidence an auditor reads.
+But the id is not a usable filter:
+
+| Rule | Namespace says | `properties.tags` |
+|---|---|---|
+| `csharp.lang.best-practice.structured-logging` | best-practice | `CWE-117`, `OWASP-A09`, **`security`** |
+| `java.android.best-practice.manifest-usesCleartextTraffic-ignored` | best-practice | **empty** |
+
+So the discriminator is the engine's own `security` tag, checked in `normalise.py`: findings
+without it stay in the JSONL but are excluded from per-measure evidence counts. Registry packs
+are security-only, so this only matters in local mode — which is exactly the mode we recommend
+for CI.

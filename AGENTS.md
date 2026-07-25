@@ -68,7 +68,11 @@ offering as a service, licensee's own internal use only; full reasoning in DESIG
   `.ens-rules/` into a public artifact.
 
 Local rule ids are path-derived and MUST be canonicalised in `normalise.py` before mapping,
-otherwise every local-mode finding lands in the unmapped appendix under a machine-specific key. This is a
+otherwise every local-mode finding lands in the unmapped appendix under a machine-specific key.
+Local mode also ships non-security rules; the discriminator is the engine's `security` tag, not
+the id namespace (`csharp.lang.best-practice.structured-logging` is tagged security, an Android
+`best-practice` rule has empty tags). Non-security findings stay in the JSONL but must not count
+toward a measure. This is a
 generic tool: breadth of ecosystem coverage is a product requirement, so when a new language
 or engine appears, extend the mapping rather than letting a catch-all swallow it. See
 [docs/scan-baseline.md](docs/scan-baseline.md), which also
@@ -77,7 +81,7 @@ that **neither engine is hermetic** — Trivy resolves Maven POMs over the netwo
 fetches a versionless ruleset — which Principle I cannot survive. Spec 001 owns it. Read the
 note before extending either data file.
 
-`tests/mapping-cases.yml` is the mapping contract — 45 observed cases plus 4 ids that must
+`tests/mapping-cases.yml` is the mapping contract — 50 observed cases plus 4 ids that must
 fall through to `unmapped`. Three of the original six probes were contradicted by real scans,
 so treat that list as live hypotheses; the surviving ones are unknown *engines*, since the
 language catch-alls absorb unknown rules inside a known engine. Changing a mapping rule without updating it should break the

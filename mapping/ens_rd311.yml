@@ -78,6 +78,11 @@ rules:
     measures: [mp.sw.1, mp.s.2]
   - match: "semgrep:ruby\\.(rails|rack|sinatra)\\..*"
     measures: [mp.sw.1, mp.s.2]
+  # Transport headers on served content (HSTS and friends), whatever language emits them.
+  - match: "semgrep:.*(missing-hsts-header|insecure-transport|cleartext).*"
+    measures: [mp.sw.1, mp.s.2]
+  - match: "semgrep:csharp\\.(dotnet|aspnet)\\..*"
+    measures: [mp.sw.1, mp.s.2]
   # Served-content defects: cleartext links, missing subresource integrity. Web-service
   # transport/integrity concerns rather than code defects.
   - match: "semgrep:html\\.security\\..*"
@@ -110,6 +115,12 @@ rules:
     measures: [mp.sw.1]
   - match: "semgrep:(php|ruby|rust|csharp)\\..*\\.security\\..*"
     measures: [mp.sw.1]
+  # Language-wide fallback: rule namespaces are NOT always "<lang>.lang.*". Observed:
+  # swift.sqllite.swift-potential-sqlite-injection, which the .lang. patterns missed
+  # entirely. Placed after the web-framework rules above so those keep their mp.s.2 pairing.
+  - match: "semgrep:(php|ruby|rust|csharp|kotlin|scala|swift|c|cpp|elixir|dart|perl)\\..*"
+    measures: [mp.sw.1]
+
   # Java and Go outside a web framework. Observed: httpservlet-path-traversal (java.lang),
   # raw-html-format (go.lang).
   - match: "semgrep:java\\.lang\\..*"

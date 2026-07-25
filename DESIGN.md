@@ -21,7 +21,7 @@ All six codes verified against the BOE consolidated text of RD 311/2022 Anexo II
 Four stations:
 
 1. **Look** — scanners find problems. v1: **Semgrep** (SAST) + **Trivy** (SCA + SBOM + misconfiguration + **secrets**, i.e. `--scanners vuln,misconfig,secret`). Secrets joined v1 after the baseline scan showed Trivy already detects them at no extra dependency cost, producing the highest-severity finding in the corpus; gitleaks stays a v2 *second* secret engine. v2, same seam: gitleaks, Checkov. Engines are **subprocess calls to binaries**, never Python imports: user pins versions in their CI image, dependency tree stays tiny, engines stay swappable. Missing binary → exit 2 with a message naming it.
-2. **Tidy** — merge the engines' SARIF, flatten to JSONL (one finding per line), dedupe cross-tool, normalise severity via `mapping/severity.yml`, compute stable fingerprints. *This is most of the real work.*
+2. **Tidy** — merge the engines' SARIF, flatten to JSONL (one finding per line), dedupe cross-tool, normalise severity via `mapping/severity.yml`, canonicalise rule ids, split security findings from non-security ones on the engines' own `security` tag, compute stable fingerprints. *This is most of the real work.*
 3. **Sort** — `mapping/ens_rd311.yml`: regex on `tool:rule-id` → list of measures. Deterministic. Unmatched findings go to an `unmapped` appendix for human review.
 4. **Write** — Jinja2. Evidence report (Markdown → PDF, Spanish, top-10 triage first, full table in appendix) + `bundle.md`. The SBOM (CycloneDX) comes directly from Trivy and bypasses the mapper.
 
