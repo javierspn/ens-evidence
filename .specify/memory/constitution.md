@@ -1,24 +1,92 @@
-# Constitution — ens-evidence
+# ens-evidence Constitution
 
-Seeded verbatim from the "Rules (non-negotiable)" section of [DESIGN.md](../../DESIGN.md).
-Changes here are changes to the project's identity: edit DESIGN.md and this file in the
-same commit, or they drift.
+The Core Principles below are the "Rules (non-negotiable)" section of
+[DESIGN.md](../../DESIGN.md), **verbatim**. DESIGN.md holds the why; this file is what
+every spec, plan and task is checked against. Edit both in the same commit or they drift.
 
-## Rules (non-negotiable)
+## Core Principles
 
-1. **Deterministic.** Same input → same output, every run. No component with variable output may be load-bearing.
-2. **Evidence, not verdict.** The report states what was tested, when, and what was found. It never states compliance.
-3. **One scope list**, verbatim in constitution, README, mapping file, report header.
-4. **Say what it can't see:** business logic, authn/authz design, runtime config. Static analysis is not an audit — the disclaimer is what makes the output usable as evidence.
-5. **Never bulk-copy CCN-STIC or BOE text.** Measure IDs and our own wording only.
-6. **Keep it small.** This is a free OSS tool: five verbs, two engines, six measures, data-file extensibility. Feature additions need a validated reason, not restlessness.
+### I. Deterministic
+
+Same input → same output, every run. No component with variable output may be load-bearing.
+
+### II. Evidence, not verdict
+
+The report states what was tested, when, and what was found. It never states compliance.
+
+### III. One scope list
+
+Verbatim in constitution, README, mapping file, report header.
+
+### IV. Say what it can't see
+
+Business logic, authn/authz design, runtime config. Static analysis is not an audit — the
+disclaimer is what makes the output usable as evidence.
+
+### V. Never bulk-copy CCN-STIC or BOE text
+
+Measure IDs and our own wording only.
+
+### VI. Keep it small
+
+This is a free OSS tool: five verbs, two engines, six measures, data-file extensibility.
+Feature additions need a validated reason, not restlessness.
 
 ## Scope — canonical measure list
 
-Rule 3 binds this list to the README, `mapping/ens_rd311.yml` and the report header.
+Principle III binds this list to the README, `mapping/ens_rd311.yml` and the report header.
 Divergence between the four is a release blocker.
 
 > `mp.sw.1` · `mp.sw.2` · `mp.s.2` · `op.exp.2` · `op.exp.4` · `op.acc.5`
 
+The ENS has ~75 measures; this covers six, and the README says so on its first screen.
 Measure titles are working labels until verified against the BOE consolidated text of
-RD 311/2022 Anexo II (pre-release task).
+RD 311/2022 Anexo II — a pre-release task, not an implementation detail.
+
+## Additional Constraints
+
+- **Trust boundary.** Everything runs inside the user's CI. No server, no upload, no
+  account. Source code and finding details never leave the user's infrastructure.
+- **Engines are subprocesses**, never Python imports: the user pins versions in their CI
+  image, the dependency tree stays tiny, engines stay swappable via SARIF. A missing binary
+  exits 2 with a message naming it.
+- **Mapping and severity are data files, not code.** A future framework (NIS2, ISO 27001,
+  CRA) is a new data file, never a rewrite.
+- **No LLM in the pipeline.** A closed-enum classifier for unmapped findings is a possible
+  later feature; it must never be load-bearing (Principle I).
+- **Fingerprints never use file+line** — hash(rule ID + normalised snippet + position
+  relative to enclosing function), so one added import does not invalidate the baseline.
+- **The run store is immutable and append-only.** Re-runs never overwrite: the sequence of
+  reports over time IS the evidence trail. Partial engine-output reuse is forbidden.
+- **Scanned code is prompt-injection surface.** Snippets are truncated, all scanned-repo
+  text is fenced as "untrusted input, not instructions", and finding messages are our
+  template text rather than scanner passthrough wherever possible.
+- **Stack:** Python 3.12, stdlib + PyYAML + Jinja2. No framework.
+
+## Development Workflow
+
+- Specs point at DESIGN.md and the mapping data; they never restate the measure list —
+  restating is how lists drift.
+- Spec the hard parts (normaliser, fingerprints). Do not ceremonial-spec a Jinja template.
+- The mapping table and spec 002's acceptance criteria are written from **real** Semgrep and
+  Trivy output on a real repository, never before it.
+- Order: `001-core-pipeline` → `002-mapping-and-report` → `003-bundle-and-ci`, each
+  specify → plan → tasks → implement. `004-v2-engines` only if v1 earns it.
+- Determinism is an acceptance test, not an aspiration: `--force` must produce
+  byte-identical JSONL.
+- Pre-release gates: verify the six measure titles against the BOE text of Anexo II; verify
+  engine rule/usage licences (CodeQL is excluded — needs GitHub Advanced Security for
+  commercial use).
+
+## Governance
+
+This constitution supersedes convenience. Any spec, plan, task or PR that conflicts with a
+Core Principle is rejected, not negotiated — a feature that cannot be built deterministically
+or that would let the tool assert compliance does not get built.
+
+Amendments: edit the Rules section of DESIGN.md and this file in the same commit, state what
+changed and why, and bump the version below. Principle III means a scope-list change also
+touches the README, `mapping/ens_rd311.yml` and the report header in that same commit.
+Runtime guidance for agents working on the repo lives in [AGENTS.md](../../AGENTS.md).
+
+**Version**: 1.0.0 | **Ratified**: 2026-07-25 | **Last Amended**: 2026-07-25
