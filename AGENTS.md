@@ -46,8 +46,10 @@ Spec Kit is initialised (`/speckit-specify`, `/speckit-plan`, `/speckit-tasks`,
 `/speckit-implement`; note the dash, not the dot DESIGN.md uses) and the constitution is
 ratified at 1.1.0.
 
-`mapping/ens_rd311.yml` and `mapping/severity.yml` are authored from a real 179-finding
-scan of three repositories — see [docs/scan-baseline.md](docs/scan-baseline.md), which also
+`mapping/ens_rd311.yml` and `mapping/severity.yml` are authored from real scans of eight
+repositories — 632 findings, 246 rule ids: five private (three app/GitOps, two with
+lockfiles for CVE and SBOM coverage) and three public vulnerable web apps. See
+[docs/scan-baseline.md](docs/scan-baseline.md), which also
 records what closed and what is still open. All original gaps are closed; what remains is
 that the `unmapped` appendix has never fired on real data. Read it before extending either
 data file.
