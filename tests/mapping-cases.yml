@@ -6,9 +6,11 @@
 # (docs/scan-baseline.md). The rest are shape probes: plausible ids from engines and
 # ecosystems we do not cover yet, kept to pin the fall-through behaviour.
 #
-# The `unmapped` block is the part that has no fixture yet in the scan corpus — every id in
-# the 28-rule inventory matched a rule, so without these cases the `unmapped` appendix
-# would ship untested.
+# The `unmapped` block has no real fixture: across 632 findings and 246 rule ids from five
+# private and three public repositories, every observed id matched a rule. Without these
+# synthetic probes the `unmapped` appendix would ship untested — and one probe already had
+# to be promoted to an observed case when the public corpus fired it, so treat the list as
+# assumptions awaiting contradiction, not as settled behaviour.
 
 version: 1
 
@@ -91,6 +93,48 @@ cases:
     note: runs as root — a hardening setting, so op.exp.2 not op.exp.3; pins the ordering
       of the KSV-0013/0125 rules ahead of the generic KSV catch-all
 
+  # --- observed on the public vulnerable-app corpus (pygoat, Vulnerable-Flask-App,
+  # juice-shop) — the run that gave mp.s.2 real evidence ------------------------------
+  - id: "semgrep:python.django.security.audit.csrf-exempt.no-csrf-exempt"
+    measures: [mp.sw.1, mp.s.2]
+    observed: true
+    note: 25 findings on pygoat — the single largest mp.s.2 source
+
+  - id: "semgrep:python.django.security.audit.secure-cookies.django-secure-set-cookie"
+    measures: [mp.sw.1, mp.s.2]
+    observed: true
+
+  - id: "semgrep:javascript.express.security.audit.express-check-directory-listing.express-check-directory-listing"
+    measures: [mp.sw.1, mp.s.2]
+    observed: true
+    note: juice-shop; pins the javascript.express namespace
+
+  - id: "semgrep:generic.secrets.security.detected-jwt-token.detected-jwt-token"
+    measures: [mp.sw.1]
+    observed: true
+    note: >-
+      was listed as a MUST-fall-through probe until the public corpus fired it 5 times.
+      p/secrets found nothing on the private repos, which made the earlier assumption look
+      safe — it was not.
+
+  - id: "trivy:jwt-token"
+    measures: [mp.sw.1]
+    observed: true
+
+  - id: "semgrep:javascript.jsonwebtoken.security.jwt-hardcode.hardcoded-jwt-secret"
+    measures: [mp.sw.1]
+    observed: true
+
+  - id: "semgrep:javascript.browser.security.eval-detected.eval-detected"
+    measures: [mp.sw.1]
+    observed: true
+    note: JS outside a web framework — javascript.(browser|audit|lang) namespace
+
+  - id: "semgrep:package_managers.npm.npm-missing-minimum-release-age.npm-missing-minimum-release-age"
+    measures: [mp.sw.2, op.exp.4]
+    observed: true
+    note: generalised the renovate-only rule to package_managers.* after this fired
+
 # --- must fall through to the unmapped appendix --------------------------------------
 # No engine/ecosystem coverage yet. If one of these starts matching, either the mapping
 # grew a rule too broad or the scope list changed — both need a deliberate commit.
@@ -99,8 +143,6 @@ unmapped:
     note: cloud misconfiguration — Checkov/Terraform territory, v2 at the earliest
   - id: "semgrep:terraform.aws.security.aws-s3-bucket-public-read"
     note: IaC namespace not covered
-  - id: "semgrep:generic.secrets.security.detected-generic-api-key"
-    note: Semgrep's own secret rules; p/secrets fired none of these in the real corpus
   - id: "gitleaks:aws-access-token"
     note: engine deferred to v2 (004-v2-engines)
   - id: "semgrep:yaml.docker-compose.security.no-new-privileges"

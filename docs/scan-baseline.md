@@ -176,9 +176,11 @@ plausible automated evidence source at all. **Resolved in constitution 1.1.0:** 
 5. ~~Measure titles unverified.~~ **Closed** — all six verified against the consolidated BOE
    text; five confirmed, one (`op.acc.5`) contradicted the design's assumption. Re-verify if
    the scope list changes.
-6. **New:** no repo in the corpus exercises `mp.s.2` beyond template-level findings
-   (jinja2, CSRF). A repo with real HTTP routing and session handling would test whether the
-   web-service measure gets useful evidence.
+6. ~~`mp.s.2` has thin evidence.~~ **Closed** — 104 findings on a public vulnerable-app
+   corpus; see round 4. The measure stays in scope.
+7. **New:** the `unmapped` appendix has never fired on real data (0 unmapped across 632
+   findings). Its only coverage is synthetic probes in `tests/mapping-cases.yml`, one of
+   which already proved wrong. Spec 002 owns building a deliberate fixture.
 
 ## Round 3 — scope amendment (constitution 1.1.0)
 
@@ -214,3 +216,60 @@ Evidence distribution over the real 179-finding corpus after the swap:
 Two caveats on that table. `op.exp.4` looks thin only because the 179-finding corpus predates
 the lockfile scan — the 34 CVE findings from repo-d and repo-e all land there. And
 `mp.s.2` at 4 remains the weakest measure; see gap 6.
+
+## Round 4 — public vulnerable-app corpus (mp.s.2)
+
+`mp.s.2` had 4 findings across the private corpus, all incidental (a jinja2 template call, a
+CSRF token). That is not enough to know whether the measure earns a place in the scope list,
+and no private repo here is a conventional web application. So: three public, deliberately
+vulnerable apps, cloned shallow into a scratch directory and **not** committed here.
+
+| Repo | Stack | Findings |
+|---|---|---|
+| [pygoat](https://github.com/adeyosemanputra/pygoat) | Django | 292 |
+| [Vulnerable-Flask-App](https://github.com/we45/Vulnerable-Flask-App) | Flask | 101 |
+| [juice-shop](https://github.com/juice-shop/juice-shop) | Express/TypeScript | 60 |
+
+**453 findings, 218 distinct rule ids.** `mp.s.2` now draws 104 findings from rules that are
+unambiguously web-service controls:
+
+| Rule | n |
+|---|---|
+| `python.django.security.audit.csrf-exempt.no-csrf-exempt` | 25 |
+| `python.django.security.django-no-csrf-token` | 19 |
+| `python.django.security.audit.secure-cookies.django-secure-set-cookie` | 10 |
+| `python.django.security.injection.request-data-write` | 4 |
+| `python.django.security.audit.xss.direct-use-of-httpresponse` | 4 |
+| `javascript.express.security.audit.express-res-sendfile` | 4 |
+| `javascript.express.security.audit.express-check-directory-listing` | 4 |
+| `python.flask.security.insecure-deserialization` | 3 |
+| `python.django.security.injection.tainted-sql-string` | 3 |
+
+CSRF exemptions, insecure cookies, XSS, directory listing, tainted SQL — `mp.s.2` stays.
+
+### Four mapping gaps this corpus exposed
+
+21 findings fell through to `unmapped`, in four families:
+
+1. **Secret rules we had assumed would never fire.** `generic.secrets.*` (JWT tokens,
+   generic secrets), `trivy:jwt-token`, `python.jwt.*`, `javascript.jsonwebtoken.*`.
+   `tests/mapping-cases.yml` had `generic.secrets.security.detected-generic-api-key` listed
+   as a **must-fall-through probe** — the public corpus fired its sibling 5 times. The
+   probe was wrong, not the engines: `p/secrets` finding nothing on the private repos made a
+   bad assumption look safe. Now mapped to `mp.sw.1`; the case carries that history.
+2. **JS/TS outside a web framework** — `javascript.browser.security.eval-detected`,
+   `javascript.audit.*`. Added `javascript.(browser|audit|lang)` and `typescript.*` →
+   `mp.sw.1`.
+3. **npm package policy** — `package_managers.npm.npm-missing-minimum-release-age`. The rule
+   was Renovate-specific; generalised to `package_managers.*` → `mp.sw.2` + `op.exp.4`.
+4. Nothing else. After the fixes, **0 unmapped** across all 453 findings.
+
+Evidence over the public corpus after the fixes: `mp.sw.2` 242, `op.exp.4` 219, `mp.sw.1`
+188, `mp.s.2` 104, `op.exp.2` 23, `op.exp.3` 17.
+
+### A caveat about 0 unmapped
+
+Zero unmapped across every corpus scanned so far is *not* reassuring. It means the catch-alls
+absorb everything, and the appendix that exists to surface "we found something nobody has
+classified" has never fired on real data. Spec 002 should build its unmapped fixture from a
+deliberately alien engine output rather than hoping for a real one.

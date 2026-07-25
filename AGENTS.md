@@ -48,10 +48,11 @@ ratified at 1.1.0.
 
 `mapping/ens_rd311.yml` and `mapping/severity.yml` are authored from a real 179-finding
 scan of three repositories — see [docs/scan-baseline.md](docs/scan-baseline.md), which also
-records what closed and what is still open. Four of the five original gaps are closed;
-`mp.s.2` still has thin evidence. Read it before extending either data file.
+records what closed and what is still open. All original gaps are closed; what remains is
+that the `unmapped` appendix has never fired on real data. Read it before extending either
+data file.
 
-`tests/mapping-cases.yml` is the mapping contract — 16 observed cases plus 5 ids that must
+`tests/mapping-cases.yml` is the mapping contract — 24 observed cases plus 4 ids that must
 fall through to `unmapped`. Changing a mapping rule without updating it should break the
 suite; that is the point.
 

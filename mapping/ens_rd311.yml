@@ -11,11 +11,14 @@
 # replaced by op.exp.3 (configuration management) in constitution 1.1.0. Measure IDs and
 # our own wording only — never bulk-copy CCN-STIC or BOE text (principle V).
 #
-# PROVENANCE: authored 2026-07-25 from a real scan of three repositories
-# (repo-a, repo-b, repo-c) with Semgrep 1.171.0 `p/default` and Trivy 0.72.0
-# `--scanners vuln,misconfig,secret` — 179 findings, 28 distinct rule ids. Every `match`
-# below was observed firing; nothing here is invented. See docs/scan-baseline.md for the
-# inventory and the engine quirks it revealed.
+# PROVENANCE: authored 2026-07-25 from real scans with Semgrep 1.171.0 `p/default` and
+# Trivy 0.72.0 `--scanners vuln,misconfig,secret`:
+#   * three private repos (repo-a, repo-b, repo-c) — 179 findings, 28 rule ids;
+#   * two lockfile repos (repo-d, repo-e) — 34 CVE findings, 44 SBOM components;
+#   * three public vulnerable web apps (pygoat, Vulnerable-Flask-App, juice-shop) —
+#     453 findings, 218 rule ids, which is where the web-service and secret rules come from.
+# Every `match` below was observed firing; nothing here is invented. See
+# docs/scan-baseline.md for the inventory and the engine quirks it revealed.
 #
 # Rules are matched FIRST-TO-LAST against the string "<tool>:<rule-id>"; the first match
 # wins, so specific patterns precede catch-alls. Unmatched findings take `default`
@@ -31,15 +34,21 @@ rules:
   # the software is developed and handled, not a defect of the authentication mechanism
   # itself (that would be op.acc.5/6, which are out of scope precisely because no scanner
   # can evidence them).
-  - match: "trivy:.*-pat$"
+  # Observed on public corpora: trivy `jwt-token`, plus Semgrep's own secret rules
+  # (`generic.secrets.*`, `*.jwt.*`, `jsonwebtoken`) which fired on pygoat/juice-shop even
+  # though p/secrets found nothing in the private corpus — hence the broader patterns.
+  - match: "trivy:.*(-pat|-token|-secret|-api-key|-private-key|-password)$"
     measures: [mp.sw.1]
   - match: "trivy:(github|gitlab|aws|gcp|azure|slack|stripe|private)-.*"
     measures: [mp.sw.1]
+  - match: "semgrep:generic\\.secrets\\..*"
+    measures: [mp.sw.1]
+  - match: "semgrep:.*\\.(jwt|jsonwebtoken)\\..*"
+    measures: [mp.sw.1]
 
   # --- known vulnerabilities in dependencies -----------------------------------------
-  # NOT YET OBSERVED: all three scanned repos lack a lockfile Trivy understands, so zero
-  # CVEs fired. Kept because the id shape is stable and documented; confirm against a
-  # repo with a lockfile before relying on it (docs/scan-baseline.md, gap 2).
+  # Observed on repo-d, repo-e and the public apps (219 findings). GHSA/DLA/DSA/RUSTSEC
+  # remain unobserved — kept because the id shapes are stable and documented.
   - match: "trivy:CVE-.*"
     measures: [op.exp.4, mp.sw.2]
   - match: "trivy:(GHSA|DLA|DSA|RUSTSEC)-.*"
@@ -60,6 +69,11 @@ rules:
   # --- application code defects (SAST, not specifically web) -------------------------
   - match: "semgrep:python\\.lang\\.security\\..*"
     measures: [mp.sw.1]
+  # JS/TS outside a web framework: browser eval, sanitisation audits, language rules.
+  - match: "semgrep:javascript\\.(browser|audit|lang)\\..*"
+    measures: [mp.sw.1]
+  - match: "semgrep:typescript\\..*"
+    measures: [mp.sw.1]
   - match: "semgrep:.*\\.security\\.audit\\..*"
     measures: [mp.sw.1]
 
@@ -72,7 +86,9 @@ rules:
     measures: [mp.sw.2, op.exp.3]
   - match: "semgrep:yaml\\.github-actions\\..*"
     measures: [mp.sw.2]
-  - match: "semgrep:package_managers\\.renovate\\..*"
+  # Any package-manager policy rule: Renovate release-age floors, npm equivalents. Both a
+  # promotion-gate and an update-policy concern.
+  - match: "semgrep:package_managers\\..*"
     measures: [mp.sw.2, op.exp.4]
 
   # --- configuration management: which artefact is actually deployed -----------------
