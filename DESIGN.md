@@ -99,10 +99,21 @@ out/
 ├── 2026-07-25_a3f9c1d/        # date + git short SHA
 │   ├── findings.jsonl
 │   ├── report.md / report.pdf
+│   ├── bundle.md
 │   ├── sbom.cdx.json
-│   └── run.json               # engine versions, Trivy DB + checks-bundle versions, rules mode+SHA, mapping version+hash, baseline hash, config hash
+│   ├── semgrep.sarif / trivy.sarif   # raw engine output, catalogue pruned — see below
+│   └── run.json               # engine versions, Trivy DB + checks-bundle versions, rules mode+SHA, mapping version+hash, baseline hash, config hash, SARIF pruning counts
 └── latest -> 2026-07-25_a3f9c1d
 ```
+
+**Stored SARIF keeps only the rules that fired.** SARIF's `tool.driver.rules` is a catalogue
+of every rule the engine could have matched; with a pinned rules root that is the entire
+ruleset — measured 2026-07-26: 2126 rule descriptions, 3.9 MB, for 9 findings. A run
+directory is the portable evidence unit, so the obvious next action with it (hand it over,
+attach it, upload it) would publish third-party rule documentation, which the Semgrep Rules
+License v1.0 does not permit. Fired rules stay: they are the provenance of what we report.
+`run.json` records the kept/dropped counts, because a stored artifact that is no longer
+byte-identical engine output has to say so.
 
 Re-runs never overwrite: the sequence of reports over time IS the evidence trail. Skip key = git SHA + engine versions + Trivy DB & checks-bundle versions + rules SHA/mode + mapping hash + baseline hash + config hash; same key → skip whole run, exit 0 (so a DB update alone makes the next scan a real scan, not a skip). `--force` re-runs and must produce byte-identical JSONL (the determinism self-test). **Partial engine-output reuse is forbidden** — Semgrep is cross-file, lockfile bumps change Trivy's world, mapping edits change reports with zero code changes; all-or-nothing per run.
 

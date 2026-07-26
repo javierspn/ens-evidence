@@ -91,7 +91,7 @@ rule file.
 
 - [x] T030a Fix pinned mode: `--config <checkout root>` makes semgrep reject the whole run (exit 7, 0 files scanned) because the upstream repository ships non-ruleset YAML. `run.semgrep_configs()` passes one `--config` per qualifying rule directory; `tests/test_rules.py` covers the root, the fixture-file and the empty-checkout cases
 - [x] T030b Close the SARIF licence hole: the run store keeps raw SARIF and semgrep's SARIF embeds the entire rule catalogue, so `scan.yml` allow-lists the five evidence files and the guard rejects `*.sarif` too
-- [ ] T030c **Decision owed (001 store):** should the run store keep raw SARIF at all, or strip the driver's rule list to the rules that fired? Left as-is; the upload no longer carries it
+- [x] T030c **Settled 2026-07-26 by the owner: keep the rules that fired.** `run.prune_sarif_rules()` drops the driver's catalogue from stored SARIF (2126 → 9 rules, 3.9 MB → 102 KB on this repo) and `run.json` records the kept/dropped counts. DESIGN.md's store layout documents it
 
 ---
 

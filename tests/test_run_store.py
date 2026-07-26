@@ -2,6 +2,7 @@
 run.json completeness (T032). Engine-free — the engine seam is faked exactly as in
 test_cli.py."""
 
+import copy
 import json
 
 import pytest
@@ -174,3 +175,75 @@ def test_counts_are_consistent_with_findings(tmp_path, monkeypatch):
     assert c["non_security"] == c["total"] - c["security"]
     assert c["new"] == sum(1 for f in findings if f["new"])
     assert c["deduped_away"] > 0  # the fixture corpus contains known duplicates
+
+
+# --- SARIF pruning (T030c) ---------------------------------------------------
+
+
+SARIF_WITH_CATALOGUE = {
+    "runs": [
+        {
+            "tool": {
+                "driver": {
+                    "name": "semgrep",
+                    "rules": [
+                        {"id": "fired.rule", "fullDescription": {"text": "matched"}},
+                        {"id": "quiet.rule", "fullDescription": {"text": "never matched"}},
+                        {"id": "also.quiet", "fullDescription": {"text": "never matched"}},
+                    ],
+                }
+            },
+            "results": [{"ruleId": "fired.rule", "message": {"text": "x"}}],
+        }
+    ]
+}
+
+
+def test_pruning_keeps_only_the_rules_that_fired(tmp_path):
+    """A pinned rules root puts the WHOLE ruleset in the driver's catalogue — 2126 rule
+    descriptions for 9 findings, measured 2026-07-26. The run store is the portable
+    evidence unit, so it must not carry third-party rule documentation."""
+    path = tmp_path / "semgrep.sarif"
+    path.write_text(json.dumps(SARIF_WITH_CATALOGUE))
+    assert run.prune_sarif_rules(path) == {"kept": 1, "dropped": 2}
+    driver = json.loads(path.read_text())["runs"][0]["tool"]["driver"]
+    assert [r["id"] for r in driver["rules"]] == ["fired.rule"]
+
+
+def test_pruning_keeps_the_provenance_of_every_reported_finding(tmp_path):
+    """The fired rules stay: they are why a finding says what it says, and without them
+    the stored SARIF cannot be checked against findings.jsonl."""
+    document = copy.deepcopy(SARIF_WITH_CATALOGUE)
+    document["runs"][0]["results"].append({"ruleId": "also.quiet", "message": {"text": "y"}})
+    path = tmp_path / "semgrep.sarif"
+    path.write_text(json.dumps(document))
+    assert run.prune_sarif_rules(path) == {"kept": 2, "dropped": 1}
+    fired = {r["ruleId"] for r in json.loads(path.read_text())["runs"][0]["results"]}
+    kept = {r["id"] for r in json.loads(path.read_text())["runs"][0]["tool"]["driver"]["rules"]}
+    assert fired == kept
+
+
+def test_pruning_is_deterministic_and_idempotent(tmp_path):
+    path = tmp_path / "semgrep.sarif"
+    path.write_text(json.dumps(SARIF_WITH_CATALOGUE))
+    run.prune_sarif_rules(path)
+    once = path.read_bytes()
+    assert run.prune_sarif_rules(path) == {"kept": 1, "dropped": 0}
+    assert path.read_bytes() == once
+
+
+def test_pruning_tolerates_a_sarif_without_a_catalogue(tmp_path):
+    path = tmp_path / "trivy.sarif"
+    path.write_text(json.dumps({"runs": [{"tool": {"driver": {"name": "trivy"}}}]}))
+    assert run.prune_sarif_rules(path) == {"kept": 0, "dropped": 0}
+
+
+def test_run_json_records_what_was_pruned(tmp_path, monkeypatch):
+    """A stored artifact that is no longer byte-identical engine output has to say so, or
+    the provenance claim is false."""
+    repo = make_repo(tmp_path)
+    fake_engines(monkeypatch)
+    assert scan(repo) == 0
+    pruned = latest_run_json(repo)["sarif_rules_pruned"]
+    assert set(pruned) == {"semgrep", "trivy"}
+    assert all({"kept", "dropped"} == set(v) for v in pruned.values())

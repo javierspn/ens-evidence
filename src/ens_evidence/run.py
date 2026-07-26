@@ -261,6 +261,39 @@ def semgrep_configs(rules_root):
     return configs
 
 
+def prune_sarif_rules(path):
+    """Keep only the rules that actually fired in a stored SARIF file.
+
+    SARIF's `tool.driver.rules` is a catalogue: it describes every rule the engine COULD
+    have matched. With a pinned rules root that is the whole ruleset — measured 2026-07-26:
+    2126 rule descriptions, 3.9 MB, for 9 findings. The run store is the portable evidence
+    unit, so the obvious next action with it (hand it over, attach it, upload it) would
+    publish third-party rule documentation, which the Semgrep Rules License v1.0 does not
+    permit. Rules that fired stay: they are the provenance of the findings we report, and
+    without them the stored SARIF cannot be checked against findings.jsonl.
+
+    The pruning is recorded in run.json — a stored artifact that is no longer byte-identical
+    engine output must say so, or the provenance claim is false. Deterministic: same input,
+    same bytes (principle I).
+
+    -> {"kept": n, "dropped": n}
+    """
+    document = json.loads(path.read_text())
+    kept = dropped = 0
+    for run_block in document.get("runs", []):
+        driver = run_block.get("tool", {}).get("driver", {})
+        catalogue = driver.get("rules")
+        if not catalogue:
+            continue
+        fired = {result.get("ruleId") for result in run_block.get("results", [])}
+        keeping = [rule for rule in catalogue if rule.get("id") in fired]
+        dropped += len(catalogue) - len(keeping)
+        kept += len(keeping)
+        driver["rules"] = keeping
+    path.write_text(json.dumps(document, indent=1, sort_keys=True) + "\n")
+    return {"kept": kept, "dropped": dropped}
+
+
 def _invoke_engines(target, cfg, tmp):
     """Both engines against `target`, SARIF into `tmp`. Hermetic per research.md R1."""
     semgrep_out = tmp / "semgrep.sarif"
@@ -456,6 +489,8 @@ def cmd_scan(args):
             stats=stats,
         )
         normalise.write_jsonl(tmp / "findings.jsonl", findings)
+        # After normalising, never before: the normaliser reads the driver's rule metadata.
+        sarif_pruning = {p.stem: prune_sarif_rules(p) for p in sorted(sarif_paths)}
 
         record = {
             "schema": SCHEMA,
@@ -467,6 +502,7 @@ def cmd_scan(args):
             },
             "engines": versions,
             "rules": rules,
+            "sarif_rules_pruned": sarif_pruning,
             "mapping": mapping_hashes,
             "baseline_sha256": baseline_sha,
             "config_sha256": config_sha,
