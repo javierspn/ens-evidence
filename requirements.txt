@@ -1,0 +1,11 @@
+# RUNTIME dependencies — what the tool itself imports.
+#
+# Deliberately tiny, and it stays that way: the constitution pins the stack at
+# "Python 3.12, stdlib + PyYAML + Jinja2. No framework." The security engines are
+# subprocess calls to binaries the operator pins in their CI image, never Python
+# imports, so they do not appear here and never will.
+#
+# Dev/test tooling lives in requirements-dev.txt, which installs this file too.
+
+pyyaml>=6      # mapping/*.yml — the mapping, severity, defect classes and measure titles
+jinja2>=3.1    # the evidence report template

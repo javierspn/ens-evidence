@@ -1,6 +1,9 @@
+# Dev/test tooling. Runtime dependencies live in requirements.txt, installed below —
+# so CI exercises the same runtime set an operator would get, rather than a superset
+# that happens to include it.
+-r requirements.txt
+
 pytest>=8.0
 bandit>=1.7
 ruff>=0.6
 pip-audit>=2.7
-pyyaml>=6      # mapping/*.yml + the contract tests read these
-jinja2>=3.1    # the evidence report template (spec 002)
