@@ -120,3 +120,92 @@ jobs:
               sys.exit(1)
           print("no structural findings in changed files")
           PY
+
+  # Mapping-coverage gate for a rules bump. Constitution 1.4.0: bumping the pinned
+  # semgrep-rules SHA must scan the fixture corpus, and any NEW unmapped rule id must be
+  # mapped before the bump merges — otherwise mapping coverage decays silently with every
+  # upstream release, and a finding that should evidence a measure lands in the appendix.
+  #
+  # Only runs when the pin file changes: the loop is about the bump. Running it on every
+  # push would spend engine time proving nothing and couple unrelated PRs to rule drift.
+  #
+  # A bump that REMOVES upstream rule ids is not a failure — the mapping then has stale
+  # entries, which cost nothing and cannot lose coverage. Only new unmapped ids gate.
+  rules-bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Did the pinned rules SHA change?
+        id: pin
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if git diff --name-only "origin/${{ github.base_ref }}...HEAD" \
+               | grep -qx '.github/semgrep-rules.sha'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "pin file untouched — the mapping-coverage gate does not apply"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.pin.outputs.changed == 'true'
+        with:
+          python-version: '3.12'
+
+      - name: Install the tool and pinned engines
+        if: steps.pin.outputs.changed == 'true'
+        env:
+          SEMGREP_VERSION: '1.171.0'
+          TRIVY_VERSION: '0.72.0'
+        run: |
+          pip install . "semgrep==${SEMGREP_VERSION}"
+          curl -sSfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin trivy
+
+      - name: Fetch the rules at the NEW pinned SHA
+        if: steps.pin.outputs.changed == 'true'
+        run: |
+          PIN="$(tr -d '[:space:]' < .github/semgrep-rules.sha)"
+          if [ ${#PIN} -ne 40 ]; then
+            echo "::error::.github/semgrep-rules.sha must hold one 40-character commit SHA" >&2
+            exit 1
+          fi
+          ens-evidence rules fetch --sha "$PIN" --accept-rules-license
+          ens-evidence rules status .
+
+      # Each fixture is scanned from a work tree of its own: semgrep reads only git-tracked
+      # files AND its defaults skip anything under tests/, so scanning them in place reports
+      # "0 files scanned" and the gate would pass having examined nothing.
+      - name: Scan the fixture corpus with the new rules
+        if: steps.pin.outputs.changed == 'true'
+        run: |
+          set -eu
+          RULES="$PWD/.ens-rules"
+          runs=""
+          for fx in vulnerable-app injection-app; do
+            work="$(mktemp -d)"
+            cp -R "tests/fixtures/$fx/." "$work/"
+            git -C "$work" init -q .
+            git -C "$work" add -A
+            git -C "$work" -c user.email=ci@local -c user.name=ci commit -qm "$fx"
+            ens-evidence scan "$work" --rules-root "$RULES" || true
+            found="$(ls "$work"/out/*/findings.jsonl | tail -1)"
+            [ -s "$found" ] || { echo "::error::$fx produced no findings — the gate would pass vacuously" >&2; exit 1; }
+            runs="$runs $found"
+          done
+          echo "scanned runs:$runs"
+          echo "RUNS=$runs" >> "$GITHUB_ENV"
+
+      - name: Every new rule id must be mapped
+        if: steps.pin.outputs.changed == 'true'
+        run: |
+          # shellcheck disable=SC2086
+          if ! python scripts/unmapped_ids.py $RUNS; then
+            echo "::error::the new rules produced findings with no mapping entry (listed above) — add them to src/ens_evidence/mapping/ens_rd311.yml in this PR" >&2
+            exit 1
+          fi

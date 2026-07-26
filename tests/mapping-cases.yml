@@ -38,6 +38,20 @@ cases:
     measures: [mp.sw.1]
     observed: true
 
+  # Both observed 2026-07-26 on the fixture corpus with the rules pinned at
+  # 81634cfc9e68dc5f238a8062909a60ba34500648. Neither ships in the free registry, so both
+  # appeared the moment pinned mode started working — which is what the rules-bump gate is
+  # for.
+  - id: "semgrep:generic.unicode.security.contains-bidirectional-characters"
+    measures: [mp.sw.1]
+    observed: true
+    note: the code a reviewer reads is not the code that runs — development integrity
+
+  - id: "semgrep:ai.ai-best-practices.mcp-tool-poisoning.mcp-tool-poisoning-generic"
+    measures: [mp.sw.1]
+    observed: true
+    note: upstream's ai.* namespace; a defect in the software, not in its deployment
+
   - id: "semgrep:yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag"
     measures: [mp.sw.2, op.exp.3]
     observed: true

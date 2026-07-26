@@ -103,11 +103,11 @@ rule file.
 `mysteryengine:SOME-RULE-1`; a pull request touching only the pin file runs the job, one that
 does not touch it does not.
 
-- [ ] T031 [US3] Write `scripts/unmapped_ids.py` (stdlib only): reads one or more `findings.jsonl` paths, applies `mapper.classify` against `src/ens_evidence/mapping/ens_rd311.yml`, prints each `tool:rule` whose measures are `["unmapped"]` sorted and de-duplicated, exit 1 if any and 0 if none
-- [ ] T032 [P] [US3] `tests/test_unmapped_ids.py`: exit 1 and the expected id list on `tests/fixtures/run/findings.jsonl` (which carries exactly one unmapped row by construction), and exit 0 on a findings file with none — the negative case is what proves the check is not scanning nothing
-- [ ] T033 [US3] Add a `rules-bump` job to `.github/workflows/ci.yaml` triggered when `.github/semgrep-rules.sha` changes in a pull request: fetch rules at the new SHA, scan the committed fixture corpus (`tests/fixtures/vulnerable-app`, `tests/fixtures/injection-app`) from throwaway work trees, and run `scripts/unmapped_ids.py` over each run's `findings.jsonl`
-- [ ] T034 [US3] Handle the local-rules id shape in that job: a local rules root yields path-derived rule ids (`DESIGN.md:179`), so assert the job's unmapped output is reported in the same id shape the mapping's language catch-alls match, and fail with the raw ids listed when it is not
-- [ ] T035 [US3] Document in the job's own comments that a bump which *removes* upstream ids is not a failure (stale mapping entries), only new unmapped ids are
+- [x] T031 [US3] Write `scripts/unmapped_ids.py` (stdlib only): reads one or more `findings.jsonl` paths, applies `mapper.classify` against `src/ens_evidence/mapping/ens_rd311.yml`, prints each `tool:rule` whose measures are `["unmapped"]` sorted and de-duplicated, exit 1 if any and 0 if none
+- [x] T032 [P] [US3] `tests/test_unmapped_ids.py`: exit 1 and the expected id list on `tests/fixtures/run/findings.jsonl` (which carries exactly one unmapped row by construction), and exit 0 on a findings file with none — the negative case is what proves the check is not scanning nothing
+- [x] T033 [US3] Add a `rules-bump` job to `.github/workflows/ci.yaml` triggered when `.github/semgrep-rules.sha` changes in a pull request: fetch rules at the new SHA, scan the committed fixture corpus (`tests/fixtures/vulnerable-app`, `tests/fixtures/injection-app`) from throwaway work trees, and run `scripts/unmapped_ids.py` over each run's `findings.jsonl`
+- [x] T034 [US3] Handle the local-rules id shape in that job: a local rules root yields path-derived rule ids (`DESIGN.md:179`), so assert the job's unmapped output is reported in the same id shape the mapping's language catch-alls match, and fail with the raw ids listed when it is not
+- [x] T035 [US3] Document in the job's own comments that a bump which *removes* upstream ids is not a failure (stale mapping entries), only new unmapped ids are
 
 ---
 

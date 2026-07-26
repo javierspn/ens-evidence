@@ -93,6 +93,18 @@ rules:
     measures: [mp.sw.1, mp.s.2]
 
   # --- application code defects (SAST, not specifically web) -------------------------
+  # Invisible and bidirectional characters in source: the code a reviewer reads is not the
+  # code that runs. A development-integrity defect, so mp.sw.1. OBSERVED 2026-07-26 on
+  # tests/fixtures/injection-app with the rules pinned at
+  # 81634cfc9e68dc5f238a8062909a60ba34500648 — the free registry does not ship this rule,
+  # which is why it appears only in pinned mode.
+  - match: "semgrep:generic\\.unicode\\..*"
+    measures: [mp.sw.1]
+  # Prompt-injection and tool-poisoning patterns in agent/LLM code. Upstream's `ai.*`
+  # namespace, new to us in pinned mode; a defect in the software being developed, not in
+  # its deployment, so mp.sw.1. OBSERVED 2026-07-26 on the same fixture corpus.
+  - match: "semgrep:ai\\..*"
+    measures: [mp.sw.1]
   - match: "semgrep:python\\.lang\\.security\\..*"
     measures: [mp.sw.1]
   # JS/TS outside a web framework: browser eval, sanitisation audits, language rules.
