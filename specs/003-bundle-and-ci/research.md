@@ -143,8 +143,28 @@ file contents, and `.ens-rules/` stays in `.gitignore` and in `run.py:SKIP_DIRS`
 artifact containing Semgrep rule files is redistribution under the Semgrep Rules License v1.0 —
 a legal boundary, so the failure mode has to be a red job, not a reviewer's memory.
 
+**Corrected during implementation — a `*.yaml` guard is not enough.** The run store keeps the
+engines' raw SARIF, and semgrep's SARIF embeds the tool driver's **entire rule catalogue**:
+2126 rule descriptions for the 9 rules that fired, 3.9 MB, measured 2026-07-26 at the pinned
+SHA. Publishing `out/latest/` wholesale would therefore publish the licensed rules in another
+shape while passing a rule-file guard. The workflow now **allow-lists** what it stages —
+`findings.jsonl`, `run.json`, `report.md`, `bundle.md`, `sbom.cdx.json` — and the guard rejects
+`*.sarif` as well as `*.yaml`/`*.yml`. Whether the store should keep raw SARIF at all, or
+strip the driver's rule list down to what fired, is a 001-store question this spec records
+rather than settles.
+
+**Also corrected: pinned mode did not work at all.** `--config <checkout root>` makes semgrep
+reject the whole run — exit 7, zero files scanned — because the upstream repository ships YAML
+that is not a ruleset (`stats/` holds category metadata, `.github/stale.yml` is bot config).
+`run.semgrep_configs()` now passes one `--config` per qualifying top-level rule directory (28
+at the pinned SHA), where a directory qualifies when every non-fixture YAML under it declares a
+top-level `rules:` key. Rule test fixtures (`*.test.yaml`) are tolerated by semgrep and must
+not disqualify their directory, or java, ruby and yaml drop out of the ruleset.
+
 **Alternatives rejected**:
 - *Trusting the upload path* — one future `path: .` typo is a licence breach.
+- *Pruning non-rule files from the checkout after fetching* — mutating a third-party checkout
+  to make our invocation work, when the invocation is what is wrong.
 - *`actions/cache` on `.ens-rules/`* — GitHub caches are scoped to the repository and not
   public, but a cache of rule content is still a mirror we maintain; a depth-1 fetch is cheap
   enough that the question does not need answering.

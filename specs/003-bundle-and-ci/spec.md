@@ -196,7 +196,10 @@ path of the operator's machine anywhere in it.
 - **FR-007**: The bootstrap MUST refuse to fetch without an explicit licence acknowledgement,
   printing the terms and exiting 2.
 - **FR-008**: The system MUST NOT copy, mirror, modify or re-namespace rule files, and MUST NOT
-  place them in any published artifact, release asset, container image or committed file.
+  place them — **or rule content in any other shape** — in any published artifact, release
+  asset, container image or committed file. Observed 2026-07-26: the engines' raw SARIF in the
+  run store embeds the whole rule catalogue (2126 rule descriptions for 9 fired), so a guard
+  that looks only for rule *files* misses it and an upload must allow-list the evidence files.
 - **FR-009**: The self-scan workflow MUST run the tool against this repository on the default
   branch, obtain rules at run time, and upload the run directory — and only the run directory
   — as a build artifact.

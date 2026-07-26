@@ -47,15 +47,20 @@ Semgrep (`p/default`): funciona sin configuración, pero no es reproducible y es
 algunos lenguajes. Modo fijado, el apto para CI:
 
 ```
-git clone https://github.com/semgrep/semgrep-rules .ens-rules
-git -C .ens-rules checkout <commit>
+ens-evidence rules fetch --sha <commit> --accept-rules-license
+ens-evidence rules status
 ens-evidence scan . --rules-root .ens-rules   # o ENS_EVIDENCE_RULES_ROOT / .ens-evidence.yml
 ```
+
+Sin `--accept-rules-license` (o `ENS_EVIDENCE_ACCEPT_RULES_LICENSE=1`), `fetch` imprime los
+términos y sale con código 2 sin descargar nada.
 
 Las reglas de Semgrep las obtiene **tu** entorno, no las distribuye esta herramienta: su
 licencia (Semgrep Rules License v1.0) prohíbe redistribuirlas y permite usarlas para fines
 internos propios. No las incluimos en la imagen ni en el paquete, y `.ens-rules/` nunca se
-publica.
+publica. Tampoco en formas menos evidentes: el SARIF en bruto que guarda el almacén de runs
+incorpora el catálogo **completo** de reglas, así que publica `findings.jsonl`, `run.json`,
+`report.md`, `bundle.md` y `sbom.cdx.json`, nunca `*.sarif`.
 
 Requiere los binarios de los motores (Semgrep, Trivy) en el PATH; se fijan sus versiones
 en tu imagen de CI.

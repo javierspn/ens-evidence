@@ -96,7 +96,10 @@ most of that gap (C: 0 → 12 findings), via a self-cloned pinned checkout passe
 offering as a service, licensee's own internal use only; full reasoning in DESIGN.md
 "Rule sourcing and licensing"):
 
-- never bundle rules in the image, the pip package or a release asset — engines only;
+- never bundle rules in the image, the pip package, a release asset or a build artifact —
+  engines only. That includes rule content in another shape: the run store's raw `*.sarif`
+  embeds the entire rule catalogue (2126 rule descriptions for 9 fired, measured
+  2026-07-26), so an upload allow-lists the evidence files and excludes SARIF;
 - never mirror, cache-in-a-published-artifact, or vendor them into this repo (`.ens-rules/` is
   git-ignored);
 - never modify, reformat or re-namespace rule files, and never strip their notices;

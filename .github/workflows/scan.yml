@@ -1,11 +1,25 @@
 # The tool scans itself and publishes its own report — the credibility artifact.
 #
-# Placeholder: wired up in spec 003-bundle-and-ci, once the CLI exists. Kept disabled
-# (workflow_dispatch only) so it cannot fail red on every push meanwhile.
+# LICENCE CONSTRAINT — do not break when editing this file:
+# rules are fetched at run time into .ens-rules/ and MUST NOT appear in any uploaded
+# artifact, cache key payload, or committed file. Upload the staged copy of out/latest/
+# only, never the repository root. Semgrep Rules License v1.0 forbids redistribution, and a
+# public build artifact containing rule files is redistribution. See DESIGN.md "Rule
+# sourcing and licensing". The "no rule file leaves this runner" step below is the
+# enforcement; it must stay, and it must run before the upload.
 name: self-scan
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SEMGREP_VERSION: '1.171.0'
+  TRIVY_VERSION: '0.72.0'
 
 jobs:
   scan:
@@ -13,19 +27,83 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # TODO(003-bundle-and-ci): install pinned engine binaries (Semgrep, Trivy), then:
-      #   ens-evidence rules fetch --sha <commit> --accept-rules-license
-      #   ens-evidence scan . --fail-on high
-      # and upload out/latest/ as a build artifact. Three lines in a consumer's CI is the
-      # target shape; here we prove it on our own repo.
-      #
-      # LICENCE CONSTRAINT — do not break when wiring this up:
-      # rules are fetched at run time into .ens-rules/ and MUST NOT appear in any uploaded
-      # artifact, cache key payload, or committed file. Upload out/latest/ only, never the
-      # repository root. Semgrep Rules License v1.0 forbids redistribution, and a public
-      # build artifact containing rule files is redistribution. See DESIGN.md
-      # "Rule sourcing and licensing".
-      - name: not implemented yet
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install the tool
+        run: pip install .
+
+      # Engines are pinned, not floated: their versions land in run.json, and a floating
+      # engine makes the published evidence non-reproducible (principle I).
+      - name: Install pinned engines
         run: |
-          echo "self-scan lands with spec 003-bundle-and-ci" >&2
-          exit 1
+          pip install "semgrep==${SEMGREP_VERSION}"
+          curl -sSfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin trivy
+          semgrep --version
+          trivy --version
+
+      # Fetched at run time at the SHA tracked in .github/semgrep-rules.sha. Deliberately
+      # not cached: a cache of rule content is a mirror we would be maintaining.
+      - name: Fetch the rules at the pinned SHA
+        run: |
+          PIN="$(tr -d '[:space:]' < .github/semgrep-rules.sha)"
+          if [ ${#PIN} -ne 40 ]; then
+            echo "::error::.github/semgrep-rules.sha must hold one 40-character commit SHA" >&2
+            exit 1
+          fi
+          ens-evidence rules fetch --sha "$PIN" --accept-rules-license
+          ens-evidence rules status .
+
+      # Reports; does not gate. Gating every push on our own findings would couple
+      # unrelated changes to upstream rule drift. `baseline update` is deliberately absent:
+      # it would silently accept our own findings as the new normal.
+      - name: Scan this repository
+        run: ens-evidence scan . || echo "scan exit $? — reported, not gating"
+
+      - name: Render the report and the bundle
+        run: |
+          ens-evidence report .
+          ens-evidence bundle .
+
+      # Allow-list, not `cp -R out/latest/.`: the run store also keeps the engines' raw
+      # SARIF, and semgrep's SARIF embeds the tool driver's ENTIRE rule catalogue — 2126
+      # rule descriptions for the 9 that fired, ~3.9 MB, verified 2026-07-26 at the pinned
+      # SHA. Publishing that is publishing the licensed rules in another shape, and a
+      # *.yaml/*.yml guard does not see it.
+      - name: Stage the artifact
+        run: |
+          mkdir -p upload
+          for f in findings.jsonl run.json report.md bundle.md sbom.cdx.json; do
+            cp "out/latest/$f" upload/
+          done
+
+      # SC-003: verified by a check, not by review — one path typo in the upload step is a
+      # licence breach, so the guard runs over the staged directory itself.
+      #
+      # To prove this guard fires (a guard that scans nothing passes forever), add to the
+      # step above:
+      #   cp .ens-rules/python/lang/security/audit/exec-detected.yaml upload/
+      # and re-run: the job must fail here, naming that file.
+      - name: No rule file leaves this runner
+        run: |
+          if [ ! -d upload ] || [ -z "$(ls -A upload)" ]; then
+            echo "::error::nothing staged for upload — the scan produced no run" >&2
+            exit 1
+          fi
+          offenders="$(find upload \( -name '*.yaml' -o -name '*.yml' -o -name '*.sarif' -o -path '*.ens-rules*' \) -print)"
+          if [ -n "$offenders" ]; then
+            echo "::error::rule-shaped or rule-carrying files staged for upload — Semgrep Rules License v1.0 forbids redistributing them (SARIF counts: it embeds the whole rule catalogue):" >&2
+            echo "$offenders" >&2
+            exit 1
+          fi
+          echo "staged for upload:"
+          find upload -type f | sort
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ens-evidence-self-scan
+          # The staged copy of out/latest/ ONLY. Never '.', never out/, never .ens-rules/.
+          path: upload/
+          if-no-files-found: error

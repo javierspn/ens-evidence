@@ -75,17 +75,23 @@ downloadable run artifact that provably contains no rule file.
 uploads `out/latest/` and the pre-upload guard fails when pointed at a directory containing a
 rule file.
 
-- [ ] T020 [US2] Add the licence-acknowledgement gate to `src/ens_evidence/run.py`: a module constant summarising the Semgrep Rules License v1.0 terms **in our own words** plus the upstream licence URL (never the licence text verbatim), printed on stderr with exit 2 when neither `--accept-rules-license` nor `ENS_EVIDENCE_ACCEPT_RULES_LICENSE=1` is present
-- [ ] T021 [US2] Implement `cmd_rules_fetch` in `src/ens_evidence/run.py` per [contracts/cli-rules.md](contracts/cli-rules.md): `git init` → `git remote add origin <repo>` → `git fetch --depth 1 origin <sha>` → `git checkout FETCH_HEAD` as subprocesses into `--rules-root` (default `.ens-rules`), exit 2 with a naming message when `git` is absent, the SHA is not found, or the destination exists and is not a git work tree
-- [ ] T022 [US2] Implement `cmd_rules_status` printing the existing `rules_info(cfg)` payload as one `{"schema": "ens-evidence/1", …}` line, exit 0 in both `local` and `registry` mode, stating in registry mode that the configuration is not reproducible
-- [ ] T023 [US2] Add the `rules` subparser group (`fetch`, `status`) with `--sha`, `--repo`, `--rules-root`, `--accept-rules-license` to `build_parser` in `src/ens_evidence/run.py`
-- [ ] T024 [P] [US2] `tests/test_rules.py`: the gate — `rules fetch` without acknowledgement exits 2, prints the terms, and creates nothing on disk (no network, runs under `-m "not engines"`)
-- [ ] T025 [P] [US2] `tests/test_rules.py`: `rules status` in registry mode reports `mode: registry`, `sha: null`, and the non-reproducibility note; in local mode, against a temporary git work tree with two fake language directories, reports the SHA and the per-language counts
-- [ ] T026 [P] [US2] `tests/test_rules.py`: mark the real network fetch test `@pytest.mark.engines` so the default job stays offline, asserting a pinned SHA checkout and that `rules_info` then reports it
-- [ ] T027 [US2] Replace the stub in `.github/workflows/scan.yml`: trigger on push to `main` and `workflow_dispatch`, install pinned Semgrep and Trivy, `pip install .`, `rules fetch --sha "$(cat .github/semgrep-rules.sha)" --accept-rules-license`, `scan . --fail-on high`, `report` and `bundle`, then upload
-- [ ] T028 [US2] Add the pre-upload licence guard step to `.github/workflows/scan.yml`: fail the job if the upload path contains any file under a `.ens-rules` path or any rule file copied from the rules root, and upload `out/latest/` by explicit path only — never the repository root
-- [ ] T029 [US2] Make the guard's failure mode observable: document in the workflow how to verify it fires (point it at a directory that does contain a rule file) so a guard that scans nothing cannot pass forever
-- [ ] T030 [US2] Ensure the self-scan reports rather than gates unrelated work: the job surfaces findings and the exit code, and never runs `baseline update` (which would silently accept the repository's own findings)
+- [x] T020 [US2] Add the licence-acknowledgement gate to `src/ens_evidence/run.py`: a module constant summarising the Semgrep Rules License v1.0 terms **in our own words** plus the upstream licence URL (never the licence text verbatim), printed on stderr with exit 2 when neither `--accept-rules-license` nor `ENS_EVIDENCE_ACCEPT_RULES_LICENSE=1` is present
+- [x] T021 [US2] Implement `cmd_rules_fetch` in `src/ens_evidence/run.py` per [contracts/cli-rules.md](contracts/cli-rules.md): `git init` → `git remote add origin <repo>` → `git fetch --depth 1 origin <sha>` → `git checkout FETCH_HEAD` as subprocesses into `--rules-root` (default `.ens-rules`), exit 2 with a naming message when `git` is absent, the SHA is not found, or the destination exists and is not a git work tree
+- [x] T022 [US2] Implement `cmd_rules_status` printing the existing `rules_info(cfg)` payload as one `{"schema": "ens-evidence/1", …}` line, exit 0 in both `local` and `registry` mode, stating in registry mode that the configuration is not reproducible
+- [x] T023 [US2] Add the `rules` subparser group (`fetch`, `status`) with `--sha`, `--repo`, `--rules-root`, `--accept-rules-license` to `build_parser` in `src/ens_evidence/run.py`
+- [x] T024 [P] [US2] `tests/test_rules.py`: the gate — `rules fetch` without acknowledgement exits 2, prints the terms, and creates nothing on disk (no network, runs under `-m "not engines"`)
+- [x] T025 [P] [US2] `tests/test_rules.py`: `rules status` in registry mode reports `mode: registry`, `sha: null`, and the non-reproducibility note; in local mode, against a temporary git work tree with two fake language directories, reports the SHA and the per-language counts
+- [x] T026 [P] [US2] `tests/test_rules.py`: mark the real network fetch test `@pytest.mark.engines` so the default job stays offline, asserting a pinned SHA checkout and that `rules_info` then reports it
+- [x] T027 [US2] Replace the stub in `.github/workflows/scan.yml`: trigger on push to `main` and `workflow_dispatch`, install pinned Semgrep and Trivy, `pip install .`, `rules fetch --sha "$(cat .github/semgrep-rules.sha)" --accept-rules-license`, `scan . --fail-on high`, `report` and `bundle`, then upload
+- [x] T028 [US2] Add the pre-upload licence guard step to `.github/workflows/scan.yml`: fail the job if the upload path contains any file under a `.ens-rules` path or any rule file copied from the rules root, and upload `out/latest/` by explicit path only — never the repository root
+- [x] T029 [US2] Make the guard's failure mode observable: document in the workflow how to verify it fires (point it at a directory that does contain a rule file) so a guard that scans nothing cannot pass forever
+- [x] T030 [US2] Ensure the self-scan reports rather than gates unrelated work: the job surfaces findings and the exit code, and never runs `baseline update` (which would silently accept the repository's own findings)
+
+### Found during phase 4, done here
+
+- [x] T030a Fix pinned mode: `--config <checkout root>` makes semgrep reject the whole run (exit 7, 0 files scanned) because the upstream repository ships non-ruleset YAML. `run.semgrep_configs()` passes one `--config` per qualifying rule directory; `tests/test_rules.py` covers the root, the fixture-file and the empty-checkout cases
+- [x] T030b Close the SARIF licence hole: the run store keeps raw SARIF and semgrep's SARIF embeds the entire rule catalogue, so `scan.yml` allow-lists the five evidence files and the guard rejects `*.sarif` too
+- [ ] T030c **Decision owed (001 store):** should the run store keep raw SARIF at all, or strip the driver's rule list to the rules that fired? Left as-is; the upload no longer carries it
 
 ---
 

@@ -24,6 +24,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -228,18 +229,58 @@ def build_coverage(target, rules):
 # --- engines -----------------------------------------------------------------
 
 
+RULE_FIXTURE_MARKERS = (".test.", ".fixed.")
+RULES_TOP_KEY = re.compile(rb"^rules:", re.M)
+
+
+def semgrep_configs(rules_root):
+    """-> the `--config` arguments for a local rules checkout, sorted.
+
+    NOT simply the checkout root: the upstream `semgrep-rules` repository ships YAML that
+    is not a ruleset (`stats/` holds category metadata, `.github/stale.yml` is bot config),
+    and ONE invalid config file makes semgrep reject the whole run with exit 7 — scanning
+    nothing while looking like an engine failure. Verified 2026-07-26 against the pinned
+    SHA: passing the root scans 0 files, passing the 28 rule directories scans normally.
+
+    A directory qualifies when every non-fixture YAML under it declares a top-level
+    `rules:` key. Rule *test* fixtures (`*.test.yaml`) are left in place — semgrep
+    tolerates them — but they do not disqualify their directory.
+    """
+    root = Path(rules_root)
+    configs = []
+    for child in sorted(p for p in root.iterdir() if p.is_dir() and not p.name.startswith(".")):
+        candidates = [
+            f
+            for f in child.rglob("*.y*ml")
+            if not any(marker in f.name for marker in RULE_FIXTURE_MARKERS)
+        ]
+        if not candidates:
+            continue
+        if all(RULES_TOP_KEY.search(f.read_bytes()[:4096]) for f in candidates):
+            configs.append(str(child))
+    return configs
+
+
 def _invoke_engines(target, cfg, tmp):
     """Both engines against `target`, SARIF into `tmp`. Hermetic per research.md R1."""
     semgrep_out = tmp / "semgrep.sarif"
     trivy_out = tmp / "trivy.sarif"
-    semgrep_config = cfg["rules_root"] or "p/default"
+    if cfg["rules_root"]:
+        configs = semgrep_configs(cfg["rules_root"])
+        if not configs:
+            raise EngineError(
+                f"no semgrep rule directories under {cfg['rules_root']} — is it a "
+                "semgrep-rules checkout?"
+            )
+    else:
+        configs = ["p/default"]
     commands = [
         [
             "semgrep",
             "scan",
             "--sarif",
             "--metrics=off",
-            f"--config={semgrep_config}",
+            *[f"--config={c}" for c in configs],
             "--output",
             str(semgrep_out),
             str(target),
@@ -594,6 +635,117 @@ def cmd_report(args):
     return 0
 
 
+RULES_REPO = "https://github.com/semgrep/semgrep-rules"
+RULES_LICENCE_URL = "https://github.com/semgrep/semgrep-rules/blob/develop/LICENSE"
+RULES_ROOT_DEFAULT = ".ens-rules"
+
+# Our own summary, never the licence text: bulk-copying someone else's terms is the same
+# reflex principle V forbids for the BOE. The operator is told what they are agreeing to
+# and where to read it in full.
+RULES_LICENCE_NOTICE = f"""\
+Semgrep's detection rules are NOT part of this tool and are not distributed with it.
+They are published under the Semgrep Rules License v1.0, which — in summary, not
+verbatim — permits use for the licensee's own internal business purposes and forbids
+redistributing them or offering them as a service.
+
+What that means for you:
+  * fetching them puts THIRD-PARTY files under your control, at a commit you choose;
+  * you must not publish them — not in an image, a package, a release asset, a build
+    artifact, or a commit;
+  * this tool never mirrors, modifies or re-namespaces them.
+
+Full terms: {RULES_LICENCE_URL}
+
+Re-run with --accept-rules-license (or ENS_EVIDENCE_ACCEPT_RULES_LICENSE=1) to fetch.
+Nothing has been downloaded."""
+
+
+def _rules_root(args):
+    return Path(getattr(args, "rules_root", None) or RULES_ROOT_DEFAULT).resolve()
+
+
+def _git_ok(root, *argv):
+    """-> (returncode, stderr tail). git is a subprocess here for the same reason the
+    engines are: no new dependency, and the operator controls the binary."""
+    proc = subprocess.run(
+        ["git", "-C", str(root), *argv], capture_output=True, text=True, check=False
+    )
+    tail = proc.stderr.strip().splitlines()[-1][:200] if proc.stderr.strip() else ""
+    return proc.returncode, tail
+
+
+def _rules_payload(root):
+    cfg = dict(CONFIG_DEFAULTS)
+    cfg["rules_root"] = str(root)
+    return {"schema": SCHEMA, **rules_info(cfg)}
+
+
+def cmd_rules_fetch(args):
+    """Pin the operator's own copy of the rules at a commit SHA. A depth-1 fetch of an
+    explicit commit is the only shape that is both pinned and cheap — `git clone --branch`
+    cannot take an arbitrary SHA."""
+    accepted = args.accept_rules_license or os.environ.get("ENS_EVIDENCE_ACCEPT_RULES_LICENSE") in (
+        "1",
+        "true",
+        "yes",
+    )
+    if not accepted:
+        _err(RULES_LICENCE_NOTICE)
+        return 2
+
+    if shutil.which("git") is None:
+        _err("rules fetch needs the git binary, which is not on PATH")
+        return 2
+
+    root = _rules_root(args)
+    if root.exists() and not (root / ".git").is_dir():
+        _err(f"{root} exists and is not a git work tree — move it or choose --rules-root")
+        return 2
+
+    root.mkdir(parents=True, exist_ok=True)
+    if not (root / ".git").is_dir():
+        code, detail = _git_ok(root, "init", "--quiet")
+        if code != 0:
+            _err(f"could not initialise {root}: {detail}")
+            return 2
+    # Idempotent: re-fetching a different SHA into an existing root is the normal way to
+    # move the pin, so the remote is set rather than added.
+    _git_ok(root, "remote", "remove", "origin")
+    code, detail = _git_ok(root, "remote", "add", "origin", args.repo)
+    if code != 0:
+        _err(f"could not set the rules remote: {detail}")
+        return 2
+
+    code, detail = _git_ok(root, "fetch", "--depth", "1", "--quiet", "origin", args.sha)
+    if code != 0:
+        _err(f"could not fetch {args.sha} from {args.repo}: {detail}")
+        return 2
+    code, detail = _git_ok(root, "checkout", "--quiet", "FETCH_HEAD")
+    if code != 0:
+        _err(f"fetched {args.sha} but could not check it out: {detail}")
+        return 2
+
+    _err(f"rules pinned at {args.sha} in {root} — never publish these files")
+    print(dumps_line(_rules_payload(root)))
+    return 0
+
+
+def cmd_rules_status(args):
+    """What the next scan would use. Registry mode is a state to report, not an error —
+    but it is reported as non-reproducible, because it is."""
+    target = Path(args.path).resolve()
+    cfg, _ = resolve_config({"rules_root": args.rules_root}, dict(os.environ), target)
+    payload = {"schema": SCHEMA, **rules_info(cfg)}
+    payload["reproducible"] = payload["mode"] == "local" and bool(payload["sha"])
+    if not payload["reproducible"]:
+        _err(
+            "registry mode: the ruleset is not pinned, so this configuration is NOT "
+            "reproducible — fetch the rules at a commit SHA for CI-grade runs"
+        )
+    print(dumps_line(payload))
+    return 0
+
+
 def cmd_bundle(args):
     """The paste-anywhere view of a stored run. Never scans, never renders a PDF: its
     purpose is being pasted into a chat window, which is also why every field of
@@ -711,6 +863,29 @@ def main(argv=None):
     )
     report.add_argument("--json", action="store_true")
     report.set_defaults(func=cmd_report)
+
+    rules = sub.add_parser("rules", help="the rules bootstrap group (licence-gated)")
+    rules_sub = rules.add_subparsers(dest="rules_verb", required=True)
+
+    fetch = rules_sub.add_parser("fetch", help="pin the operator's own rules copy at a SHA")
+    fetch.add_argument("--sha", required=True, help="upstream commit SHA to pin to")
+    fetch.add_argument(
+        "--repo", default=RULES_REPO, help=f"rules repository (default: {RULES_REPO})"
+    )
+    fetch.add_argument(
+        "--rules-root", default=None, help=f"destination (default: {RULES_ROOT_DEFAULT})"
+    )
+    fetch.add_argument(
+        "--accept-rules-license",
+        action="store_true",
+        help="acknowledge the Semgrep Rules License v1.0; also ENS_EVIDENCE_ACCEPT_RULES_LICENSE=1",
+    )
+    fetch.set_defaults(func=cmd_rules_fetch)
+
+    status = rules_sub.add_parser("status", help="which rules the next scan would use")
+    status.add_argument("path", nargs="?", default=".")
+    status.add_argument("--rules-root", default=None)
+    status.set_defaults(func=cmd_rules_status)
 
     bundle = sub.add_parser("bundle", help="paste-anywhere bundle.md from a stored run")
     bundle.add_argument("path", nargs="?", default=".")

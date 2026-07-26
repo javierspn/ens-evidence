@@ -6,10 +6,9 @@ paste-anywhere bundle. Use when asked for ENS evidence, an ENS compliance report
 
 # ens-evidence
 
-> **Status: all five finding-path verbs ship** — `scan`, `baseline update`, `report`,
-> `bundle` and `explain` (specs `001` through `003`); `ens-evidence` installs as a console
-> command. The `rules` bootstrap group is not built yet: pin rules by cloning them yourself
-> and passing `--rules-root`, as shown below.
+> **Status: all five finding-path verbs plus the `rules` bootstrap group ship** — `scan`,
+> `baseline update`, `report`, `bundle`, `explain`, `rules fetch|status` (specs `001`
+> through `003`); `ens-evidence` installs as a console command.
 
 Runs open-source scanners over a repository, maps findings to six ENS measures, and writes
 an evidence report in Spanish. Everything runs locally — no server, no upload.
@@ -47,19 +46,27 @@ threshold.
 ## Rules bootstrap (once per environment)
 
 Semgrep's rules are licensed so that the **operator** holds their own copy — the tool never
-ships them and never fetches them. With no rules root configured, scan runs Semgrep's
-registry (`p/default`): works out of the box, but thin for some languages and not
-reproducible — the run records it as such and rule counts are unknowable. Pinned mode is the
-CI-grade option: clone the rules yourself, then point the tool at them.
+ships them. With no rules root configured, scan runs Semgrep's registry (`p/default`): works
+out of the box, but thin for some languages and not reproducible, and the run records it as
+such. Pinned mode is the CI-grade option:
 
 ```bash
-git clone https://github.com/semgrep/semgrep-rules .ens-rules && git -C .ens-rules checkout <sha>
-ens-evidence scan . --rules-root .ens-rules      # also ENS_EVIDENCE_RULES_ROOT or .ens-evidence.yml
+ens-evidence rules fetch --sha <commit> --accept-rules-license   # depth-1 into .ens-rules/
+ens-evidence rules status                                        # mode, SHA, rules per language
+ens-evidence scan . --rules-root .ens-rules   # also ENS_EVIDENCE_RULES_ROOT / .ens-evidence.yml
 ```
 
-The run's `run.json` records the mode, the rules repo, its SHA and rules per language. Never
-commit `.ens-rules/`, never copy it into an image or a published artifact, never edit the rule
-files.
+Without the acknowledgement flag (or `ENS_EVIDENCE_ACCEPT_RULES_LICENSE=1`) `fetch` prints the
+terms and exits 2 having downloaded nothing. `status` exits 0 in both modes and says when the
+configuration is not reproducible.
+
+The run's `run.json` records the mode, the rules repo, its SHA and rules per language.
+
+**Never publish rule content.** Do not commit `.ens-rules/`, copy it into an image, or attach
+it to a release or build artifact. This includes shapes that are not obviously rule files: the
+engines' raw SARIF in the run store embeds the **whole rule catalogue** — thousands of rule
+descriptions, not only the ones that fired — so publish `findings.jsonl`, `run.json`,
+`report.md`, `bundle.md` and `sbom.cdx.json`, never `*.sarif`.
 
 ## Exit codes
 
