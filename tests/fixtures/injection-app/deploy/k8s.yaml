@@ -1,0 +1,23 @@
+# Deliberately vulnerable: no securityContext at all — fires the cross-engine
+# duplicate pair (semgrep yaml.kubernetes.security.run-as-non-root, trivy KSV-0012)
+# plus trivy's default-context family (KSV-0001, KSV-0014, KSV-0104, ...), and the
+# mutable ':latest' tag (KSV-0013).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vulnapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vulnapp
+  template:
+    metadata:
+      labels:
+        app: vulnapp
+    spec:
+      containers:
+        - name: vulnapp
+          image: vulnapp:latest
+          ports:
+            - containerPort: 8080

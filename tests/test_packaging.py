@@ -49,8 +49,22 @@ def test_every_third_party_import_is_declared(pyproject):
     for module in (ROOT / "src" / "ens_evidence").glob("*.py"):
         found.update(import_re.findall(module.read_text()))
     stdlib_and_self = {
-        "argparse", "dataclasses", "datetime", "hashlib", "io", "json", "os", "pathlib",
-        "re", "shutil", "subprocess", "sys", "tempfile", "typing", "ens_evidence",
+        "argparse",
+        "dataclasses",
+        "datetime",
+        "hashlib",
+        "io",
+        "json",
+        "os",
+        "pathlib",
+        "re",
+        "shutil",
+        "subprocess",
+        "sys",
+        "tempfile",
+        "typing",
+        "unicodedata",
+        "ens_evidence",
     }
     third_party = {aliases.get(m, m) for m in found - stdlib_and_self}
     assert third_party <= declared, f"imported but not declared: {sorted(third_party - declared)}"

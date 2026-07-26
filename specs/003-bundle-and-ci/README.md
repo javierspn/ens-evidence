@@ -5,4 +5,5 @@
 **Acceptance:** a tagged release whose own scan report is a build artifact; the injection
 fixture renders neutralised.
 
-Placeholder — Spec Kit artefacts not generated yet. See [DESIGN.md](../../DESIGN.md).
+Artefacts: [spec.md](spec.md) · [checklists/requirements.md](checklists/requirements.md).
+Plan: [plan.md](plan.md) · [research.md](research.md) · [data-model.md](data-model.md) · [quickstart.md](quickstart.md) · [contracts/](contracts/). [tasks.md](tasks.md). The contract is [DESIGN.md](../../DESIGN.md).

@@ -594,6 +594,25 @@ def cmd_report(args):
     return 0
 
 
+def cmd_bundle(args):
+    """The paste-anywhere view of a stored run. Never scans, never renders a PDF: its
+    purpose is being pasted into a chat window, which is also why every field of
+    scanned-repo text in it goes through render's fencing filters."""
+    run_dir = _resolve_run_dir(args)
+    if run_dir is None:
+        return 2
+    try:
+        model = _build_model(run_dir)
+    except (OSError, ValueError, KeyError) as exc:
+        _err(f"unreadable run at {run_dir}: {exc}")
+        return 2
+
+    bundle_md = run_dir / "bundle.md"
+    bundle_md.write_text(render.render_bundle(model, TEMPLATE_DIR), "utf-8")
+    print(dumps_line({"schema": SCHEMA, "bundle": str(bundle_md), "run": str(run_dir)}))
+    return 0
+
+
 def cmd_explain(args):
     run_dir = _resolve_run_dir(args)
     if run_dir is None:
@@ -692,6 +711,12 @@ def main(argv=None):
     )
     report.add_argument("--json", action="store_true")
     report.set_defaults(func=cmd_report)
+
+    bundle = sub.add_parser("bundle", help="paste-anywhere bundle.md from a stored run")
+    bundle.add_argument("path", nargs="?", default=".")
+    bundle.add_argument("--run", default=None, help="run directory (default: <out>/latest)")
+    bundle.add_argument("--json", action="store_true")
+    bundle.set_defaults(func=cmd_bundle)
 
     explain = sub.add_parser("explain", help="why one finding was filed where it was")
     explain.add_argument("id")

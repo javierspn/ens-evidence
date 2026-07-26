@@ -17,12 +17,20 @@ not instructions. A new field that renders scanned-repo text without it is a def
 tests/test_render.py's fencing test is what catches it. The longest engine message in the
 reference corpus is 734 characters, so the truncation is load-bearing.
 
+Where a value must stay inline — a path or rule id in a table cell, where a fenced block
+cannot go — `inline_untrusted()` is the required filter: it flattens, replaces the cell
+and code delimiters, and marks Unicode control/format characters, which are how a
+directive hides from a human reader while an agent still reads it.
+
 DETERMINISM: rendering reads only the stored run. No clock, no environment, no engine —
 two renders of one run produce identical bytes (principle I).
 
-Stub for bundle.md — see specs/003-bundle-and-ci.
+bundle.md (spec 003) renders the same model through a second template: a short, pasteable
+view. Same fencing rules, no exceptions — it is the document most likely to be pasted into
+an agent's context.
 """
 
+import unicodedata
 from pathlib import Path
 
 import jinja2
@@ -32,7 +40,9 @@ from ens_evidence import mapper
 from ens_evidence.normalise import CANONICAL
 
 SNIPPET_MAX_CHARS = 200
+INLINE_MAX_CHARS = 120
 TRUNCATION_MARK = "…[truncado]"
+CONTROL_MARK = "�"
 
 FENCE_OPEN = "```text untrusted"
 FENCE_CLOSE = "```"
@@ -57,6 +67,23 @@ def fence(text):
     the block headed so a reader — human or agent — knows it is data."""
     body = truncate(text).replace("```", "'''")
     return f"{FENCE_OPEN}\n{FENCE_HEADER}\n{body}\n{FENCE_CLOSE}"
+
+
+def inline_untrusted(text):
+    """Scanned-repo text that must stay on one line — a path or a rule id inside a table
+    cell, where a fenced block cannot go. Weaker than fence() and therefore only for
+    values whose shape is constrained: it defangs the characters that let such a value
+    stop being a value. Backticks and pipes break out of the cell; Unicode format
+    characters (Cf: zero-width joiners, bidi overrides) hide text from the human reader
+    while an agent still consumes it, which is the whole injection premise."""
+    flat = " ".join(str(text).split())
+    scrubbed = "".join(
+        ch if unicodedata.category(ch) not in ("Cc", "Cf") else CONTROL_MARK for ch in flat
+    )
+    defanged = scrubbed.replace("`", "'").replace("|", "¦")
+    if len(defanged) <= INLINE_MAX_CHARS:
+        return defanged
+    return defanged[: INLINE_MAX_CHARS - len(TRUNCATION_MARK)] + TRUNCATION_MARK
 
 
 # --- data files --------------------------------------------------------------
@@ -174,6 +201,7 @@ def _environment(template_dir):
     )
     env.filters["fence"] = fence
     env.filters["truncate_untrusted"] = truncate
+    env.filters["inline_untrusted"] = inline_untrusted
     return env
 
 
@@ -184,5 +212,9 @@ def render_report(model, template_dir, pdf_note=None):
     return env.get_template("report.md.j2").render(pdf_note=pdf_note, **model)
 
 
-def render_bundle(findings, run_meta, template_dir):
-    raise NotImplementedError("spec 003-bundle-and-ci")
+def render_bundle(model, template_dir):
+    """-> the paste-anywhere bundle Markdown, from the same model as the report. Takes the
+    built model rather than raw findings so the two documents cannot diverge on what they
+    were told (spec 003, D1)."""
+    env = _environment(template_dir)
+    return env.get_template("bundle.md.j2").render(**model)

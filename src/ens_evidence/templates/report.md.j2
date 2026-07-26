@@ -10,8 +10,11 @@
    cumplimiento. Una medida sin hallazgos se declara sin evidencia recogida — el silencio
    no es un aprobado.
 
-   Todo texto procedente del repositorio analizado pasa por el filtro `fence`. No añadas
-   un campo que lo imprima sin él. #}
+   Todo texto procedente del repositorio analizado pasa por el filtro `fence` cuando puede
+   ir en bloque, y por `inline_untrusted` cuando debe quedarse en una celda o una viñeta
+   (rutas, ids de regla, motor, lenguaje). No añadas un campo que lo imprima sin uno de los
+   dos: una ruta con un acento grave o una barra vertical se sale de la celda y su texto
+   pasa a ser prosa del documento — spec 003, tests/test_injection.py. #}
 # Informe de evidencias — Esquema Nacional de Seguridad
 
 **Alcance de este informe.** Se recogen evidencias para estas seis medidas del RD 311/2022
@@ -54,7 +57,7 @@ dice exactamente qué se analizó.
 | Lenguajes detectados | Ficheros |
 |---|---|
 {% for lang, count in coverage.languages_detected | dictsort %}
-| {{ lang }} | {{ count }} |
+| {{ lang | inline_untrusted }} | {{ count }} |
 {% endfor %}
 
 **Reglas ejecutadas por lenguaje:**
@@ -68,14 +71,14 @@ que lo sea, fije las reglas a un commit concreto.
 | Lenguaje | Reglas |
 |---|---|
 {% for lang, count in coverage.rules_per_language | dictsort %}
-| {{ lang }} | {{ count }} |
+| {{ lang | inline_untrusted }} | {{ count }} |
 {% endfor %}
 {% endif %}
 
 **Lenguajes detectados sin analizar:**
 {% if coverage.languages_not_analysed %}
 {% for lang in coverage.languages_not_analysed %}
-- `{{ lang }}` — se detectó código en este lenguaje y no se ejecutó ninguna regla sobre él.
+- `{{ lang | inline_untrusted }}` — se detectó código en este lenguaje y no se ejecutó ninguna regla sobre él.
 {% endfor %}
 {% elif coverage.rules_per_language == "registry-uncounted" %}
 No se puede determinar. Al no poder contar las reglas del catálogo remoto, tampoco se
@@ -121,10 +124,10 @@ Los {{ triage | length }} hallazgos que primero merecen revisión humana, ordena
 gravedad y, a igual gravedad, priorizando lo nuevo respecto a la línea base.
 
 {% for f in triage %}
-### {{ loop.index }}. `{{ f.rule }}` — {{ f.sev }}{% if f.new %} · nuevo{% endif %}
+### {{ loop.index }}. `{{ f.rule | inline_untrusted }}` — {{ f.sev }}{% if f.new %} · nuevo{% endif %}
 
-- **Fichero:** `{{ f.file }}`{% if f.line %} (línea {{ f.line }}){% endif %}
-- **Motor:** {{ f.tool }}
+- **Fichero:** `{{ f.file | inline_untrusted }}`{% if f.line %} (línea {{ f.line }}){% endif %}
+- **Motor:** {{ f.tool | inline_untrusted }}
 - **Medidas:** {% if f.counts %}{{ f.measures | join(', ') }}{% elif not f.security %}ninguna (no marcado como seguridad){% else %}ninguna (sin correspondencia){% endif %}
 - **Identificador:** `{{ f.id }}`
 
@@ -150,7 +153,7 @@ tienen correspondencia asignada. Los demás figuran en los apéndices.
 | Gravedad | Regla | Fichero | Nuevo | Id |
 |---|---|---|---|---|
 {% for f in by_measure[measure] %}
-| {{ f.sev }} | `{{ f.rule }}` | `{{ f.file }}` | {% if f.new %}sí{% else %}no{% endif %} | `{{ f.id }}` |
+| {{ f.sev }} | `{{ f.rule | inline_untrusted }}` | `{{ f.file | inline_untrusted }}` | {% if f.new %}sí{% else %}no{% endif %} | `{{ f.id }}` |
 {% endfor %}
 {% else %}
 **Sin evidencia recogida en este análisis.** Esto no significa que la medida se cumpla:
@@ -165,7 +168,7 @@ tabla de cobertura para saber si se ejecutaron reglas capaces de detectarlos.
 | Gravedad | Motor | Regla | Fichero | Medidas | Id |
 |---|---|---|---|---|---|
 {% for f in findings %}
-| {{ f.sev }} | {{ f.tool }} | `{{ f.rule }}` | `{{ f.file }}` | {% if f.counts %}{{ f.measures | join(', ') }}{% else %}—{% endif %} | `{{ f.id }}` |
+| {{ f.sev }} | {{ f.tool | inline_untrusted }} | `{{ f.rule | inline_untrusted }}` | `{{ f.file | inline_untrusted }}` | {% if f.counts %}{{ f.measures | join(', ') }}{% else %}—{% endif %} | `{{ f.id }}` |
 {% endfor %}
 {% else %}
 Ninguno.
@@ -179,7 +182,7 @@ Ninguno.
 | Gravedad | Motor | Regla | Fichero | Id |
 |---|---|---|---|---|
 {% for f in unmapped %}
-| {{ f.sev }} | {{ f.tool }} | `{{ f.rule }}` | `{{ f.file }}` | `{{ f.id }}` |
+| {{ f.sev }} | {{ f.tool | inline_untrusted }} | `{{ f.rule | inline_untrusted }}` | `{{ f.file | inline_untrusted }}` | `{{ f.id }}` |
 {% endfor %}
 {% else %}
 Ninguno: todas las reglas que dispararon tienen correspondencia asignada.
@@ -195,7 +198,7 @@ de buena práctica no debe inflar el recuento de una medida del ENS.
 | Motor | Regla | Fichero | Id |
 |---|---|---|---|
 {% for f in non_security %}
-| {{ f.tool }} | `{{ f.rule }}` | `{{ f.file }}` | `{{ f.id }}` |
+| {{ f.tool | inline_untrusted }} | `{{ f.rule | inline_untrusted }}` | `{{ f.file | inline_untrusted }}` | `{{ f.id }}` |
 {% endfor %}
 {% else %}
 Ninguno.
