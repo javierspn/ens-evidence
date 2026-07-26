@@ -1,13 +1,13 @@
 ---
 name: ens-evidence
-description: Generate Spanish ENS (RD 311/2022) evidence for a repository — runs Semgrep and Trivy, files each finding under an ENS measure, renders an auditor-facing evidence report plus a paste-anywhere bundle. Use when asked for ENS evidence, an ENS compliance report, an SBOM for ENS, or to explain which measure a finding maps to. Not a compliance verdict.
+description: Generate Spanish ENS (RD 311/2022) evidence for a repository — runs Semgrep and Trivy, files each finding under an ENS measure, renders an auditor-facing evidence report. Use when asked for ENS evidence, an ENS compliance report, an SBOM for ENS, or to explain which measure a finding maps to. Not a compliance verdict.
 ---
 
 # ens-evidence
 
-> **Status: not implemented yet.** This file ships with the package and is seeded from
-> DESIGN.md's CLI contract; the commands below do not exist until spec
-> `001-core-pipeline` lands. Do not invoke it before then.
+> **Status: `scan`, `baseline update`, `report` and `explain` ship** (specs
+> `001-core-pipeline` and `002-mapping-and-report`); `ens-evidence` installs as a console
+> command. `bundle` does not exist yet — it lands with spec `003-bundle-and-ci`.
 
 Runs open-source scanners over a repository, maps findings to six ENS measures, and writes
 an evidence report in Spanish. Everything runs locally — no server, no upload.
@@ -21,30 +21,32 @@ an evidence report in Spanish. Everything runs locally — no server, no upload.
 Do **not** present its output as proof of compliance. It is evidence of what was tested,
 when, and what was found.
 
-## The five verbs
+## The verbs
 
 ```bash
-ens-evidence scan [PATH]        # engines → normalise → baseline → map → report
-ens-evidence baseline update    # accept current findings (never implicit in scan)
-ens-evidence bundle             # emit paste-anywhere bundle.md
-ens-evidence report             # re-render from the last scan's JSONL, no re-scan
+ens-evidence scan [PATH]        # engines → normalise → baseline → store run
+ens-evidence baseline update    # accept the latest run's findings (never implicit in scan)
+ens-evidence report [PATH]      # render the report from a stored run, no re-scan
 ens-evidence explain <id>       # one finding: matching regex, measures, and why
+ens-evidence bundle             # NOT IMPLEMENTED — spec 003. Do not invoke
 ```
 
 ## Rules bootstrap (once per environment)
 
 Semgrep's rules are licensed so that the **operator** holds their own copy — the tool never
-ships them. Registry mode works out of the box but is thin for some languages and not
-reproducible; pinned mode is the CI-grade option:
+ships them and never fetches them. With no rules root configured, scan runs Semgrep's
+registry (`p/default`): works out of the box, but thin for some languages and not
+reproducible — the run records it as such and rule counts are unknowable. Pinned mode is the
+CI-grade option: clone the rules yourself, then point the tool at them.
 
 ```bash
-ens-evidence rules fetch --sha <commit> --accept-rules-license   # clones into .ens-rules/
-ens-evidence rules status                                        # mode, SHA, rules per language
+git clone https://github.com/semgrep/semgrep-rules .ens-rules && git -C .ens-rules checkout <sha>
+ens-evidence scan . --rules-root .ens-rules      # also ENS_EVIDENCE_RULES_ROOT or .ens-evidence.yml
 ```
 
-Without the acknowledgement flag (or `ENS_EVIDENCE_ACCEPT_RULES_LICENSE=1`) the command prints
-the licence terms and exits 2 without fetching. Never commit `.ens-rules/`, never copy it into
-an image or a published artifact, never edit the rule files.
+The run's `run.json` records the mode, the rules repo, its SHA and rules per language. Never
+commit `.ens-rules/`, never copy it into an image or a published artifact, never edit the rule
+files.
 
 ## Exit codes
 
@@ -69,9 +71,13 @@ rules mode for those languages.
 ```bash
 $ ens-evidence scan . --fail-on high
 $ ls out/latest/
-findings.jsonl  report.md  report.pdf  sbom.cdx.json  run.json
+findings.jsonl  sbom.cdx.json  run.json
+$ ens-evidence report . --format pdf --pdf-engine weasyprint   # writes report.md + report.pdf
 $ ens-evidence explain a3f9
 ```
+
+`report` renders the document; `scan` does not. `--format pdf` needs pandoc plus a PDF engine —
+name it with `--pdf-engine`, because `auto` degrades to Markdown and says so in the document.
 
 Machine output (JSON) goes to stdout, human chatter to stderr; every machine document
 starts `{"schema": "ens-evidence/1"}`. Config resolves flags → `ENS_EVIDENCE_*` env vars →

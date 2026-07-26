@@ -86,8 +86,8 @@ spanning Python, JS/TS, Java, Go, Ruby, PHP, Scala, Terraform, Kubernetes, Docke
 **C, C++, Swift, Kotlin and Elixir are not analysed in registry mode** — Semgrep's free
 registry ships ~2 rules each, so a clean report there means no rules ran (constitution 1.2.0
 requires the report to say so). Running the public `semgrep-rules` directories locally closes
-most of that gap (C: 0 → 12 findings), via `ens-evidence rules fetch --sha <commit>
---accept-rules-license`.
+most of that gap (C: 0 → 12 findings), via a self-cloned pinned checkout passed as
+`--rules-root`.
 
 **Licence rules you must not break** (Semgrep Rules License v1.0 — no redistribution, no
 offering as a service, licensee's own internal use only; full reasoning in DESIGN.md

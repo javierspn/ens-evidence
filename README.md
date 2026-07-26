@@ -29,21 +29,23 @@ subida de datos, no hay cuenta.
 
 ## Uso
 
-<!-- TODO(001-core-pipeline): comandos reales cuando el CLI exista. Contrato en DESIGN.md. -->
-
 ```
-ens-evidence scan [PATH]        # escaneo → normalización → baseline → mapeo → informe
-ens-evidence baseline update    # acepta los hallazgos actuales
-ens-evidence bundle             # genera bundle.md
-ens-evidence report             # re-renderiza sin re-escanear
+ens-evidence scan [PATH]        # escaneo → normalización → baseline → run almacenado
+ens-evidence baseline update    # acepta los hallazgos del último run
+ens-evidence report [PATH]      # renderiza el informe desde un run, sin re-escanear
 ens-evidence explain <id>       # un hallazgo: qué regla lo detectó y a qué medidas mapea
 ```
 
-Arranque de reglas (una vez por entorno):
+`bundle` aún no existe: llega con la spec `003-bundle-and-ci`.
+
+Arranque de reglas (una vez por entorno). Sin `--rules-root`, `scan` usa el registro de
+Semgrep (`p/default`): funciona sin configuración, pero no es reproducible y es escaso en
+algunos lenguajes. Modo fijado, el apto para CI:
 
 ```
-ens-evidence rules fetch --sha <commit> --accept-rules-license
-ens-evidence rules status
+git clone https://github.com/semgrep/semgrep-rules .ens-rules
+git -C .ens-rules checkout <commit>
+ens-evidence scan . --rules-root .ens-rules   # o ENS_EVIDENCE_RULES_ROOT / .ens-evidence.yml
 ```
 
 Las reglas de Semgrep las obtiene **tu** entorno, no las distribuye esta herramienta: su
@@ -79,9 +81,9 @@ roughly 75 ENS measures. Static analysis cannot see business logic, authn/authz 
 runtime configuration, and the report says so.
 
 Rules are fetched by your environment, never shipped by us: the Semgrep Rules License v1.0
-forbids redistribution while permitting the licensee's own internal use, so
-`ens-evidence rules fetch --sha <commit> --accept-rules-license` puts a pinned copy in your CI
-and nothing rule-shaped ever enters our image, package or release assets.
+forbids redistribution while permitting the licensee's own internal use, so you clone
+`semgrep-rules` at a pinned SHA into your own CI and pass `--rules-root` — nothing
+rule-shaped ever enters our image, package or release assets.
 
 Everything runs inside your CI: no server, no upload, no account. Engines (Semgrep, Trivy)
 are subprocess calls to binaries you pin yourself. See [DESIGN.md](DESIGN.md) for the
