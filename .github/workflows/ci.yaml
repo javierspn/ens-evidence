@@ -18,7 +18,12 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install dependencies
-        run: pip install -r requirements-dev.txt
+        run: |
+          pip install -r requirements-dev.txt
+          pip install -e .
+      - name: Verify the installed CLI works
+        run: ens-evidence --help
+
       - name: Run tests
         # 'engines' tests need real semgrep/trivy binaries; this job gates the
         # data files and the pure-python pipeline, engine-free.

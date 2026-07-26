@@ -7,7 +7,7 @@
 ## Summary
 
 Consume spec 001's stored run (`findings.jsonl` + `run.json`), file each finding under
-ENS measures via the existing `mapping/ens_rd311.yml` (first-match-wins over
+ENS measures via the existing `src/ens_evidence/mapping/ens_rd311.yml` (first-match-wins over
 `<tool>:<rule-id>`), and render a Spanish evidence report — scope list verbatim in the
 header, coverage table from the run record, top-10 triage first, full table and unmapped
 appendix after. Plus `explain <id>` for one finding's classification and `report` for
@@ -50,7 +50,7 @@ output in our own wording only
 | II. Evidence, not verdict | ✅ | per-measure sections state evidence or its absence; a forbidden-phrase test scans the rendered text (SC-003) |
 | III. One scope list | ✅ | scope list literal in the template → `SCOPE_DOCS` gains its fourth entry; a second test asserts the *rendered* report carries it too |
 | IV. Say what it can't see | ✅ | coverage table + disclaimer + staleness disclosures rendered from `run.json` (FR-005, FR-007) |
-| V. Never bulk-copy BOE/CCN-STIC | ✅ | `mapping/measures_es.yml` holds **our own** Spanish wording — verified against Anexo II, never copied from it |
+| V. Never bulk-copy BOE/CCN-STIC | ✅ | `src/ens_evidence/mapping/measures_es.yml` holds **our own** Spanish wording — verified against Anexo II, never copied from it |
 | VI. Keep it small | ✅ | completes the five finding-path verbs (`report`, `explain` added); no new abstraction — mapper is a table lookup, renderer is a template binding |
 | Mapping/severity are data | ✅ | mapper holds zero mapping knowledge; measure titles are a data file too |
 | No LLM | ✅ | none |
@@ -113,6 +113,6 @@ DESIGN.md's layout does not name:
 
 | Decision | Why needed | Simpler alternative rejected because |
 |---|---|---|
-| `mapping/measures_es.yml` | The report must label each measure in Spanish. Principle V forbids copying BOE text, so the wording must be ours — versioned, diffable, reviewable | Rendering bare ids (`mp.sw.1`): an auditor-facing document listing only codes is poor evidence. Hardcoding titles in the template makes "our own wording" unreviewable and undiffable |
+| `src/ens_evidence/mapping/measures_es.yml` | The report must label each measure in Spanish. Principle V forbids copying BOE text, so the wording must be ours — versioned, diffable, reviewable | Rendering bare ids (`mp.sw.1`): an auditor-facing document listing only codes is poor evidence. Hardcoding titles in the template makes "our own wording" unreviewable and undiffable |
 | PDF via external binary | Keeps the dependency tree at PyYAML + Jinja2 and reuses the subprocess seam the constitution already blesses | A Python PDF library (weasyprint/reportlab) — a framework-sized dependency the constitution's stack line excludes |
 | `tests/fixtures/run/` | Rendering tests must run in CI with no engines installed and no scan; a committed stored run is the only engine-free input | Re-scanning inside the test — reintroduces the engine dependency the 001 CI gate deliberately removed |

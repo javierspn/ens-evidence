@@ -13,11 +13,11 @@ from pathlib import Path
 
 import pytest
 
-from src import mapper, render
+from ens_evidence import MAPPING_DIR, TEMPLATE_DIR, mapper, render
 
 ROOT = Path(__file__).resolve().parent.parent
 RUN = ROOT / "tests" / "fixtures" / "run"
-TEMPLATES = ROOT / "templates"
+TEMPLATES = TEMPLATE_DIR
 SCOPE = ["mp.sw.1", "mp.sw.2", "mp.s.2", "op.exp.2", "op.exp.3", "op.exp.4"]
 SCOPE_LINE = " · ".join(f"`{m}`" for m in SCOPE)
 
@@ -33,8 +33,8 @@ def build(record=None, findings=None):
     return render.build_model(
         findings if findings is not None else loaded_findings,
         record if record is not None else loaded_record,
-        mapper.load_rules(ROOT / "mapping" / "ens_rd311.yml"),
-        render.load_measures(ROOT / "mapping" / "measures_es.yml"),
+        mapper.load_rules(MAPPING_DIR / "ens_rd311.yml"),
+        render.load_measures(MAPPING_DIR / "measures_es.yml"),
         SCOPE,
     )
 

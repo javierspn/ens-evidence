@@ -28,8 +28,8 @@ from pathlib import Path
 import jinja2
 import yaml
 
-from src import mapper
-from src.normalise import CANONICAL
+from ens_evidence import mapper
+from ens_evidence.normalise import CANONICAL
 
 SNIPPET_MAX_CHARS = 200
 TRUNCATION_MARK = "…[truncado]"

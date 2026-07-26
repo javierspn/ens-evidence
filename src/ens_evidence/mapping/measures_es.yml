@@ -15,7 +15,7 @@
 # verificación (constitución, puerta previa a publicación).
 #
 # El alcance canónico (las seis medidas) vive en la constitución, el README y
-# mapping/ens_rd311.yml. Este fichero NO lo redefine: si aparece aquí una medida que no
+# ens_rd311.yml (junto a este fichero). Este fichero NO lo redefine: si aparece aquí una medida que no
 # esté en el alcance, o falta una que sí lo esté, es un bloqueo de publicación.
 
 version: 1

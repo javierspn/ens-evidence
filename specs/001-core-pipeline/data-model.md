@@ -10,8 +10,8 @@ contracts in [contracts/artifacts.md](contracts/artifacts.md).
 | `id` | str | fingerprint prefix — unique within a run |
 | `tool` | `semgrep` \| `trivy` | surviving representative after dedupe |
 | `rule` | str | **canonical** rule id (R3) — never a path-derived local id |
-| `class` | str | defect class from `mapping/defect_classes.yml`, else `tool:rule` self-class (R4) |
-| `sev` | `critical`\|`high`\|`medium`\|`low`\|`info` | via `mapping/severity.yml`; uncovered input severity → the file's declared `default`, hard error only if none declared (FR-006) |
+| `class` | str | defect class from `src/ens_evidence/mapping/defect_classes.yml`, else `tool:rule` self-class (R4) |
+| `sev` | `critical`\|`high`\|`medium`\|`low`\|`info` | via `src/ens_evidence/mapping/severity.yml`; uncovered input severity → the file's declared `default`, hard error only if none declared (FR-006) |
 | `security` | bool | engine `security` tag verbatim (FR-004); `false` ⇒ excluded from measure counts downstream |
 | `file` | str | repo-relative POSIX path (R4) — never absolute, never `%SRCROOT%`/`ROOTPATH` |
 | `line` | int | display only — MUST NOT feed fingerprint or dedupe |
@@ -60,7 +60,7 @@ State transitions: written **only** by `baseline update` (FR-009); `scan` reads.
 fingerprint's lifecycle: new → (operator review) → accepted (in baseline) → stale
 (no longer found; kept until next `baseline update` prunes it).
 
-## Defect classes (`mapping/defect_classes.yml`)
+## Defect classes (`src/ens_evidence/mapping/defect_classes.yml`)
 
 | Field | Content |
 |---|---|

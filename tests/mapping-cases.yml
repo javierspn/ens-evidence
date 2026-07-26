@@ -1,5 +1,5 @@
 # Mapping contract: "<tool>:<rule-id>" -> expected measures. Data-driven test input for
-# mapper.py (spec 002). Editing mapping/ens_rd311.yml without updating this file should
+# mapper.py (spec 002). Editing src/ens_evidence/mapping/ens_rd311.yml without updating this file should
 # turn the test suite red — that is the point.
 #
 # `observed: true` means the rule id was seen firing in a real scan

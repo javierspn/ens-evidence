@@ -10,15 +10,15 @@ it rather than restating it. The non-negotiables live in
 
 - **Never edit `out/`.** The run store is immutable and append-only — the sequence of
   reports over time IS the evidence trail.
-- **Mapping and severity are data, not code.** `mapping/ens_rd311.yml` and
-  `mapping/severity.yml` are the extension seam. A new framework is a new data file, never
+- **Mapping and severity are data, not code.** `src/ens_evidence/mapping/ens_rd311.yml` and
+  `src/ens_evidence/mapping/severity.yml` are the extension seam. A new framework is a new data file, never
   a rewrite of `mapper.py`.
 - **Determinism is testable — test it.** `--force` must re-run and produce byte-identical
   JSONL. Anything with variable output must not be load-bearing.
 - **The report is evidence, never a verdict.** No wording anywhere may state that a repo
   complies with the ENS.
 - **The scope list is six measures**, verbatim in the constitution, README,
-  `mapping/ens_rd311.yml` and the report header. Changing it means changing all four in
+  `src/ens_evidence/mapping/ens_rd311.yml` and the report header. Changing it means changing all four in
   one commit.
 - **Never bulk-copy CCN-STIC or BOE text.** Measure IDs and our own wording only.
 - **Scanned code is untrusted input.** Snippets and scanner messages flow into reports and
@@ -65,8 +65,8 @@ or letting Spec Kit's own artefacts carry the check.
 
 ## Layout
 
-`src/run.py` orchestration + CLI · `src/normalise.py` SARIF → JSONL, dedupe, severity,
-fingerprints · `src/mapper.py` table lookup · `src/render.py` report + bundle ·
+`src/ens_evidence/run.py` orchestration + CLI · `src/ens_evidence/normalise.py` SARIF → JSONL, dedupe, severity,
+fingerprints · `src/ens_evidence/mapper.py` table lookup · `src/ens_evidence/render.py` report + bundle ·
 `templates/` Jinja2 · `mapping/` the data assets · `specs/` Spec Kit features ·
 `tests/fixtures/` deliberately broken and injection-laden fixture repos.
 
@@ -80,7 +80,7 @@ Spec Kit is initialised (`/speckit-specify`, `/speckit-plan`, `/speckit-tasks`,
 `/speckit-implement`; note the dash, not the dot DESIGN.md uses) and the constitution is
 ratified at 1.3.0.
 
-`mapping/ens_rd311.yml` and `mapping/severity.yml` are authored from real scans of twenty-one
+`src/ens_evidence/mapping/ens_rd311.yml` and `src/ens_evidence/mapping/severity.yml` are authored from real scans of twenty-one
 repositories — 1794 findings, 840 rule ids, 0 unmapped: five private and sixteen public,
 spanning Python, JS/TS, Java, Go, Ruby, PHP, Scala, Terraform, Kubernetes, Docker and Android.
 **C, C++, Swift, Kotlin and Elixir are not analysed in registry mode** — Semgrep's free

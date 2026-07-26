@@ -11,12 +11,12 @@ from pathlib import Path
 
 import pytest
 
-from src import normalise
+from ens_evidence import MAPPING_DIR, normalise
 
 ROOT = Path(__file__).resolve().parent.parent
 SARIF = ROOT / "tests" / "fixtures" / "sarif"
-SEVERITY = ROOT / "mapping" / "severity.yml"
-CLASSES = ROOT / "mapping" / "defect_classes.yml"
+SEVERITY = MAPPING_DIR / "severity.yml"
+CLASSES = MAPPING_DIR / "defect_classes.yml"
 
 
 def run_normalise(paths=None, baseline=frozenset()):

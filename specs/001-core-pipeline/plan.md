@@ -53,7 +53,7 @@ irrelevant at corpus scale (179 findings / 28 rule ids)
 | Rules never distributed | ✅ | `scan` only consumes an existing rules root; `rules fetch` out of scope here |
 | Drift pinned/recorded | ✅ | `run.json` records engine versions, Trivy DB + checks-bundle versions, rules mode+SHA, mapping hash, baseline hash, config hash |
 | Hermetic or fiction | ✅ | `trivy --offline-scan`, `--skip-db-update` after explicit cache prime; Semgrep local rules root; any finding-path network use is a defect |
-| Mapping/severity are data | ✅ | severity via `mapping/severity.yml`; dedupe equivalence via `mapping/defect_classes.yml` (new data file, same pattern) |
+| Mapping/severity are data | ✅ | severity via `src/ens_evidence/mapping/severity.yml`; dedupe equivalence via `src/ens_evidence/mapping/defect_classes.yml` (new data file, same pattern) |
 | No LLM | ✅ | none |
 | Fingerprints never file+line | ✅ | hash(canonical rule id + normalised snippet + occurrence ordinal) — see research.md R5 |
 | Run store immutable | ✅ | new dir per run, `latest` symlink swap is the only mutation; partial reuse forbidden by design (skip is all-or-nothing) |
@@ -107,7 +107,7 @@ models/services split would violate Principle VI for a two-module change.
 
 No violations — table intentionally empty.
 
-One judgement call recorded: `mapping/defect_classes.yml` is a new data file not named in
+One judgement call recorded: `src/ens_evidence/mapping/defect_classes.yml` is a new data file not named in
 DESIGN.md's layout. It is the (path, defect class) dedupe key's data half; encoding
 cross-engine equivalences in code would violate "mapping … are data files, not code".
 Unlisted rule ids self-class (class = canonical rule id), so the file only ever *merges*

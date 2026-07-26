@@ -11,10 +11,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from src import mapper
+from ens_evidence import MAPPING_DIR, mapper
 
 ROOT = Path(__file__).resolve().parent.parent
-MAPPING = ROOT / "mapping" / "ens_rd311.yml"
+MAPPING = MAPPING_DIR / "ens_rd311.yml"
 CASES = ROOT / "tests" / "mapping-cases.yml"
 
 

@@ -1,0 +1,2 @@
+[console_scripts]
+ens-evidence = ens_evidence.run:main

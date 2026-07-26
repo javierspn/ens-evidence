@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from src import run
+from ens_evidence import run
 from tests.test_cli import fake_engines, make_repo, scan
 
 

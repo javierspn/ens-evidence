@@ -33,10 +33,8 @@ from pathlib import Path
 
 import yaml
 
-from src import mapper, normalise, render
-from src.normalise import CANONICAL, SCHEMA, dumps_line
-
-MAPPING_DIR = Path(__file__).resolve().parent.parent / "mapping"
+from ens_evidence import MAPPING_DIR, TEMPLATE_DIR, mapper, normalise, render
+from ens_evidence.normalise import CANONICAL, SCHEMA, dumps_line
 
 CONFIG_DEFAULTS = {
     "fail_on": None,
@@ -489,7 +487,6 @@ def cmd_baseline_update(args):
 
 # --- report / explain (spec 002) ---------------------------------------------
 
-TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "templates"
 PDF_CONVERTER = "pandoc"
 
 # The canonical scope list lives in the constitution, the README, the mapping file and

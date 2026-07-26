@@ -21,8 +21,8 @@ All six codes verified against the BOE consolidated text of RD 311/2022 Anexo II
 Four stations:
 
 1. **Look** — scanners find problems. v1: **Semgrep** (SAST) + **Trivy** (SCA + SBOM + misconfiguration + **secrets**, i.e. `--scanners vuln,misconfig,secret`). Secrets joined v1 after the baseline scan showed Trivy already detects them at no extra dependency cost, producing the highest-severity finding in the corpus; gitleaks stays a v2 *second* secret engine. v2, same seam: gitleaks, Checkov. Engines are **subprocess calls to binaries**, never Python imports: user pins versions in their CI image, dependency tree stays tiny, engines stay swappable. Missing binary → exit 2 with a message naming it.
-2. **Tidy** — merge the engines' SARIF, flatten to JSONL (one finding per line), dedupe cross-tool, normalise severity via `mapping/severity.yml`, canonicalise rule ids, split security findings from non-security ones on the engines' own `security` tag, compute stable fingerprints. *This is most of the real work.*
-3. **Sort** — `mapping/ens_rd311.yml`: regex on `tool:rule-id` → list of measures. Deterministic. Unmatched findings go to an `unmapped` appendix for human review.
+2. **Tidy** — merge the engines' SARIF, flatten to JSONL (one finding per line), dedupe cross-tool, normalise severity via `src/ens_evidence/mapping/severity.yml`, canonicalise rule ids, split security findings from non-security ones on the engines' own `security` tag, compute stable fingerprints. *This is most of the real work.*
+3. **Sort** — `src/ens_evidence/mapping/ens_rd311.yml`: regex on `tool:rule-id` → list of measures. Deterministic. Unmatched findings go to an `unmapped` appendix for human review.
 4. **Write** — Jinja2. Evidence report (Markdown → PDF, Spanish, top-10 triage first, full table in appendix) + `bundle.md`. The SBOM (CycloneDX) comes directly from Trivy and bypasses the mapper.
 
 ```json
@@ -198,7 +198,7 @@ what can be pinned, record what cannot, update deliberately, and never let stale
 | Trivy misconfig checks bundle | fetched/cached separately from the binary | same as DB | bundle version from cache | automatic; recorded |
 | Semgrep rules (pinned mode) | rules added/fixed upstream | pinned by `--sha` | repo URL + SHA + per-language counts | deliberate SHA bump — see loop below |
 | Semgrep rules (registry mode) | versionless | allowed, flagged non-reproducible | mode + config names | n/a; coverage table says so |
-| `mapping/ens_rd311.yml` + `severity.yml` | new rule ids appear as rules evolve | ships with the tool, versioned | mapping version + content hash | tool release; unmapped appendix is the drift detector |
+| `src/ens_evidence/mapping/ens_rd311.yml` + `severity.yml` | new rule ids appear as rules evolve | ships with the tool, versioned | mapping version + content hash | tool release; unmapped appendix is the drift detector |
 | ENS legal text (RD 311/2022) | BOE amendments | measure list verified 2026-07-25 | verification date in report header | re-verify on any BOE consolidation; scope change = principle III four-file commit |
 
 **The rules-bump loop** (how "update its core info" actually happens without breaking evidence):
@@ -253,15 +253,17 @@ ens-evidence/
 │   ├── 002-mapping-and-report/
 │   ├── 003-bundle-and-ci/
 │   └── 004-v2-engines/              # stays empty until v2 is earned
-├── mapping/
-│   ├── ens_rd311.yml                # THE asset
-│   └── severity.yml                 # tool scale → canonical scale
-├── src/
+├── src/ens_evidence/                # the installable package (src-layout)
 │   ├── run.py                       # orchestration + CLI
 │   ├── normalise.py                 # SARIF → JSONL, dedupe, severity, fingerprints
 │   ├── mapper.py                    # table lookup
-│   └── render.py                    # report + bundle
-├── templates/                       # Jinja2
+│   ├── render.py                    # report + bundle
+│   ├── mapping/
+│   │   ├── ens_rd311.yml            # THE asset
+│   │   ├── severity.yml             # tool scale → canonical scale
+│   │   ├── defect_classes.yml       # cross-engine dedupe equivalences
+│   │   └── measures_es.yml          # our own Spanish wording per measure
+│   └── templates/                   # Jinja2
 ├── tests/fixtures/
 │   ├── vulnerable-app/              # deliberately broken repo
 │   └── injection-app/               # comments contain prompt-injection attempts
@@ -270,6 +272,16 @@ ens-evidence/
 ```
 
 Stack: Python 3.12, stdlib + PyYAML + Jinja2. No framework.
+
+**Why the package layout looks like this.** The tool ships as `ens-evidence`, an
+installable console command, so the code lives under `src/ens_evidence/` (src-layout:
+an installed copy is imported, never the working directory — which for a tool whose
+first principle is determinism is the difference between testing what you ship and
+testing what you happen to have lying around). The mapping tables and the report
+template moved inside the package for a blunter reason: the tool cannot map a finding
+or render a report without them, so an installed copy has to carry them. They are still
+plain YAML and Jinja under version control, so "mapping and severity are data files,
+not code" is unaffected — only their address changed.
 
 **Feature specs and their acceptance tests:**
 

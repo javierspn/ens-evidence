@@ -39,7 +39,7 @@ extensibility. Feature additions need a validated reason, not restlessness.
 
 ## Scope — canonical measure list
 
-Principle III binds this list to the README, `mapping/ens_rd311.yml` and the report header.
+Principle III binds this list to the README, `src/ens_evidence/mapping/ens_rd311.yml` and the report header.
 Divergence between the four is a release blocker.
 
 > `mp.sw.1` · `mp.sw.2` · `mp.s.2` · `op.exp.2` · `op.exp.3` · `op.exp.4`
@@ -114,7 +114,7 @@ or that would let the tool assert compliance does not get built.
 
 Amendments: edit the Rules section of DESIGN.md and this file in the same commit, state what
 changed and why, and bump the version below. Principle III means a scope-list change also
-touches the README, `mapping/ens_rd311.yml` and the report header in that same commit.
+touches the README, `src/ens_evidence/mapping/ens_rd311.yml` and the report header in that same commit.
 Runtime guidance for agents working on the repo lives in [AGENTS.md](../../AGENTS.md).
 
 **Version**: 1.4.0 | **Ratified**: 2026-07-25 | **Last Amended**: 2026-07-25

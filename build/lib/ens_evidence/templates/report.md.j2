@@ -1,0 +1,209 @@
+{# Informe de evidencias ENS. Estructura fijada por contrato:
+   specs/002-mapping-and-report/contracts/report.md — el orden de las secciones se
+   comprueba en tests/test_render.py.
+
+   PRINCIPIO III: la lista de alcance aparece abajo LITERAL. Es el cuarto sitio que la
+   lleva, junto a la constitución, el README y mapping/ens_rd311.yml; omitirla o
+   parafrasearla bloquea la publicación (tests/test_mapping_contract.py::SCOPE_DOCS).
+
+   PRINCIPIO II: este documento describe lo analizado y lo encontrado. NUNCA afirma
+   cumplimiento. Una medida sin hallazgos se declara sin evidencia recogida — el silencio
+   no es un aprobado.
+
+   Todo texto procedente del repositorio analizado pasa por el filtro `fence`. No añadas
+   un campo que lo imprima sin él. #}
+# Informe de evidencias — Esquema Nacional de Seguridad
+
+**Alcance de este informe.** Se recogen evidencias para estas seis medidas del RD 311/2022
+(Anexo II):
+
+`mp.sw.1` · `mp.sw.2` · `mp.s.2` · `op.exp.2` · `op.exp.3` · `op.exp.4`
+
+El ENS contiene unas 75 medidas: este análisis cubre seis. Los títulos de las medidas son
+redacción propia, verificados contra el texto consolidado del BOE el {{ measures_verified }}.
+
+| Dato del análisis | Valor |
+|---|---|
+| Fecha | {{ record.run.date }} |
+| Repositorio analizado | `{{ target_name }}` |
+| Revisión | `{{ record.run.git_sha }}` |
+| Hallazgos | {{ totals.total }} |
+
+## Qué es y qué no es este informe
+
+Este documento **es** un registro de qué se analizó, cuándo, con qué versiones y qué se
+encontró. Sirve como evidencia ante un auditor.
+
+Este documento **no** es una declaración de conformidad, ni una auditoría, ni un
+certificado. No dice que la organización cumpla el ENS: eso solo puede determinarlo una
+auditoría, con alcance y método propios.
+
+El análisis estático **no puede observar**:
+
+- la lógica de negocio y si es correcta;
+- el diseño de autenticación y autorización;
+- la configuración real en tiempo de ejecución;
+- nada que ocurra fuera del repositorio analizado.
+
+Además, la cobertura por lenguaje es desigual: donde no se ejecutaron reglas, la ausencia
+de hallazgos significa que **no se buscó**, no que no haya defectos. La tabla siguiente
+dice exactamente qué se analizó.
+
+## Cobertura del análisis
+
+| Lenguajes detectados | Ficheros |
+|---|---|
+{% for lang, count in coverage.languages_detected | dictsort %}
+| {{ lang }} | {{ count }} |
+{% endfor %}
+
+**Reglas ejecutadas por lenguaje:**
+{% if coverage.rules_per_language == "registry-uncounted" %}
+No es posible contarlas. El análisis usó el catálogo remoto de reglas, que no está fijado
+a una versión: el conjunto de reglas puede cambiar entre ejecuciones sin que cambie
+ninguna entrada de este análisis. Este informe **no es reproducible** en ese sentido. Para
+que lo sea, fije las reglas a un commit concreto.
+{% else %}
+
+| Lenguaje | Reglas |
+|---|---|
+{% for lang, count in coverage.rules_per_language | dictsort %}
+| {{ lang }} | {{ count }} |
+{% endfor %}
+{% endif %}
+
+**Lenguajes detectados sin analizar:**
+{% if coverage.languages_not_analysed %}
+{% for lang in coverage.languages_not_analysed %}
+- `{{ lang }}` — se detectó código en este lenguaje y no se ejecutó ninguna regla sobre él.
+{% endfor %}
+{% elif coverage.rules_per_language == "registry-uncounted" %}
+No se puede determinar. Al no poder contar las reglas del catálogo remoto, tampoco se
+puede afirmar que se ejecutara alguna sobre cada lenguaje detectado. Para varios
+lenguajes el catálogo público apenas incluye reglas, de modo que la ausencia de hallazgos
+en ellos no debe leerse como ausencia de defectos. Fije las reglas a un commit concreto
+para obtener este dato.
+{% else %}
+Ninguno: se ejecutaron reglas sobre todos los lenguajes detectados.
+{% endif %}
+
+**Análisis de dependencias:**
+{% if coverage.dependency_analysis == "done" %}
+Realizado sobre las dependencias declaradas en el repositorio.
+{% else %}
+**No realizado**: no se encontró ningún fichero de bloqueo de dependencias. Las
+vulnerabilidades conocidas de las dependencias no se han buscado en este análisis.
+{% endif %}
+
+## Vigencia de las entradas
+
+Varias entradas de este análisis cambian con el tiempo. Se registran aquí para que se
+pueda juzgar su antigüedad; la herramienta las declara, no las valora.
+
+| Entrada | Valor en el momento del análisis |
+|---|---|
+| Motor SAST | Semgrep {{ record.engines.semgrep }} |
+| Motor SCA/configuración | Trivy {{ record.engines.trivy }} |
+| Base de datos de vulnerabilidades | versión {{ record.engines.trivy_db.version }}, actualizada {{ record.engines.trivy_db.updated_at }} |
+| Paquete de comprobaciones | `{{ record.engines.trivy_checks_bundle }}` |
+| Origen de las reglas | {{ record.rules.mode }}{% if record.rules.sha %} — commit `{{ record.rules.sha }}`{% else %} (sin fijar){% endif %} |
+| Correspondencias ENS | `{{ record.mapping.severity_sha256[:12] }}` (severidad), `{{ record.mapping.defect_classes_sha256[:12] }}` (clases) |
+| Verificación de las medidas contra el BOE | {{ measures_verified }} |
+{% if pdf_note %}
+
+> **Nota sobre el formato.** {{ pdf_note }}
+{% endif %}
+
+## Triage: por dónde empezar
+
+{% if triage %}
+Los {{ triage | length }} hallazgos que primero merecen revisión humana, ordenados por
+gravedad y, a igual gravedad, priorizando lo nuevo respecto a la línea base.
+
+{% for f in triage %}
+### {{ loop.index }}. `{{ f.rule }}` — {{ f.sev }}{% if f.new %} · nuevo{% endif %}
+
+- **Fichero:** `{{ f.file }}`{% if f.line %} (línea {{ f.line }}){% endif %}
+- **Motor:** {{ f.tool }}
+- **Medidas:** {% if f.counts %}{{ f.measures | join(', ') }}{% elif not f.security %}ninguna (no marcado como seguridad){% else %}ninguna (sin correspondencia){% endif %}
+- **Identificador:** `{{ f.id }}`
+
+{{ f.msg | fence }}
+
+{% endfor %}
+{% else %}
+No se han registrado hallazgos en este análisis. Esto refleja lo que se analizó y con qué
+reglas — véase la tabla de cobertura —, no una valoración de la seguridad del repositorio.
+{% endif %}
+
+## Evidencia por medida
+
+Solo cuentan para una medida los hallazgos que el motor marcó como de seguridad y que
+tienen correspondencia asignada. Los demás figuran en los apéndices.
+
+{% for measure in scope %}
+### {{ measure }} — {{ measures_meta[measure].title }}
+
+{{ measures_meta[measure].gloss }}
+
+{% if by_measure[measure] %}
+| Gravedad | Regla | Fichero | Nuevo | Id |
+|---|---|---|---|---|
+{% for f in by_measure[measure] %}
+| {{ f.sev }} | `{{ f.rule }}` | `{{ f.file }}` | {% if f.new %}sí{% else %}no{% endif %} | `{{ f.id }}` |
+{% endfor %}
+{% else %}
+**Sin evidencia recogida en este análisis.** Esto no significa que la medida se cumpla:
+significa que este análisis no ha producido hallazgos que le correspondan. Consulte la
+tabla de cobertura para saber si se ejecutaron reglas capaces de detectarlos.
+{% endif %}
+
+{% endfor %}
+## Tabla completa de hallazgos
+
+{% if findings %}
+| Gravedad | Motor | Regla | Fichero | Medidas | Id |
+|---|---|---|---|---|---|
+{% for f in findings %}
+| {{ f.sev }} | {{ f.tool }} | `{{ f.rule }}` | `{{ f.file }}` | {% if f.counts %}{{ f.measures | join(', ') }}{% else %}—{% endif %} | `{{ f.id }}` |
+{% endfor %}
+{% else %}
+Ninguno.
+{% endif %}
+
+## Apéndice: hallazgos sin correspondencia asignada
+
+{{ measures_meta['unmapped'].gloss }}
+
+{% if unmapped %}
+| Gravedad | Motor | Regla | Fichero | Id |
+|---|---|---|---|---|
+{% for f in unmapped %}
+| {{ f.sev }} | {{ f.tool }} | `{{ f.rule }}` | `{{ f.file }}` | `{{ f.id }}` |
+{% endfor %}
+{% else %}
+Ninguno: todas las reglas que dispararon tienen correspondencia asignada.
+{% endif %}
+
+## Apéndice: hallazgos no marcados como seguridad
+
+Los motores etiquetan cada regla. Los hallazgos de reglas **no** etiquetadas como de
+seguridad se registran, pero no cuentan como evidencia de ninguna medida: una sugerencia
+de buena práctica no debe inflar el recuento de una medida del ENS.
+
+{% if non_security %}
+| Motor | Regla | Fichero | Id |
+|---|---|---|---|
+{% for f in non_security %}
+| {{ f.tool }} | `{{ f.rule }}` | `{{ f.file }}` | `{{ f.id }}` |
+{% endfor %}
+{% else %}
+Ninguno.
+{% endif %}
+
+---
+
+Generado por ens-evidence. Recuento: {{ totals.total }} hallazgos —
+{{ totals.counted }} con correspondencia y marcados de seguridad,
+{{ totals.unmapped }} sin correspondencia,
+{{ totals.non_security }} no marcados como seguridad.

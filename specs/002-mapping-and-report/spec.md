@@ -10,7 +10,7 @@
 
 > The why lives in [DESIGN.md](../../DESIGN.md); the non-negotiables in
 > [constitution.md](../../.specify/memory/constitution.md). The mapping data file
-> (`mapping/ens_rd311.yml`) and its contract fixture (`tests/mapping-cases.yml`) already
+> (`src/ens_evidence/mapping/ens_rd311.yml`) and its contract fixture (`tests/mapping-cases.yml`) already
 > exist, authored 2026-07-25 from real scans — this spec covers the **semantics** that
 > consume them, never a rewrite of the table. Input is spec 001's output; the six-measure
 > scope list is deliberately not restated here (Principle III).

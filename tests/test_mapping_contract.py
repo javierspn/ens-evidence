@@ -15,6 +15,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from ens_evidence import MAPPING_DIR
+
 ROOT = Path(__file__).resolve().parent.parent
 
 # Principle III: this list is the contract. Changing it is a four-file commit.
@@ -30,18 +32,18 @@ SCOPE_DOCS = {
     # literally, exactly as the other three do. That a template CONTAINS it does not
     # prove the rendered report EMITS it, so tests/test_render.py asserts the rendered
     # side separately — both are required.
-    "templates/report.md.j2": 1,
+    "src/ens_evidence/templates/report.md.j2": 1,
 }
 
 
 @pytest.fixture(scope="module")
 def mapping():
-    return yaml.safe_load((ROOT / "mapping" / "ens_rd311.yml").read_text())
+    return yaml.safe_load((MAPPING_DIR / "ens_rd311.yml").read_text())
 
 
 @pytest.fixture(scope="module")
 def severity():
-    return yaml.safe_load((ROOT / "mapping" / "severity.yml").read_text())
+    return yaml.safe_load((MAPPING_DIR / "severity.yml").read_text())
 
 
 @pytest.fixture(scope="module")
@@ -83,7 +85,7 @@ def test_scope_list_is_verbatim_everywhere(doc, count):
 
 
 def test_mapping_header_carries_scope_list(mapping):
-    header = (ROOT / "mapping" / "ens_rd311.yml").read_text().split("version:")[0]
+    header = (MAPPING_DIR / "ens_rd311.yml").read_text().split("version:")[0]
     for measure in SCOPE:
         assert measure in header, f"{measure} missing from mapping header"
 

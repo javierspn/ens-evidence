@@ -23,7 +23,7 @@ probes, plus the 28 ids in the real fixture run), `search` and `fullmatch` retur
 identical results — 0 divergences. So the choice is currently unobservable in behaviour
 and is made to match the contract, not to change outcomes.
 
-**Deliberate inconsistency worth preserving**: `mapping/defect_classes.yml` (spec 001)
+**Deliberate inconsistency worth preserving**: `src/ens_evidence/mapping/defect_classes.yml` (spec 001)
 is matched with `fullmatch`, because its patterns are written as whole-key patterns.
 Harmonising the two would silently change one file's meaning. Each loader states its
 own semantics.
@@ -33,7 +33,7 @@ and re-verifying the whole table against the corpus for no behavioural gain.
 
 ## R2 — Measure titles: a new data file, in our own words
 
-**Decision**: `mapping/measures_es.yml` maps each in-scope measure id to a short Spanish
+**Decision**: `src/ens_evidence/mapping/measures_es.yml` maps each in-scope measure id to a short Spanish
 title and a one-line gloss, both **our own wording**. The report renders id + title;
 the file carries the BOE verification date in its header.
 
@@ -78,7 +78,7 @@ degrading silently (violates "never let staleness be silent"); auto-detecting an
 ## R4 — Binding the scope list to the template
 
 **Decision**: the template carries the canonical scope list as literal text, so
-`SCOPE_DOCS` in `tests/test_mapping_contract.py` gains `templates/report.md.j2` as its
+`SCOPE_DOCS` in `tests/test_mapping_contract.py` gains `src/ens_evidence/templates/report.md.j2` as its
 fourth entry with the same verbatim-count assertion. A **second**, separate test asserts
 the *rendered* report also contains the line — because a template can carry the text and
 still fail to emit it (inside a conditional block, or escaped).

@@ -30,7 +30,7 @@ presentation of it ([research.md R3](../research.md)). Field semantics:
 | Accounting | every finding appears exactly once across sections 6, 8 and 9 |
 | Fencing | every scanned-repo string is truncated (~200 chars) and inside an untrusted-input block |
 | Determinism | two renders of one stored run produce identical content |
-| Language | Spanish throughout; measure wording from `mapping/measures_es.yml`, never BOE text |
+| Language | Spanish throughout; measure wording from `src/ens_evidence/mapping/measures_es.yml`, never BOE text |
 
 ## Untrusted-input block
 

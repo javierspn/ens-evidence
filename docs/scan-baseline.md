@@ -4,8 +4,8 @@ Build-order step 2: *"Run Semgrep + Trivy on one real repo, count the findings �
 mapping table and spec 002's criteria are written from that output, never before it."*
 
 Done 2026-07-25 on **three** private repositories rather than one, because the first had no
-access-control findings at all. This file is the evidence behind `mapping/ens_rd311.yml` and
-`mapping/severity.yml`, and the record of where the design's assumptions met reality.
+access-control findings at all. This file is the evidence behind `src/ens_evidence/mapping/ens_rd311.yml` and
+`src/ens_evidence/mapping/severity.yml`, and the record of where the design's assumptions met reality.
 
 Engines: **Semgrep 1.171.0** `--config=p/default --sarif --metrics=off` ·
 **Trivy 0.72.0** `fs --scanners vuln,misconfig,secret --format sarif` plus a separate
@@ -21,7 +21,7 @@ private repos — see the trust-boundary rule); the inventory below is.
 | repo-c | GitOps Kubernetes manifests | 8 (2 rules) | 86 (15 rules) | 0 |
 
 **179 findings, 28 distinct `tool:rule` ids.** Every mapping rule in
-`mapping/ens_rd311.yml` was authored against this inventory.
+`src/ens_evidence/mapping/ens_rd311.yml` was authored against this inventory.
 
 ## Rule inventory
 
@@ -69,7 +69,7 @@ coming from the mapping layer — not on rule id, and not on message text. This 
 Every Trivy rule carries `properties."security-severity"` (2.0 / 5.5 / 8.0 / 9.5). **No
 Semgrep rule does**, and Semgrep results carry no `level` either — the only signal is the
 rule's `defaultConfiguration.level` plus a `"<X> CONFIDENCE"` string in `properties.tags`.
-Hence the two `strategy` values in `mapping/severity.yml`. Read severity from the rule
+Hence the two `strategy` values in `src/ens_evidence/mapping/severity.yml`. Read severity from the rule
 object, never the result.
 
 ### 3. Semgrep's fingerprint is unusable without an account
@@ -531,7 +531,7 @@ and land in the `unmapped` appendix — on a machine-specific string, so the run
 be reproducible across checkouts. `normalise.py` must strip the configured rules-root prefix
 and reduce every id to its canonical form (`c.lang.security.double-free`) before the mapper
 sees it. That is a spec-001 requirement, and it makes registry mode and local mode produce
-identical mapping keys — which is what lets the same `mapping/ens_rd311.yml` serve both.
+identical mapping keys — which is what lets the same `src/ens_evidence/mapping/ens_rd311.yml` serve both.
 
 Because normalisation yields canonical ids, the existing
 `(php|ruby|rust|csharp|kotlin|scala|swift|c|cpp|elixir)\.lang\..*` pattern already files these

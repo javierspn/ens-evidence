@@ -1,0 +1,28 @@
+# Cross-engine dedupe equivalences: regex on "tool:rule-id" -> defect class.
+# Data, not code (constitution: mapping and severity are data files).
+#
+# Dedupe keys on (normalised path, defect class) — NEVER rule id: the baseline scans
+# proved the engines flag one defect under unrelated ids (docs/scan-baseline.md,
+# "Cross-tool dedupe cannot key on rule identity"). Rules match first-to-last.
+#
+# A rule id matching NO entry self-classes as its canonical "tool:rule-id", so this
+# file only ever MERGES known duplicates; absence of an entry is always safe.
+#
+# Patterns end in .* on the semgrep side because registry ids repeat the rule name as
+# a trailing segment (dockerfile.security.missing-user.missing-user) while pinned
+# local runs canonicalise to the plain form.
+
+version: 1
+
+classes:
+  # Container image runs as root: 6/6 identical files in the baseline corpus.
+  - match: "semgrep:dockerfile\\.security\\.missing-user.*"
+    class: container-runs-as-root
+  - match: "trivy:DS-0002"
+    class: container-runs-as-root
+
+  # Pod runs as root: 5/5 file overlap in the baseline corpus.
+  - match: "semgrep:yaml\\.kubernetes\\.security\\.run-as-non-root.*"
+    class: pod-runs-as-root
+  - match: "trivy:KSV-0012"
+    class: pod-runs-as-root

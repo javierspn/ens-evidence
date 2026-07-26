@@ -44,7 +44,7 @@ into every downstream consumer and makes the unmapped appendix non-reproducible.
 ## R4 — Dedupe key: (normalised path, defect class)
 
 **Decision**: normalise both engines' path bases (`%SRCROOT%`, `ROOTPATH`, absolute
-roots) to repo-relative POSIX paths. Defect class comes from `mapping/defect_classes.yml`
+roots) to repo-relative POSIX paths. Defect class comes from `src/ens_evidence/mapping/defect_classes.yml`
 (regex on `tool:rule-id` → class, first match wins); unlisted ids self-class as their
 canonical `tool:rule-id`. Duplicate group → keep the highest-severity representative,
 record the merged `(tool, rule)` pairs on the surviving finding.

@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from src import run
+from ens_evidence import run
 
 ROOT = Path(__file__).resolve().parent.parent
 SARIF = ROOT / "tests" / "fixtures" / "sarif"

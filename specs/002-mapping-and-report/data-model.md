@@ -13,7 +13,7 @@ file and one document. Decisions behind these shapes: [research.md](research.md)
 
 Neither is ever modified by this spec (immutable run store).
 
-## `mapping/measures_es.yml` (NEW)
+## `src/ens_evidence/mapping/measures_es.yml` (NEW)
 
 | Field | Content |
 |---|---|
