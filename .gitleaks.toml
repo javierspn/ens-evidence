@@ -1,4 +1,4 @@
-title = "repo-a gitleaks config"
+title = "ens-evidence gitleaks config"
 
 [extend]
 useDefault = true
@@ -17,10 +17,24 @@ tags = ["github", "pat"]
 
 [allowlist]
 description = "Known false positives — fixtures and doc strings, never real secrets"
+# Match against the surrounding text, not just the extracted secret, so an entry can
+# key off the field name it appears under. The existing entries below match either way.
+regexTarget = "match"
 regexes = [
   # Test license key fixture (CLAUDE.md, tests).
   '''89fc947c-95ea-481a-85a1-399fb755787d''',
   # Spec docs name the token algorithm ("HS256-signed"); the broad default
   # generic-api-key rule misreads it as a key. It is a doc string, not a secret.
   '''HS256-signed''',
+  # A run record's `skip_key` is a sha256 over PUBLIC build metadata — git SHA,
+  # engine and vulnerability-DB versions, rules pin, mapping/baseline/config
+  # hashes — and exists to decide whether a scan can be skipped. It grants
+  # nothing to whoever reads it. The default generic-api-key rule fires on the
+  # field NAME containing "key", not on the content, and committed fixture runs
+  # under tests/fixtures/run/ carry one by design.
+  #
+  # Deliberately matched on this ONE field rather than allowlisting the fixture
+  # path or all 64-char hex: every other string in those files stays scanned, so
+  # a real secret landing in a fixture is still caught.
+  '''skip_key":\s*"[a-f0-9]{64}''',
 ]

@@ -1,0 +1,69 @@
+# Etiquetas en castellano para cada medida del alcance. Datos, no código.
+#
+# PRINCIPIO V (constitución): aquí solo van identificadores de medida y REDACCIÓN
+# PROPIA. No se copia, ni total ni parcialmente, el texto del RD 311/2022 ni de las
+# guías CCN-STIC. Los títulos de abajo describen, con nuestras palabras, el ámbito de
+# cada medida; no son la rúbrica oficial y no deben sustituirla al citar la norma.
+#
+# `title` — de qué trata la medida, en una línea nuestra.
+# `gloss` — qué tipo de evidencia puede aportar ESTA herramienta para esa medida, y por
+#           tanto qué está viendo el lector. Nunca afirma cumplimiento (principio II).
+#
+# VERIFICACIÓN: los seis códigos se contrastaron con el texto consolidado del BOE
+# (RD 311/2022, Anexo II) el 2026-07-25 — se comprobó que el código existe y que su
+# ámbito es el que aquí se describe. Una nueva consolidación del BOE reabre esa
+# verificación (constitución, puerta previa a publicación).
+#
+# El alcance canónico (las seis medidas) vive en la constitución, el README y
+# mapping/ens_rd311.yml. Este fichero NO lo redefine: si aparece aquí una medida que no
+# esté en el alcance, o falta una que sí lo esté, es un bloqueo de publicación.
+
+version: 1
+verified: 2026-07-25
+
+measures:
+  mp.sw.1:
+    title: Desarrollo del software
+    gloss: >-
+      Defectos de seguridad introducidos al escribir la aplicación. La evidencia
+      procede del análisis estático del código fuente del repositorio analizado.
+
+  mp.sw.2:
+    title: Paso a producción del software
+    gloss: >-
+      Controles sobre cómo se construye y se promociona el software: dependencias con
+      vulnerabilidades conocidas, referencias mutables en la cadena de construcción y
+      políticas de actualización de paquetes.
+
+  mp.s.2:
+    title: Protección de los servicios expuestos en web
+    gloss: >-
+      Defectos que afectan a código servido a través de un servicio web: inyección
+      alcanzable desde una petición, contenido servido sin protección de transporte y
+      similares. Solo se cuenta aquí lo que llega por una capa web.
+
+  op.exp.2:
+    title: Configuración de seguridad de lo desplegado
+    gloss: >-
+      Ajustes de seguridad del artefacto desplegado y de su infraestructura: imágenes de
+      contenedor, manifiestos de orquestación e infraestructura declarada como código.
+
+  op.exp.3:
+    title: Control de la configuración en vigor
+    gloss: >-
+      Si lo que se despliega queda determinado por el manifiesto o puede cambiar sin que
+      cambie el manifiesto: etiquetas de imagen mutables, orígenes no confiables y
+      referencias no fijadas.
+
+  op.exp.4:
+    title: Actualizaciones de seguridad
+    gloss: >-
+      Vulnerabilidades conocidas y publicadas que afectan a las dependencias declaradas
+      en el repositorio, según la base de datos del motor en el momento del análisis.
+
+  unmapped:
+    title: Hallazgos sin correspondencia asignada
+    gloss: >-
+      Hallazgos que ninguna regla del fichero de correspondencias reconoce todavía. No
+      son ni más ni menos graves por ello: están a la espera de una decisión humana
+      sobre a qué medida corresponden, y por eso figuran aparte.

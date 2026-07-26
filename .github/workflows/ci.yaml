@@ -20,7 +20,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
       - name: Run tests
-        run: pytest tests/ -v --tb=short
+        # 'engines' tests need real semgrep/trivy binaries; this job gates the
+        # data files and the pure-python pipeline, engine-free.
+        run: pytest tests/ -v --tb=short -m "not engines"
 
   lint:
     runs-on: ubuntu-latest

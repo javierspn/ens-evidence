@@ -13,6 +13,9 @@ select = ["E", "F", "I", "N", "W"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "engines: needs real semgrep/trivy binaries on PATH (CI data gate runs -m 'not engines')",
+]
 
 [tool.bandit]
 exclude_dirs = ["tests"]

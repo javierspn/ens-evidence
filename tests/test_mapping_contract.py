@@ -21,12 +21,16 @@ ROOT = Path(__file__).resolve().parent.parent
 SCOPE = ["mp.sw.1", "mp.sw.2", "mp.s.2", "op.exp.2", "op.exp.3", "op.exp.4"]
 SCOPE_LINE = " · ".join(f"`{m}`" for m in SCOPE)
 
-# The three places that must carry the list verbatim, and how many times each does.
-# The report header is the fourth; it becomes a case here when templates/ gains one.
+# The four places that must carry the list verbatim, and how many times each does.
 SCOPE_DOCS = {
     "README.md": 2,
     "DESIGN.md": 1,
     ".specify/memory/constitution.md": 1,
+    # The fourth site: the report header (principle III). The template carries the line
+    # literally, exactly as the other three do. That a template CONTAINS it does not
+    # prove the rendered report EMITS it, so tests/test_render.py asserts the rendered
+    # side separately — both are required.
+    "templates/report.md.j2": 1,
 }
 
 

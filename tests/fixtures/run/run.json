@@ -1,0 +1,51 @@
+{
+ "baseline_sha256": null,
+ "config_sha256": "83a8a72b97642dbfdd3e4c9eaef3cc9b20ac3f49fb3f4a424f97aa7bc4b55077",
+ "counts": {
+  "deduped_away": 3,
+  "new": 30,
+  "non_security": 1,
+  "security": 29,
+  "total": 30
+ },
+ "coverage": {
+  "dependency_analysis": "done",
+  "languages_detected": {
+   "dockerfile": 1,
+   "elixir": 1,
+   "python": 1,
+   "yaml": 2
+  },
+  "languages_not_analysed": [],
+  "rules_per_language": "registry-uncounted"
+ },
+ "engines": {
+  "semgrep": "1.171.0",
+  "trivy": "0.72.0",
+  "trivy_checks_bundle": "sha256:1583562f8b90ed2a071b99f0e5ffff6b57e4ceb6ca3e4796577b4e6a339eb74c",
+  "trivy_db": {
+   "updated_at": "2026-07-25T07:31:15.040814353Z",
+   "version": 2
+  }
+ },
+ "mapping": {
+  "defect_classes_sha256": "1c296a6612465313639f4b0cdccb707a7a061a8f765269b72c6893f038c5ff54",
+  "severity_sha256": "edd662eea01341d046ad1432c709d291729f00cd7e6fa7a5a3c4ef9dfc146514"
+ },
+ "rules": {
+  "config": "p/default",
+  "mode": "registry",
+  "per_language": null,
+  "repo": null,
+  "root": null,
+  "sha": null
+ },
+ "run": {
+  "date": "2026-07-26",
+  "git_sha": "f720dff9e68d79645bc82722094c902ff2d3e600",
+  "git_short_sha": "f720dff",
+  "target": "."
+ },
+ "schema": "ens-evidence/1",
+ "skip_key": "d46980bbfbb6ff9deeb6bddfcec0c01f04c879046d8d0a8265fb919f030eaa2b"
+}

@@ -5,6 +5,8 @@
 **Acceptance:** fixture in, identical JSONL twice; green in a bare ubuntu runner from a
 3-line workflow; `--fail-on high` gates a fixture with one new high finding.
 
-`spec.md` generated 2026-07-25 (`/speckit.specify`); `plan.md` and `tasks.md` pending
-(`/speckit.plan` → `/speckit.tasks`). Spec the hard parts (normaliser, fingerprints);
-point at [DESIGN.md](../../DESIGN.md) rather than restating the measure list.
+**Implemented 2026-07-26** — 38/38 tasks, acceptance criteria verified by
+`tests/test_normalise.py` (engine-free, from captured SARIF fixtures),
+`tests/test_run_store.py` and `tests/test_cli.py` (real-engine scenarios marked
+`engines`). Spec artifacts: `spec.md` → `plan.md` (+ `research.md`, `data-model.md`,
+`contracts/`, `quickstart.md`) → `tasks.md`.

@@ -1,0 +1,2 @@
+# Intentionally empty: the fixture sits under tests/, which Semgrep's default
+# .semgrepignore excludes — this file overrides that so the fixture is scannable.

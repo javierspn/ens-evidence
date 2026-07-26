@@ -152,8 +152,9 @@ and no new run directory.
   never on rule id. Path normalisation MUST unify engine-specific path bases so the
   same file compares equal across engines and machines.
 - **FR-006**: Severity MUST be normalised from each engine's scale to the canonical
-  scale via the severity data file; unknown severities fail loudly, never default
-  silently.
+  scale via the severity data file; a severity the file's tables do not cover resolves
+  to the file's own declared `default` (a reviewable data decision, never a silent
+  in-code fallback), and is a hard error only when the file declares no default.
 - **FR-007**: Each finding MUST carry a stable fingerprint derived from rule id,
   normalised snippet, and position relative to the enclosing function — never from
   file+line — so unrelated edits do not invalidate the baseline.
