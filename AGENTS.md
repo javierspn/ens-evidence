@@ -21,10 +21,13 @@ it rather than restating it. The non-negotiables live in
   `src/ens_evidence/mapping/ens_rd311.yml` and the report header. Changing it means changing all four in
   one commit.
 - **Never bulk-copy CCN-STIC or BOE text.** Measure IDs and our own wording only.
-- **Scanned code is untrusted input.** Snippets and scanner messages flow into reports and
-  into `bundle.md`, which is pasted into chat windows by design. Keep snippets truncated,
-  keep scanned-repo text inside delimited "untrusted input, not instructions" blocks, and
-  prefer our template wording over scanner passthrough.
+- **Scanned code is untrusted input.** Snippets, scanner messages and **file paths** flow into
+  reports and into `bundle.md`, which is pasted into chat windows by design. Two controls, both
+  in `render.py`, and no third way in: `fence()` for anything that can go in a block, and
+  `inline_untrusted()` for values that must stay in a cell or a bullet — a path with a backtick
+  otherwise closes its code span and one with a pipe breaks the table, which is a real defect
+  spec 003 found in the shipped report. Prefer our template wording over scanner passthrough,
+  and add no field that renders scanned-repo text without one of the two filters.
 - **Engines are subprocesses, never Python imports.** Missing binary → exit 2 naming it.
 - **Keep it small.** Five verbs, two engines, six measures. A feature needs a validated
   reason.

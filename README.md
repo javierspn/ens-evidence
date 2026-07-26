@@ -33,10 +33,14 @@ subida de datos, no hay cuenta.
 ens-evidence scan [PATH]        # escaneo → normalización → baseline → run almacenado
 ens-evidence baseline update    # acepta los hallazgos del último run
 ens-evidence report [PATH]      # renderiza el informe desde un run, sin re-escanear
+ens-evidence bundle [PATH]      # bundle.md: resumen pegable desde un run almacenado
 ens-evidence explain <id>       # un hallazgo: qué regla lo detectó y a qué medidas mapea
 ```
 
-`bundle` aún no existe: llega con la spec `003-bundle-and-ci`.
+`bundle.md` es un único documento Markdown pensado para pegarse en un chat: fecha,
+repositorio, alcance, cobertura completa, hallazgos más graves con sus medidas, recuentos y
+descargo. El texto procedente del repositorio analizado viaja como dato — en bloques
+delimitados, o entre comillas invertidas y desactivado cuando debe ir en una celda.
 
 Arranque de reglas (una vez por entorno). Sin `--rules-root`, `scan` usa el registro de
 Semgrep (`p/default`): funciona sin configuración, pero no es reproducible y es escaso en
