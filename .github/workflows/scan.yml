@@ -1,7 +1,8 @@
 # The tool scans itself and publishes its own report — the credibility artifact.
 #
 # LICENCE CONSTRAINT — do not break when editing this file:
-# rules are fetched at run time into .ens-rules/ and MUST NOT appear in any uploaded
+# rules are fetched at run time into $RULES_DIR (outside the working tree, so the scan does
+# not scan them) and MUST NOT appear in any uploaded
 # artifact, cache key payload, or committed file. Upload the staged copy of out/latest/
 # only, never the repository root. Semgrep Rules License v1.0 forbids redistribution, and a
 # public build artifact containing rule files is redistribution. See DESIGN.md "Rule
@@ -20,6 +21,8 @@ permissions:
 env:
   SEMGREP_VERSION: '1.171.0'
   TRIVY_VERSION: '0.72.0'
+  # Deliberately outside the working tree: anything under it becomes part of `scan .`.
+  RULES_DIR: /home/runner/ens-rules
 
 jobs:
   scan:
@@ -62,8 +65,13 @@ jobs:
             echo "::error::.github/semgrep-rules.sha must hold one 40-character commit SHA" >&2
             exit 1
           fi
-          ens-evidence rules fetch --sha "$PIN" --accept-rules-license
-          ens-evidence rules status .
+          # Outside the working tree on purpose: fetched into ./.ens-rules, the checkout is
+          # part of what `scan .` then scans. Verified 2026-07-28 — 1304 of 1380 published
+          # findings were about semgrep's own rule fixtures rather than this repository,
+          # and the licence guard did not see it because it matches file names, not the
+          # paths a finding refers to.
+          ens-evidence rules fetch --sha "$PIN" --rules-root "$RULES_DIR" --accept-rules-license
+          ens-evidence rules status . --rules-root "$RULES_DIR"
 
       # Reports; does not gate. Gating every push on our own findings would couple
       # unrelated changes to upstream rule drift. `baseline update` is deliberately absent:
@@ -78,7 +86,7 @@ jobs:
       - name: Scan this repository
         run: |
           status=0
-          ens-evidence scan . --rules-root .ens-rules || status=$?
+          ens-evidence scan . --rules-root "$RULES_DIR" || status=$?
           if [ "$status" -eq 0 ] || [ "$status" -eq 1 ]; then
             echo "scan exit $status — findings reported, not gating"
             exit 0
@@ -108,7 +116,7 @@ jobs:
       #
       # To prove this guard fires (a guard that scans nothing passes forever), add to the
       # step above:
-      #   cp .ens-rules/python/lang/security/audit/exec-detected.yaml upload/
+      #   cp "$RULES_DIR/python/lang/security/audit/exec-detected.yaml" upload/
       # and re-run: the job must fail here, naming that file.
       - name: No rule file leaves this runner
         run: |
@@ -120,6 +128,13 @@ jobs:
           if [ -n "$offenders" ]; then
             echo "::error::rule-shaped or rule-carrying files staged for upload — Semgrep Rules License v1.0 forbids redistributing them (SARIF counts: it embeds the whole rule catalogue):" >&2
             echo "$offenders" >&2
+            exit 1
+          fi
+          # Names are not enough: the staged evidence is JSON and Markdown, and a run that
+          # scanned the rules checkout fills them with its paths and rule text while every
+          # file name stays innocent. Verified 2026-07-28, when exactly that shipped.
+          if grep -rIlF -e "$RULES_DIR" -e '.ens-rules' upload; then
+            echo "::error::staged evidence refers to the rules checkout (files listed above) — the scan included $RULES_DIR instead of only the repository" >&2
             exit 1
           fi
           echo "staged for upload:"
