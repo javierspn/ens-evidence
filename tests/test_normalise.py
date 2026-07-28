@@ -105,6 +105,38 @@ def test_paths_are_repo_relative_posix():
         assert not f["file"].startswith("./")
 
 
+def test_semgrep_absolute_uris_are_stripped_with_the_target_root(tmp_path):
+    """The shape every real scan produces, and the one the fixtures do not have.
+
+    `scan` resolves its target, and Semgrep given an absolute target emits absolute URIs
+    with NO originalUriBaseIds entry — verified 2026-07-28 against semgrep 1.171.0. The
+    captured fixtures were taken with a relative target, so their URIs are already relative
+    and the `target_root` branch that strips the prefix never ran in any test. If it broke,
+    the first thing anyone would notice is someone's home directory in a published report.
+    """
+    sarif = json.loads((SARIF / "semgrep.sarif").read_text())
+    run = sarif["runs"][0]
+    assert run.get("originalUriBaseIds") is None, "semgrep declares a base now; test is moot"
+    root = "/home/someone/secret-project-name"
+    for result in run["results"]:
+        location = result["locations"][0]["physicalLocation"]["artifactLocation"]
+        location["uri"] = f"{root}/{location['uri']}"
+
+    path = tmp_path / "absolute.sarif"
+    path.write_text(json.dumps(sarif))
+    findings = normalise.normalise(
+        sarif_paths=[path],
+        severity_policy=normalise.load_severity(SEVERITY),
+        defect_classes=normalise.load_defect_classes(CLASSES),
+        baseline=frozenset(),
+        target_root=root,
+    )
+    assert findings
+    for finding in findings:
+        assert not finding["file"].startswith("/"), finding["file"]
+        assert "secret-project-name" not in finding["file"]
+
+
 def test_cross_engine_duplicates_collapse():
     findings = run_normalise()
     roots = [f for f in findings if f["class"] == "container-runs-as-root"]
@@ -136,7 +168,7 @@ def test_severities_follow_the_policy():
     by_rule = {f["rule"]: f for f in run_normalise()}
     # trivy severity word from the rule's tags
     assert by_rule["DS-0026"]["sev"] == "low"  # tag LOW
-    # semgrep error level -> high
+    # semgrep warning level -> medium, and HIGH CONFIDENCE does not move it
     assert (
         by_rule[
             "yaml.github-actions.security.github-actions-mutable-action-tag"
@@ -151,6 +183,42 @@ def test_severities_follow_the_policy():
         ]["sev"]
         == "low"
     )
+
+
+def test_trivys_severity_tag_beats_its_cvss_score():
+    """severity.yml's load-bearing sentence: for a CVE, `security-severity` is the CVSS v3
+    base score and Trivy's own tag is its verdict, vendor overrides included — so the tag
+    wins. Nothing asserted it, and the captured fixture contains the divergence:
+    CVE-2024-56326 is tagged MEDIUM while its score of 7.8 lands in the HIGH band. Read the
+    number instead of the tag and this is the test that fails."""
+    rules = {
+        rule["id"]: rule
+        for rule in json.loads((SARIF / "trivy.sarif").read_text())["runs"][0]["tool"]["driver"][
+            "rules"
+        ]
+    }
+    diverging = rules["CVE-2024-56326"]
+    properties = diverging["properties"]
+    assert "MEDIUM" in properties["tags"]
+    assert float(properties["security-severity"]) >= 7.0, "fixture no longer holds the divergence"
+
+    by_rule = {f["rule"]: f for f in run_normalise()}
+    assert by_rule["CVE-2024-56326"]["sev"] == "medium"
+
+
+def test_the_cvss_bands_are_used_only_when_no_severity_tag_is_present(tmp_path):
+    """The fallback half of `severity_tag_then_bands` had no test at all — every captured
+    rule carries a severity word, so the branch never ran. It exists because a rule without
+    one is still a finding, and defaulting it to `medium` would understate a 9.5."""
+    sarif = json.loads((SARIF / "trivy.sarif").read_text())
+    rule = sarif["runs"][0]["tool"]["driver"]["rules"][0]
+    rule["properties"]["tags"] = [t for t in rule["properties"]["tags"] if t.isupper() is False]
+    rule["properties"]["security-severity"] = "9.5"
+    path = tmp_path / "banded.sarif"
+    path.write_text(json.dumps(sarif))
+
+    findings = [f for f in run_normalise(paths=[path]) if f["rule"] == rule["id"]]
+    assert findings and all(f["sev"] == "critical" for f in findings)
 
 
 def test_unknown_severity_resolves_to_the_files_declared_default(tmp_path):

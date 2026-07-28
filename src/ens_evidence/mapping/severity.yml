@@ -19,6 +19,20 @@
 #               properties.tags.
 #
 # Read severity from the RULE (tool.driver.rules[]), never from the result object.
+#
+# AUDITED 2026-07-28 against Semgrep 1.171.0 and Trivy 0.72.0 output, because the claims
+# above were provenance-backed but unguarded — `canonical_rule_id` had just shown what an
+# assumption nobody re-checked costs. What held, and what the tests now pin:
+#
+#   * Trivy: every rule carried both security-severity and a severity word tag (24/24), and
+#     for THESE the tag and the result-level agreed in all 52 results. The divergence the
+#     policy exists for is tag-vs-CVSS, not tag-vs-level: CVE-2024-56326 is tagged MEDIUM
+#     with a score of 7.8, which bands as HIGH. Pinned by
+#     test_trivys_severity_tag_beats_its_cvss_score.
+#   * Semgrep: no rule carried security-severity (0/9) and no result carried `level`, so the
+#     rule's defaultConfiguration is genuinely the only signal.
+#   * The bands fallback had never executed in any test — every captured rule has a tag.
+#     Now covered, so removing it fails rather than silently understating a 9.5.
 
 version: 1
 
