@@ -47,6 +47,11 @@ jobs:
           # refuses that on a runner with no database ("--skip-db-update cannot be
           # specified on the first run"). Fetch it once here so the scan stays hermetic.
           trivy fs --download-db-only
+          # No equivalent download-only flag exists for the misconfiguration checks bundle,
+          # so fetch it by scanning an empty directory. Without it --skip-check-update leaves
+          # the misconfig scanner with no checks and run.json declares no bundle digest.
+          trivy fs --scanners misconfig -o /dev/null "$(mktemp -d)"
+          trivy version --format json
 
       # Fetched at run time at the SHA tracked in .github/semgrep-rules.sha. Deliberately
       # not cached: a cache of rule content is a mirror we would be maintaining.

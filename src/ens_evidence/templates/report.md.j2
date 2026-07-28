@@ -111,7 +111,7 @@ pueda juzgar su antigüedad; la herramienta las declara, no las valora.
 {# Shortened like the mapping hashes below: the full 71-character digest overflows the page
    margin in the PDF and gets visually cut, which is worse than a documented prefix — the
    complete value is in run.json. Observed 2026-07-26 in the sample render. #}
-| Paquete de comprobaciones | `{{ record.engines.trivy_checks_bundle[:19] }}…` (completo en `run.json`) |
+| Paquete de comprobaciones | {% if record.engines.trivy_checks_bundle %}`{{ record.engines.trivy_checks_bundle[:19] }}…` (completo en `run.json`){% else %}no declarado por el motor — las comprobaciones de configuración pueden no haberse aplicado{% endif %} |
 | Origen de las reglas | {{ record.rules.mode }}{% if record.rules.sha %} — commit `{{ record.rules.sha }}`{% else %} (sin fijar){% endif %} |
 | Correspondencias ENS | `{{ record.mapping.severity_sha256[:12] }}` (severidad), `{{ record.mapping.defect_classes_sha256[:12] }}` (clases) |
 | Verificación de las medidas contra el BOE | {{ measures_verified }} |

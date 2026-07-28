@@ -148,6 +148,18 @@ def test_staleness_block_discloses_every_drifting_input(report):
     assert "2026-07-25" in report  # measure-list verification date
 
 
+def test_report_renders_without_a_checks_bundle_digest():
+    """Trivy declares no CheckBundle until the bundle has been fetched once, and a runner
+    that never fetched it produced None here — which crashed the render on a slice. The
+    report must still render and must say the configuration checks may not have applied,
+    because silence would read as "they ran"."""
+    _, record = render.load_run(RUN)
+    record = copy.deepcopy(record)
+    record["engines"]["trivy_checks_bundle"] = None
+    report = render.render_report(build(record=record), TEMPLATES)
+    assert prose("las comprobaciones de configuración pueden no haberse aplicado") in prose(report)
+
+
 # --- T013 principle II: no verdict -------------------------------------------
 
 FORBIDDEN = [
