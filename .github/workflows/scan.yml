@@ -43,6 +43,10 @@ jobs:
             | sudo tar -xz -C /usr/local/bin trivy
           semgrep --version
           trivy --version
+          # The scan runs Trivy with --skip-db-update for reproducibility, and Trivy
+          # refuses that on a runner with no database ("--skip-db-update cannot be
+          # specified on the first run"). Fetch it once here so the scan stays hermetic.
+          trivy fs --download-db-only
 
       # Fetched at run time at the SHA tracked in .github/semgrep-rules.sha. Deliberately
       # not cached: a cache of rule content is a mirror we would be maintaining.
@@ -59,8 +63,19 @@ jobs:
       # Reports; does not gate. Gating every push on our own findings would couple
       # unrelated changes to upstream rule drift. `baseline update` is deliberately absent:
       # it would silently accept our own findings as the new normal.
+      # Exit 1 is "there are findings" and must not gate. Exit 2 is a tool error and must:
+      # swallowing it left the job to fail two steps later on a missing run store, which is
+      # how the first real execution of this workflow reported a Trivy problem as a render one.
       - name: Scan this repository
-        run: ens-evidence scan . || echo "scan exit $? — reported, not gating"
+        run: |
+          status=0
+          ens-evidence scan . || status=$?
+          if [ "$status" -eq 0 ] || [ "$status" -eq 1 ]; then
+            echo "scan exit $status — findings reported, not gating"
+            exit 0
+          fi
+          echo "::error::ens-evidence scan failed with exit $status" >&2
+          exit "$status"
 
       - name: Render the report and the bundle
         run: |
