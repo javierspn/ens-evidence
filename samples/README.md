@@ -7,7 +7,7 @@ Real output, not a mock-up — this repository scanning itself.
 | `informe-ejemplo.pdf` | the evidence report, rendered from Markdown with `--pdf-engine weasyprint` |
 | `bundle-ejemplo.md` | the paste-anywhere summary of the same run |
 
-Produced on 2026-07-26 from commit `349f642`, with Semgrep 1.171.0 and Trivy 0.72.0 and the
+Produced on 2026-07-28 from commit `df10b3d`, with Semgrep 1.171.0 and Trivy 0.72.0 and the
 rules pinned at `81634cfc9e68dc5f238a8062909a60ba34500648` (`.github/semgrep-rules.sha`):
 
 ```bash
@@ -21,8 +21,14 @@ ens-evidence bundle .
 
 Both `--rules-root` arguments matter. Without them `scan` falls back to the Semgrep
 registry (`p/default`) and `run.json` records `"mode": "registry"` — the pin is then
-decorative and the run is not reproducible. The recipe above lacked them until 2026-07-28,
-so the committed sample was produced in registry mode despite this file naming a SHA.
+decorative and the run is not reproducible. The recipe lacked them until 2026-07-28, so the
+first committed sample was produced in registry mode despite this file naming a SHA; these
+files are the regenerated, genuinely pinned run (`"mode": "local"`).
+
+The totals did not move: 75 findings, 62 mapped and security-tagged, 13 not tagged as
+security, 0 unmapped, before and after. The pin changes what is *provable* about the run,
+not what this repository contains — worth saying plainly, because "we fixed the rules
+source" reads like "the numbers were wrong", and they were not.
 
 ## Two things to know before reading the numbers
 

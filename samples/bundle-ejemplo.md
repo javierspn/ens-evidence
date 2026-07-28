@@ -12,9 +12,9 @@ documento.
 
 | Dato | Valor |
 |---|---|
-| Fecha del análisis | 2026-07-26 |
+| Fecha del análisis | 2026-07-28 |
 | Repositorio | `ens-compliance-tool` |
-| Revisión | `349f642` |
+| Revisión | `df10b3d` |
 | Hallazgos | 75 |
 | Con correspondencia y de seguridad | 62 |
 | Sin correspondencia | 0 |
@@ -30,9 +30,9 @@ documento.
 |---|---|
 | dockerfile | 3 |
 | elixir | 1 |
-| python | 27 |
+| python | 23 |
 | shell | 9 |
-| yaml | 22 |
+| yaml | 18 |
 
 **Reglas ejecutadas por lenguaje:**
 
@@ -77,7 +77,7 @@ Realizado.
 ## Por dónde empezar
 
 ### 1. `yaml.github-actions.security.run-shell-injection` — high · nuevo
-- **Fichero:** `.github/workflows/ci.yaml` (línea 88)
+- **Fichero:** `.github/workflows/ci.yaml` (línea 129)
 - **Motor:** semgrep
 - **Medidas:** mp.sw.2
 - **Identificador:** `c185141a`
@@ -88,7 +88,7 @@ Using variable interpolation `${{...}}` with `github` context data in a `run:` s
 ```
 
 ### 2. `ai.ai-best-practices.hooks-path-traversal.hooks-path-traversal-python` — high · nuevo
-- **Fichero:** `src/ens_evidence/normalise.py` (línea 170)
+- **Fichero:** `src/ens_evidence/normalise.py` (línea 187)
 - **Motor:** semgrep
 - **Medidas:** mp.sw.1
 - **Identificador:** `b6d047e5`
