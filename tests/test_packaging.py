@@ -81,6 +81,22 @@ def test_data_files_ship_inside_the_package(pyproject):
     assert (ens_evidence.MAPPING_DIR / "defect_classes.yml").is_file()
     assert (ens_evidence.MAPPING_DIR / "measures_es.yml").is_file()
     assert (ens_evidence.TEMPLATE_DIR / "report.md.j2").is_file()
+    assert (ens_evidence.TEMPLATE_DIR / "bundle.md.j2").is_file()
+
+
+def test_every_template_the_code_loads_is_present():
+    """T044. Naming report.md.j2 alone let `bundle` ship broken in an installed copy with no
+    test failing first — the template was added and the guard was not. Ask the source which
+    templates it loads instead of maintaining a second list that can fall behind."""
+    loaded = set(
+        re.findall(
+            r'get_template\(\s*["\']([^"\']+)["\']',
+            (ROOT / "src" / "ens_evidence" / "render.py").read_text(),
+        )
+    )
+    assert loaded, "no get_template call found — has the render entry point moved?"
+    missing = sorted(name for name in loaded if not (ens_evidence.TEMPLATE_DIR / name).is_file())
+    assert not missing, f"templates the code loads but the package does not ship: {missing}"
 
 
 def test_data_lives_inside_the_package_dir():
