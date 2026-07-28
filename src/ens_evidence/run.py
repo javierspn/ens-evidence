@@ -378,8 +378,32 @@ def _invoke_engines(target, cfg, tmp):
     for cmd in commands:
         proc = subprocess.run(cmd, capture_output=True, text=True)
         if proc.returncode != 0:
-            raise EngineError(f"{cmd[0]} failed ({proc.returncode}): {proc.stderr.strip()[-500:]}")
+            raise EngineError(_engine_failure(cmd[0], proc.returncode, proc.stderr))
     return semgrep_out, trivy_out
+
+
+# Trivy's own words for "you asked me not to update a database I do not have". The scan
+# passes --skip-db-update for reproducibility, so a machine that has never fetched the
+# database cannot scan at all — the tool's FIRST run fails, and the engine's message says
+# nothing about how to proceed. Verified 2026-07-28 on a fresh CI runner.
+_TRIVY_COLD_CACHE = "cannot be specified on the first run"
+
+
+def _engine_failure(engine, code, stderr):
+    detail = stderr.strip()[-500:]
+    if engine == "trivy" and _TRIVY_COLD_CACHE in stderr:
+        return (
+            "trivy has no local database, and the scan does not fetch one: a run that "
+            "silently downloaded engine data would not be reproducible. Bootstrap it once "
+            "with\n"
+            "    trivy fs --download-db-only\n"
+            '    trivy fs --scanners misconfig -o /dev/null "$(mktemp -d)"\n'
+            "and re-run. The second command fetches the misconfiguration checks bundle, "
+            "which has no download-only flag of its own; without it the configuration "
+            "checks do not run and the report says so.\n"
+            f"trivy said ({code}): {detail}"
+        )
+    return f"{engine} failed ({code}): {detail}"
 
 
 class EngineError(Exception):

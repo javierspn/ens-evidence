@@ -188,12 +188,15 @@ def test_baseline_gate_scenario(tmp_path):
     assert run.main(["scan", str(repo), "--force", "--fail-on", "medium"]) == 0
 
 
-@pytest.mark.engines
 def test_cli_entrypoint_runs():
+    """`python -m src.run` has not been the module path since the src-layout move; the
+    package is ens_evidence and pyproject points the console script at ens_evidence.run.
+    The test kept its `engines` mark and no CI job ran that mark, so it sat broken. Needs
+    no engine — it only asks argparse to print help."""
     proc = subprocess.run(
-        [sys.executable, "-m", "src.run", "--help"], capture_output=True, cwd=ROOT
+        [sys.executable, "-m", "ens_evidence.run", "--help"], capture_output=True, cwd=ROOT
     )
-    assert proc.returncode == 0
+    assert proc.returncode == 0, proc.stderr.decode()
 
 
 # --- report + explain (spec 002: T015, T028, T029) ---------------------------

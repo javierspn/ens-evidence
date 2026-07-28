@@ -295,3 +295,25 @@ def test_a_language_with_no_rules_anywhere_is_still_reported():
     rules = {"mode": "local", "per_language": {"bash": 6}}
     coverage = run.build_coverage_from_census({"shell": 9, "elixir": 2}, False, rules)
     assert coverage["languages_not_analysed"] == ["elixir"]
+
+
+def test_a_cold_trivy_cache_explains_itself():
+    """The scan passes --skip-db-update for reproducibility, so the FIRST run on any new
+    machine fails — and trivy's own message ("--skip-db-update cannot be specified on the
+    first run") tells the operator nothing about what to do. This turns it into
+    instructions. Found 2026-07-28 by the first CI job to run the engines suite on a cold
+    runner, after the same failure had broken the self-scan workflow twice."""
+    stderr = (
+        "2026-07-28T08:54:42Z\tERROR\t[vulndb] The first run cannot skip downloading DB\n"
+        "FATAL\trun error: init error: DB error: database error: "
+        "--skip-db-update cannot be specified on the first run"
+    )
+    message = run._engine_failure("trivy", 1, stderr)
+    assert "trivy fs --download-db-only" in message
+    assert "misconfig" in message
+    assert "--skip-db-update cannot be specified" in message
+
+
+def test_other_engine_failures_are_passed_through_unchanged():
+    message = run._engine_failure("semgrep", 7, "invalid configuration file")
+    assert message == "semgrep failed (7): invalid configuration file"
