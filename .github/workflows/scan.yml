@@ -71,10 +71,14 @@ jobs:
       # Exit 1 is "there are findings" and must not gate. Exit 2 is a tool error and must:
       # swallowing it left the job to fail two steps later on a missing run store, which is
       # how the first real execution of this workflow reported a Trivy problem as a render one.
+      # --rules-root is what makes the fetch above matter. Without it the scan silently
+      # falls back to the semgrep registry (`p/default`) and run.json records
+      # "mode": "registry" — the pin is decorative and the published evidence is not
+      # reproducible. Verified 2026-07-28 on the first green run of this workflow.
       - name: Scan this repository
         run: |
           status=0
-          ens-evidence scan . || status=$?
+          ens-evidence scan . --rules-root .ens-rules || status=$?
           if [ "$status" -eq 0 ] || [ "$status" -eq 1 ]; then
             echo "scan exit $status — findings reported, not gating"
             exit 0

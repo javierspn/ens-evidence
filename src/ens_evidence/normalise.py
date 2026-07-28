@@ -90,12 +90,24 @@ def defect_class(tool, rule_id, classes):
 
 
 def canonical_rule_id(raw_id, rules_root=None):
-    """Strip a local rules-root prefix so local and registry runs share mapping keys."""
+    """Strip a local rules-root prefix so local and registry runs share mapping keys.
+
+    Semgrep 1.171.0 prefixes a rule id with the LAST component of the config directory,
+    not the whole path, and drops the leading dot of a hidden one: scanning with
+    --rules-root /anywhere/.ens-rules yields `ens-rules.dockerfile.security.missing-user`.
+    Both prefix shapes are stripped because the full-path form is what this function was
+    originally written against; only the basename form has been observed (2026-07-28,
+    semgrep 1.171.0). Getting this wrong is silent — every pinned-mode finding keeps a
+    prefix, matches no mapping pattern, and lands in the unmapped appendix.
+    """
     if not rules_root:
         return raw_id
-    dotted = str(rules_root).strip("/").replace("/", ".")
-    if dotted and raw_id.startswith(dotted + "."):
-        return raw_id[len(dotted) + 1 :]
+    raw = str(rules_root).strip("/")
+    prefixes = {raw.replace("/", "."), raw.rsplit("/", 1)[-1]}
+    prefixes |= {p.lstrip(".") for p in prefixes}
+    for dotted in sorted((p for p in prefixes if p), key=len, reverse=True):
+        if raw_id.startswith(dotted + "."):
+            return raw_id[len(dotted) + 1 :]
     return raw_id
 
 
