@@ -166,6 +166,10 @@ jobs:
           pip install . "semgrep==${SEMGREP_VERSION}"
           curl -sSfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
             | sudo tar -xz -C /usr/local/bin trivy
+          # The scan runs Trivy with --skip-db-update and --skip-check-update, which it
+          # refuses on a runner holding neither. Same warm-up as the self-scan workflow.
+          trivy fs --download-db-only
+          trivy fs --scanners misconfig -o /dev/null "$(mktemp -d)"
 
       - name: Fetch the rules at the NEW pinned SHA
         if: steps.pin.outputs.changed == 'true'
