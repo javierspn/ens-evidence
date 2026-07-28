@@ -113,3 +113,9 @@ def test_console_entry_point_resolves(pyproject):
     module_path, _, attr = target.partition(":")
     module = __import__(module_path, fromlist=[attr])
     assert callable(getattr(module, attr))
+
+
+def test_the_two_declared_versions_agree(pyproject):
+    """Two places state the version and nothing compared them, so a release could ship a
+    wheel whose metadata and whose `__version__` disagree."""
+    assert pyproject["project"]["version"] == ens_evidence.__version__

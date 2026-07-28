@@ -12,7 +12,7 @@ code" actually asks for. Where they live is declared once, here.
 
 from pathlib import Path
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 MAPPING_DIR = PACKAGE_DIR / "mapping"
