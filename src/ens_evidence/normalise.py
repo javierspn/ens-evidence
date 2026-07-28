@@ -92,13 +92,18 @@ def defect_class(tool, rule_id, classes):
 def canonical_rule_id(raw_id, rules_root=None):
     """Strip a local rules-root prefix so local and registry runs share mapping keys.
 
-    Semgrep 1.171.0 prefixes a rule id with the LAST component of the config directory,
-    not the whole path, and drops the leading dot of a hidden one: scanning with
-    --rules-root /anywhere/.ens-rules yields `ens-rules.dockerfile.security.missing-user`.
-    Both prefix shapes are stripped because the full-path form is what this function was
-    originally written against; only the basename form has been observed (2026-07-28,
-    semgrep 1.171.0). Getting this wrong is silent — every pinned-mode finding keeps a
-    prefix, matches no mapping pattern, and lands in the unmapped appendix.
+    Semgrep 1.171.0 prefixes the id with the path it walked to reach the config directory,
+    so the shape depends on where that directory sits relative to the working directory —
+    both forms verified 2026-07-28 against the engine:
+
+      rules root OUTSIDE cwd   private.tmp.scratch..ens-rules.dockerfile.security.missing-user
+      rules root INSIDE cwd    ens-rules.dockerfile.security.missing-user
+
+    A hidden directory keeps its dot in the middle of the first form and loses it at the
+    start of the second. Only the first was handled until 2026-07-28, which is why the
+    default layout — `rules fetch` writes to ./.ens-rules, inside the repository being
+    scanned — produced ids that matched no mapping pattern and filled the unmapped
+    appendix, while an out-of-tree checkout worked. Getting this wrong is silent.
     """
     if not rules_root:
         return raw_id

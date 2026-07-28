@@ -53,13 +53,16 @@ def test_both_modes_share_the_canonical_id():
     assert registry == local == "dockerfile.security.missing-user"
 
 
-def test_basename_prefix_is_stripped_which_is_the_shape_semgrep_emits():
-    """The two cases above assume semgrep prefixes the whole config path. It does not: it
-    uses the last component only, and drops the leading dot of a hidden directory. Observed
-    2026-07-28 with semgrep 1.171.0 — every pinned-mode run emitted `ens-rules.<id>`
-    regardless of where the checkout lived, so nothing was ever stripped in production and
-    every finding fell through to the unmapped appendix."""
-    for root in ("/private/tmp/scratch/.ens-rules", ".ens-rules", "/opt/.ens-rules"):
+def test_in_tree_rules_root_prefix_is_stripped():
+    """The two cases above cover a rules root OUTSIDE the working directory, where semgrep
+    prefixes the whole path. A root inside it gets the relative form instead — just the
+    directory name, its leading dot dropped. Both shapes verified 2026-07-28 against
+    semgrep 1.171.0.
+
+    Only the first was handled, and the second is the DEFAULT: `rules fetch` writes to
+    ./.ens-rules inside the repository, so ordinary pinned use produced
+    `ens-rules.<id>`, matched no mapping pattern, and filed every finding as unmapped."""
+    for root in (".ens-rules", "/private/tmp/scratch/.ens-rules"):
         assert (
             normalise.canonical_rule_id(
                 "ens-rules.dockerfile.security.missing-user", rules_root=root

@@ -29,6 +29,42 @@ jobs:
         # data files and the pure-python pipeline, engine-free.
         run: pytest tests/ -v --tb=short -m "not engines"
 
+  # The engines suite had no runner. Every defect of 2026-07-28 lived in the pinned
+  # pipeline — fetch, scan, render, guard — and the `test` job above cannot see any of it:
+  # it renders a committed fixture offline and never starts an engine. Six of them shipped
+  # under a green suite. This job is what makes tests/test_pinned_pipeline.py mean anything.
+  pinned-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install the tool and pinned engines
+        env:
+          SEMGREP_VERSION: '1.171.0'
+          TRIVY_VERSION: '0.72.0'
+        run: |
+          pip install -r requirements-dev.txt
+          pip install . "semgrep==${SEMGREP_VERSION}"
+          curl -sSfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin trivy
+          # Deliberately NOT warmed here, unlike the other jobs: a cold cache is the state
+          # that broke the self-scan twice, so the suite should meet it.
+          trivy --version
+
+      # Outside the working tree: a checkout inside it becomes part of what the tests scan.
+      - name: Fetch the rules at the pinned SHA
+        run: |
+          PIN="$(tr -d '[:space:]' < .github/semgrep-rules.sha)"
+          ens-evidence rules fetch --sha "$PIN" --rules-root "$HOME/ens-rules" --accept-rules-license
+
+      - name: Run the engines suite
+        env:
+          ENS_TEST_RULES_ROOT: /home/runner/ens-rules
+        run: pytest tests/ -v --tb=short -m engines
+
   lint:
     runs-on: ubuntu-latest
     steps:
