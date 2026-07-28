@@ -317,3 +317,30 @@ def test_a_cold_trivy_cache_explains_itself():
 def test_other_engine_failures_are_passed_through_unchanged():
     message = run._engine_failure("semgrep", 7, "invalid configuration file")
     assert message == "semgrep failed (7): invalid configuration file"
+
+
+def test_a_rules_checkout_inside_the_target_is_excluded_and_declared(tmp_path):
+    """`rules fetch` writes ./.ens-rules by default, so the ordinary local workflow leaves a
+    copy of semgrep-rules inside the repository about to be scanned. Published 2026-07-28:
+    1304 of 1380 findings in this repository's own evidence described those rule fixtures.
+    The exclusion is named in run.json — a scan that skips part of its target silently is an
+    undeclared input."""
+    target = tmp_path / "repo"
+    (target / ".ens-rules").mkdir(parents=True)
+    assert run.excluded_rules_dir(target, target / ".ens-rules") == ".ens-rules"
+
+    info = run.rules_info({"rules_root": str(target / ".ens-rules")}, target)
+    assert info["excluded_from_scan"] == ".ens-rules"
+
+
+def test_a_rules_checkout_outside_the_target_excludes_nothing(tmp_path):
+    target = tmp_path / "repo"
+    outside = tmp_path / "elsewhere" / ".ens-rules"
+    outside.mkdir(parents=True)
+    target.mkdir()
+    assert run.excluded_rules_dir(target, outside) is None
+    assert run.rules_info({"rules_root": str(outside)}, target)["excluded_from_scan"] is None
+
+
+def test_registry_mode_declares_no_exclusion(tmp_path):
+    assert run.rules_info({"rules_root": None}, tmp_path)["excluded_from_scan"] is None

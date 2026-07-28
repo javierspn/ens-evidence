@@ -169,7 +169,10 @@ def rules_per_language(rules_root):
     return dict(sorted(counts.items()))
 
 
-def rules_info(cfg):
+def rules_info(cfg, target=None):
+    """`excluded_from_scan` names the rules checkout when it sits inside the target and was
+    therefore skipped — null when it does not, so a reader can tell "nothing was excluded"
+    from "this run predates the field"."""
     root = cfg.get("rules_root")
     if not root:
         return {
@@ -179,6 +182,7 @@ def rules_info(cfg):
             "sha": None,
             "root": None,
             "per_language": None,
+            "excluded_from_scan": None,
         }
     return {
         "mode": "local",
@@ -187,6 +191,7 @@ def rules_info(cfg):
         "sha": _git(root, "rev-parse", "HEAD"),
         "root": str(root),
         "per_language": rules_per_language(root),
+        "excluded_from_scan": excluded_rules_dir(target, root) if target else None,
     }
 
 
@@ -325,6 +330,27 @@ def prune_sarif_rules(path):
     return {"kept": kept, "dropped": dropped}
 
 
+def excluded_rules_dir(target, rules_root):
+    """-> the rules checkout's path relative to `target`, when it sits inside it.
+
+    `rules fetch` writes ./.ens-rules by default, so the ordinary local workflow puts a
+    21 MB copy of semgrep-rules inside the repository about to be scanned — and the engines
+    then report on it. Measured 2026-07-28 on this repository's own published evidence:
+    1304 of 1380 findings described semgrep's rule fixtures rather than the repository.
+
+    The exclusion is recorded in run.json rather than applied quietly: a scan that skips
+    part of its target without saying so is an undeclared input, which is the thing
+    principle I exists to prevent.
+    """
+    if not rules_root:
+        return None
+    root = Path(rules_root).resolve()
+    base = Path(target).resolve()
+    if root == base or base not in root.parents:
+        return None
+    return root.relative_to(base).as_posix()
+
+
 def _invoke_engines(target, cfg, tmp):
     """Both engines against `target`, SARIF into `tmp`. Hermetic per research.md R1."""
     semgrep_out = tmp / "semgrep.sarif"
@@ -338,6 +364,9 @@ def _invoke_engines(target, cfg, tmp):
             )
     else:
         configs = ["p/default"]
+    skip = excluded_rules_dir(target, cfg["rules_root"])
+    semgrep_skip = [f"--exclude={skip}"] if skip else []
+    trivy_skip = ["--skip-dirs", skip] if skip else []
     commands = [
         [
             "semgrep",
@@ -345,6 +374,7 @@ def _invoke_engines(target, cfg, tmp):
             "--sarif",
             "--metrics=off",
             *[f"--config={c}" for c in configs],
+            *semgrep_skip,
             "--output",
             str(semgrep_out),
             str(target),
@@ -359,6 +389,7 @@ def _invoke_engines(target, cfg, tmp):
             "--offline-scan",
             "--skip-db-update",
             "--skip-check-update",
+            *trivy_skip,
             "-o",
             str(trivy_out),
             str(target),
@@ -370,6 +401,7 @@ def _invoke_engines(target, cfg, tmp):
             "cyclonedx",
             "--offline-scan",
             "--skip-db-update",
+            *trivy_skip,
             "-o",
             str(tmp / "sbom.cdx.json"),
             str(target),
@@ -508,7 +540,7 @@ def cmd_scan(args):
         _err(f"engine version probe failed: {exc}")
         return 2
 
-    rules = rules_info(cfg)
+    rules = rules_info(cfg, target)
     mapping_hashes = {
         "severity_sha256": _sha256_file(MAPPING_DIR / "severity.yml"),
         "defect_classes_sha256": _sha256_file(MAPPING_DIR / "defect_classes.yml"),

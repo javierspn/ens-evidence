@@ -147,13 +147,24 @@ def test_the_default_in_tree_rules_root_still_maps(tmp_path, rules_root, monkeyp
 
     monkeypatch.chdir(repo)
     assert run.main(["scan", ".", "--rules-root", ".ens-rules", "--force"]) in (0, 1)
+    # The first line of findings.jsonl is the schema marker, not a finding.
     findings = [
-        json.loads(line)
-        for line in (repo / "out" / "latest" / "findings.jsonl").read_text().splitlines()
+        record
+        for record in (
+            json.loads(line)
+            for line in (repo / "out" / "latest" / "findings.jsonl").read_text().splitlines()
+        )
+        if "file" in record
     ]
     semgrep = [f for f in findings if f.get("tool") == "semgrep"]
     assert semgrep, "the fixture Dockerfile must fire at least one semgrep rule"
     assert not [f for f in semgrep if f["rule"].startswith("ens-rules.")]
+
+    # The checkout is inside the target, so the engines must not report on it, and the run
+    # record must say the exclusion happened rather than leaving the gap unexplained.
+    assert not [f for f in findings if f["file"].startswith(".ens-rules")]
+    record = json.loads((repo / "out" / "latest" / "run.json").read_text())
+    assert record["rules"]["excluded_from_scan"] == ".ens-rules"
 
     rules = mapper.load_rules(MAPPING_DIR / "ens_rd311.yml")
     assert not [
