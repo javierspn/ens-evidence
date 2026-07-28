@@ -11,11 +11,18 @@ Produced on 2026-07-26 from commit `349f642`, with Semgrep 1.171.0 and Trivy 0.7
 rules pinned at `81634cfc9e68dc5f238a8062909a60ba34500648` (`.github/semgrep-rules.sha`):
 
 ```bash
-ens-evidence rules fetch --sha "$(cat .github/semgrep-rules.sha)" --accept-rules-license
-ens-evidence scan .
+# Outside the repository on purpose: a rules checkout inside it becomes part of `scan .`.
+ens-evidence rules fetch --sha "$(cat .github/semgrep-rules.sha)" \
+  --rules-root ~/ens-rules --accept-rules-license
+ens-evidence scan . --rules-root ~/ens-rules
 ens-evidence report . --format pdf --pdf-engine weasyprint
 ens-evidence bundle .
 ```
+
+Both `--rules-root` arguments matter. Without them `scan` falls back to the Semgrep
+registry (`p/default`) and `run.json` records `"mode": "registry"` — the pin is then
+decorative and the run is not reproducible. The recipe above lacked them until 2026-07-28,
+so the committed sample was produced in registry mode despite this file naming a SHA.
 
 ## Two things to know before reading the numbers
 
