@@ -172,7 +172,14 @@ def rules_per_language(rules_root):
 def rules_info(cfg, target=None):
     """`excluded_from_scan` names the rules checkout when it sits inside the target and was
     therefore skipped — null when it does not, so a reader can tell "nothing was excluded"
-    from "this run predates the field"."""
+    from "this run predates the field".
+
+    `root` is the checkout's directory NAME, never its path. run.json is published — the
+    self-scan uploads it — and an absolute path puts the operator's filesystem into someone
+    else's hands for no evidential gain: what makes a run repeatable is `repo` and `sha`,
+    not where the checkout happened to sit. The skip key agrees, hashing mode and SHA and
+    not this field.
+    """
     root = cfg.get("rules_root")
     if not root:
         return {
@@ -189,7 +196,7 @@ def rules_info(cfg, target=None):
         "config": None,
         "repo": _git(root, "remote", "get-url", "origin"),
         "sha": _git(root, "rev-parse", "HEAD"),
-        "root": str(root),
+        "root": Path(root).name,
         "per_language": rules_per_language(root),
         "excluded_from_scan": excluded_rules_dir(target, root) if target else None,
     }
@@ -585,7 +592,11 @@ def cmd_scan(args):
                 "date": cfg["fixed_date"] or date.today().isoformat(),
                 "git_sha": git_sha,
                 "git_short_sha": short_sha,
-                "target": str(target),
+                # The repository's NAME, not where this machine keeps it. Same reasoning as
+                # rules.root: run.json is published, `git_sha` is what identifies the code,
+                # and a checkout path can name a client. The report already showed only the
+                # basename; the record was the one place the full path survived.
+                "target": Path(target).name,
             },
             "engines": versions,
             "rules": rules,

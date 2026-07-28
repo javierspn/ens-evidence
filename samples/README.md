@@ -7,7 +7,7 @@ Real output, not a mock-up — this repository scanning itself.
 | `informe-ejemplo.pdf` | the evidence report, rendered from Markdown with `--pdf-engine weasyprint` |
 | `bundle-ejemplo.md` | the paste-anywhere summary of the same run |
 
-Produced on 2026-07-28 from commit `df10b3d`, with Semgrep 1.171.0 and Trivy 0.72.0 and the
+Produced on 2026-07-28 from commit `55e9b2e`, with Semgrep 1.171.0 and Trivy 0.72.0 and the
 rules pinned at `81634cfc9e68dc5f238a8062909a60ba34500648` (`.github/semgrep-rules.sha`):
 
 ```bash

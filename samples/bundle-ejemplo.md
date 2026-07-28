@@ -14,7 +14,7 @@ documento.
 |---|---|
 | Fecha del análisis | 2026-07-28 |
 | Repositorio | `ens-compliance-tool` |
-| Revisión | `df10b3d` |
+| Revisión | `55e9b2e` |
 | Hallazgos | 75 |
 | Con correspondencia y de seguridad | 62 |
 | Sin correspondencia | 0 |
@@ -208,7 +208,7 @@ evidencia que le corresponda.
 | Semgrep | 1.171.0 |
 | Trivy | 0.72.0 (BD 2, 2026-07-25T07:31:15.040814353Z) |
 | Origen de las reglas | local — commit `81634cfc9e68dc5f238a8062909a60ba34500648` |
-| Correspondencias ENS | `edd662eea013` (severidad), `1c296a661246` (clases) |
+| Correspondencias ENS | `14a0041208f1` (severidad), `1c296a661246` (clases) |
 | Medidas verificadas contra el BOE | 2026-07-25 |
 
 ---

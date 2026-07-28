@@ -344,3 +344,53 @@ def test_a_rules_checkout_outside_the_target_excludes_nothing(tmp_path):
 
 def test_registry_mode_declares_no_exclusion(tmp_path):
     assert run.rules_info({"rules_root": None}, tmp_path)["excluded_from_scan"] is None
+
+
+def test_the_run_record_names_the_rules_dir_without_its_path(tmp_path):
+    """run.json is published — the self-scan uploads it — so an absolute rules-root path
+    hands the operator's filesystem to whoever reads the artifact. Found 2026-07-28 in this
+    repository's own evidence, where report.md and bundle.md were clean and this one field
+    was not. `repo` and `sha` are the provenance that matters; where the checkout sat is
+    not, and the skip key does not hash it either."""
+    root = tmp_path / "somewhere" / "private" / "ens-rules"
+    root.mkdir(parents=True)
+    info = run.rules_info({"rules_root": str(root)}, tmp_path)
+    assert info["root"] == "ens-rules"
+    assert str(tmp_path) not in json.dumps(info)
+
+
+def test_the_skip_key_ignores_where_the_rules_checkout_lives():
+    """Guards the reason the field can be trimmed at all: two runs differing only in the
+    checkout's location are the same run, so moving it must not invalidate a stored one."""
+    versions = {
+        "semgrep": "1.171.0",
+        "trivy": "0.72.0",
+        "trivy_db": {"version": 2, "updated_at": "2026-07-28"},
+        "trivy_checks_bundle": "sha256:abc",
+    }
+    common = dict(
+        git_sha="deadbeef",
+        versions=versions,
+        mapping_hashes={"severity_sha256": "a", "defect_classes_sha256": "b"},
+        baseline_sha="c",
+        config_sha="d",
+    )
+    here = run.compute_skip_key(
+        rules={"mode": "local", "sha": "81634cf", "root": "ens-rules"}, **common
+    )
+    there = run.compute_skip_key(
+        rules={"mode": "local", "sha": "81634cf", "root": "/elsewhere/ens-rules"}, **common
+    )
+    assert here == there
+
+
+def test_the_run_record_names_the_repository_without_its_path(tmp_path, monkeypatch):
+    """The sibling of the rules.root leak, and the worse of the two: a checkout path can
+    name a client. The report only ever showed the basename, so the record was the single
+    place the operator's full path survived into a published artifact."""
+    repo = make_repo(tmp_path, name="acme-audit")
+    fake_engines(monkeypatch)
+    scan(repo)
+    record = json.loads((repo / "out" / "latest" / "run.json").read_text())
+    assert record["run"]["target"] == "acme-audit"
+    assert str(tmp_path) not in (repo / "out" / "latest" / "run.json").read_text()
