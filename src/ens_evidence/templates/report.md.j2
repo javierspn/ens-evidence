@@ -108,7 +108,10 @@ pueda juzgar su antigüedad; la herramienta las declara, no las valora.
 | Motor SAST | Semgrep {{ record.engines.semgrep }} |
 | Motor SCA/configuración | Trivy {{ record.engines.trivy }} |
 | Base de datos de vulnerabilidades | versión {{ record.engines.trivy_db.version }}, actualizada {{ record.engines.trivy_db.updated_at }} |
-| Paquete de comprobaciones | `{{ record.engines.trivy_checks_bundle }}` |
+{# Shortened like the mapping hashes below: the full 71-character digest overflows the page
+   margin in the PDF and gets visually cut, which is worse than a documented prefix — the
+   complete value is in run.json. Observed 2026-07-26 in the sample render. #}
+| Paquete de comprobaciones | `{{ record.engines.trivy_checks_bundle[:19] }}…` (completo en `run.json`) |
 | Origen de las reglas | {{ record.rules.mode }}{% if record.rules.sha %} — commit `{{ record.rules.sha }}`{% else %} (sin fijar){% endif %} |
 | Correspondencias ENS | `{{ record.mapping.severity_sha256[:12] }}` (severidad), `{{ record.mapping.defect_classes_sha256[:12] }}` (clases) |
 | Verificación de las medidas contra el BOE | {{ measures_verified }} |
@@ -126,9 +129,9 @@ gravedad y, a igual gravedad, priorizando lo nuevo respecto a la línea base.
 {% for f in triage %}
 ### {{ loop.index }}. `{{ f.rule | inline_untrusted }}` — {{ f.sev }}{% if f.new %} · nuevo{% endif %}
 
-- **Fichero:** `{{ f.file | inline_untrusted }}`{% if f.line %} (línea {{ f.line }}){% endif %}
+- **Fichero:** `{{ f.file | inline_untrusted }}`{% if f.line %} (línea {{ f.line }}){% endif +%}
 - **Motor:** {{ f.tool | inline_untrusted }}
-- **Medidas:** {% if f.counts %}{{ f.measures | join(', ') }}{% elif not f.security %}ninguna (no marcado como seguridad){% else %}ninguna (sin correspondencia){% endif %}
+- **Medidas:** {% if f.counts %}{{ f.measures | join(', ') }}{% elif not f.security %}ninguna (no marcado como seguridad){% else %}ninguna (sin correspondencia){% endif +%}
 - **Identificador:** `{{ f.id }}`
 
 {{ f.msg | fence }}

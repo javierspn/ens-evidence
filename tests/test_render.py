@@ -139,7 +139,11 @@ def test_staleness_block_discloses_every_drifting_input(report):
     assert record["engines"]["trivy"] in report
     assert str(record["engines"]["trivy_db"]["version"]) in report
     assert record["engines"]["trivy_db"]["updated_at"] in report
-    assert record["engines"]["trivy_checks_bundle"] in report
+    # Prefix, not the full digest: the 71-character value overflowed the PDF's page margin
+    # and was visually cut, so the report shows a documented prefix and points at run.json
+    # for the complete value (observed 2026-07-26 in the sample render).
+    assert record["engines"]["trivy_checks_bundle"][:19] in report
+    assert "run.json" in report
     assert record["mapping"]["severity_sha256"][:12] in report
     assert "2026-07-25" in report  # measure-list verification date
 

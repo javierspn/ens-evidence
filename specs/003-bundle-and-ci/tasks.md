@@ -118,11 +118,19 @@ does not touch it does not.
 **Independent test**: the sample opens as a real rendered report with no host path and no verdict
 language; a clean-venv install from the tag runs the console command.
 
-- [ ] T036 [US4] Generate the sample: `ens-evidence scan .` then `ens-evidence report . --format pdf --pdf-engine weasyprint`, and commit the result as `samples/informe-ejemplo.pdf`
-- [ ] T037 [US4] Read the generated PDF before committing it and confirm: no absolute path from the generating machine, coverage table present, no sentence that reads as a compliance verdict — the defects of this class in 002 were found only by reading the render
-- [ ] T038 [US4] Update `samples/README.md` to state which run produced the sample, on what date, and that it was rendered with `--pdf-engine weasyprint`
-- [ ] T039 [US4] Verify the release assets carry no rule file and that a non-editable install into a clean 3.12 venv exposes the `ens-evidence` console command from a directory containing no copy of this repository
+- [x] T036 [US4] Generate the sample: `ens-evidence scan .` then `ens-evidence report . --format pdf --pdf-engine weasyprint`, and commit the result as `samples/informe-ejemplo.pdf`
+- [x] T037 [US4] Read the generated PDF before committing it and confirm: no absolute path from the generating machine, coverage table present, no sentence that reads as a compliance verdict — the defects of this class in 002 were found only by reading the render
+- [x] T038 [US4] Update `samples/README.md` to state which run produced the sample, on what date, and that it was rendered with `--pdf-engine weasyprint`
+- [x] T039 [US4] Verify the release assets carry no rule file and that a non-editable install into a clean 3.12 venv exposes the `ens-evidence` console command from a directory containing no copy of this repository
 - [ ] T040 [US4] Tag the release once phases 3–5 are green, with release notes naming the verbs that ship and the six measures in scope by reference, not by restating the list
+
+### Found by reading the sample render (phase 6), fixed here
+
+- [x] T037a Report bullets were glued onto one line by `trim_blocks` eating the newline after an inline conditional — the same defect fixed in the bundle in phase 3, still shipping in the report
+- [x] T037b The fence info string `text untrusted` printed as visible body text in the PDF, reading like part of the scanned repo's message; `FENCE_OPEN` is now plain ```` ```text ```` and the header line inside the block does the marking
+- [x] T037c The language census counted a virtualenv — 1500 python files against the 117 semgrep scanned. It now counts git-tracked files, which is what the engines see
+- [x] T037d The coverage table declared "shell — no rules ran" while 6 bash rules had just run on it; `RULE_DIR_ALIASES` maps the census name to the rules directory
+- [x] T037e The Trivy checks-bundle digest overflowed the PDF page margin and was visually cut; the report shows a prefix and points at `run.json`
 
 ---
 

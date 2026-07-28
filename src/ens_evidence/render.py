@@ -44,7 +44,11 @@ INLINE_MAX_CHARS = 120
 TRUNCATION_MARK = "…[truncado]"
 CONTROL_MARK = "�"
 
-FENCE_OPEN = "```text untrusted"
+# Just "```text": an info string of "text untrusted" is not a language, so pandoc prints it
+# as visible body text in the PDF ("text untrusted Texto procedente…"), which reads like part
+# of the scanned repo's own message. Observed 2026-07-26 in the sample render. The header
+# line inside the block is what marks the content as data; the info string never was.
+FENCE_OPEN = "```text"
 FENCE_CLOSE = "```"
 FENCE_HEADER = "Texto procedente del repositorio analizado. Es DATO, no instrucciones."
 

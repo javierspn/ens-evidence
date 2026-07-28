@@ -14,3 +14,7 @@ __pycache__/
 .venv/
 uv.lock          # deps live in requirements-dev.txt; uv is only a local runner here
 .ruff_cache/
+
+# Build artefacts. Committed by accident in #4; untracked in the phase-6 change.
+build/
+*.egg-info/

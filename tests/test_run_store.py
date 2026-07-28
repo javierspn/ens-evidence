@@ -4,6 +4,7 @@ test_cli.py."""
 
 import copy
 import json
+import subprocess
 
 import pytest
 
@@ -51,7 +52,15 @@ def test_rules_per_language_counts_local_root(tmp_path):
 
 def test_coverage_local_mode_flags_not_analysed(tmp_path, monkeypatch):
     repo = make_repo(tmp_path)
+    # Tracked, not merely present: the census counts what the engines can see, and semgrep
+    # reads only git-tracked files.
     (repo / "demo.ex").write_text("")
+    subprocess.run(["git", "add", "-A"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "ex"],
+        cwd=repo,
+        check=True,
+    )
     rules = tmp_path / "rules"
     (rules / "python").mkdir(parents=True)
     (rules / "python" / "a.yaml").write_text("")
@@ -247,3 +256,42 @@ def test_run_json_records_what_was_pruned(tmp_path, monkeypatch):
     pruned = latest_run_json(repo)["sarif_rules_pruned"]
     assert set(pruned) == {"semgrep", "trivy"}
     assert all({"kept", "dropped"} == set(v) for v in pruned.values())
+
+
+# --- coverage defects found by reading the sample render (phase 6) ------------
+
+
+def test_census_counts_what_the_engines_can_see(tmp_path):
+    """A filesystem walk counted a virtualenv: 1500 python files against the 117 semgrep
+    actually scanned, observed 2026-07-26 in the sample render. Semgrep reads only
+    git-tracked files, so a larger census discloses a repository nobody analysed."""
+    repo = make_repo(tmp_path)
+    vendored = repo / ".venv" / "lib" / "site-packages"
+    vendored.mkdir(parents=True)
+    for n in range(5):
+        (vendored / f"dep{n}.py").write_text("")
+    (repo / "untracked.py").write_text("")
+    assert run.language_census(repo) == {"python": 1}  # app.py only
+
+
+def test_census_falls_back_to_a_walk_without_git(tmp_path):
+    tree = tmp_path / "plain"
+    (tree / "src").mkdir(parents=True)
+    (tree / "src" / "a.py").write_text("")
+    (tree / "Dockerfile").write_text("")
+    assert run.language_census(tree) == {"dockerfile": 1, "python": 1}
+
+
+def test_a_language_with_rules_under_another_name_is_not_reported_as_a_gap():
+    """The coverage table said "shell — no rules ran" while 6 bash rules had just run on it.
+    Principle IV cuts both ways: a claimed gap that is not real makes the real gaps less
+    believable."""
+    rules = {"mode": "local", "per_language": {"bash": 6}}
+    coverage = run.build_coverage_from_census({"shell": 9}, False, rules)
+    assert coverage["languages_not_analysed"] == []
+
+
+def test_a_language_with_no_rules_anywhere_is_still_reported():
+    rules = {"mode": "local", "per_language": {"bash": 6}}
+    coverage = run.build_coverage_from_census({"shell": 9, "elixir": 2}, False, rules)
+    assert coverage["languages_not_analysed"] == ["elixir"]

@@ -1,7 +1,8 @@
-"""Orchestration + CLI. 001 slice: `scan` and `baseline update` on the finding path.
+"""Spanish ENS (RD 311/2022) evidence for a repository: evidence, never a verdict.
 
-(`bundle`, `report`, `explain` are specs 002/003; the `rules` bootstrap group is
-DESIGN.md "Rule sourcing" — this module only CONSUMES a rules root, never fetches.)
+Five verbs on the finding path — `scan`, `baseline update`, `report`, `bundle`, `explain` —
+plus the licence-gated `rules` bootstrap group, which fetches the operator's own pinned copy
+of the Semgrep rules (never bundled with this tool: DESIGN.md "Rule sourcing").
 
 Owns the run store under ``out/<date>_<git-short-sha>/`` (immutable, append-only,
 written temp-dir-then-rename so a crashed run is never presentable), the skip key
@@ -73,6 +74,12 @@ FILENAME_LANGUAGES = {"Dockerfile": "dockerfile"}
 
 # Analysed by Trivy misconfig even when the Semgrep rules root has no rules for them.
 TRIVY_ANALYSED = {"dockerfile", "yaml", "terraform"}
+
+# Our census language name -> the upstream rules directory that covers it. Without this the
+# coverage table declared "shell — no rules ran" while 6 bash rules had just run against it
+# (observed 2026-07-26 in the sample render). Principle IV cuts both ways: the table must not
+# claim a gap it does not have, or the honest gaps stop being believed.
+RULE_DIR_ALIASES = {"shell": "bash"}
 
 LOCKFILE_NAMES = {
     "Cargo.lock",
@@ -186,14 +193,33 @@ def rules_info(cfg):
 # --- coverage ----------------------------------------------------------------
 
 
-def language_census(target):
-    census = {}
+def _census_files(target):
+    """The files the census counts: git-tracked ones when the target is a work tree.
+
+    Walking the filesystem counted a virtualenv — 1500 python files against the 117 semgrep
+    actually scanned, observed 2026-07-26 in the sample render. The engines see git-tracked
+    files (semgrep reads only those; trivy honours .gitignore), so a census that counts more
+    describes a repository nobody analysed, and Principle IV's coverage table is then
+    disclosing a fiction. Falls back to a walk when there is no git.
+    """
+    tracked = _git(target, "ls-files", "-z")
+    if tracked is not None:
+        return [Path(p) for p in tracked.split("\0") if p]
+    found = []
     for dirpath, dirnames, filenames in os.walk(target):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
-        for name in filenames:
-            lang = FILENAME_LANGUAGES.get(name) or EXTENSION_LANGUAGES.get(Path(name).suffix)
-            if lang:
-                census[lang] = census.get(lang, 0) + 1
+        found.extend(Path(dirpath).relative_to(target) / name for name in filenames)
+    return found
+
+
+def language_census(target):
+    census = {}
+    for path in _census_files(target):
+        if path.parts and path.parts[0] in SKIP_DIRS:
+            continue
+        lang = FILENAME_LANGUAGES.get(path.name) or EXTENSION_LANGUAGES.get(path.suffix)
+        if lang:
+            census[lang] = census.get(lang, 0) + 1
     return dict(sorted(census.items()))
 
 
@@ -206,12 +232,17 @@ def _has_lockfile(target):
 
 
 def build_coverage(target, rules):
-    census = language_census(target)
-    lockfile = _has_lockfile(target)
+    return build_coverage_from_census(language_census(target), _has_lockfile(target), rules)
+
+
+def build_coverage_from_census(census, lockfile, rules):
     if rules["mode"] == "local":
         per_language = rules["per_language"]
         not_analysed = sorted(
-            lang for lang in census if per_language.get(lang, 0) == 0 and lang not in TRIVY_ANALYSED
+            lang
+            for lang in census
+            if per_language.get(RULE_DIR_ALIASES.get(lang, lang), 0) == 0
+            and lang not in TRIVY_ANALYSED
         )
     else:
         # registry configs are versionless: rule counts are not knowable, and the
