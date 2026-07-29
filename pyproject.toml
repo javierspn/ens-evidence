@@ -47,6 +47,7 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 markers = [
     "engines: needs real semgrep/trivy binaries on PATH (CI data gate runs -m 'not engines')",
+    "rendering: needs pandoc, weasyprint and pdftotext; reads the rendered PDF page",
 ]
 
 [tool.bandit]

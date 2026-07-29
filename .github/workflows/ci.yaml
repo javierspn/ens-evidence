@@ -70,6 +70,32 @@ jobs:
           ENS_TEST_RULES_ROOT: /home/runner/ens-rules
         run: pytest tests/ -v --tb=short -m engines
 
+  # Every presentation defect this project has hit was invisible to the unit suite and
+  # obvious on the rendered page: a leaked absolute path, a finding id clipped at the right
+  # margin, a quoted engine message cut mid-sentence. Its own job because it needs a PDF
+  # toolchain the other jobs have no use for.
+  rendering:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install the tool and the PDF toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc poppler-utils
+          pip install -r requirements-dev.txt
+          pip install . weasyprint
+
+      # The tests skip themselves when the toolchain is absent, which is right on a laptop
+      # and wrong here: this job exists to run them.
+      - name: Run the rendering suite
+        run: |
+          pandoc --version >/dev/null && weasyprint --version >/dev/null && pdftotext -v
+          pytest tests/ -v --tb=short -m rendering
+
   lint:
     runs-on: ubuntu-latest
     steps:
