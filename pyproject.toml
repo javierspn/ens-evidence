@@ -25,7 +25,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 # The mapping tables and the report template are not optional extras: without them
 # an installed tool cannot map a finding or render a report.
-ens_evidence = ["mapping/*.yml", "templates/*.j2"]
+ens_evidence = ["mapping/*.yml", "templates/*.j2", "templates/*.css"]
 
 # Appended by the repo-gates skill. Ruff's rule set is PINNED rather than left to
 # the default: CI installs a newer ruff than your laptop sooner or later, and an

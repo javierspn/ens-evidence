@@ -704,6 +704,15 @@ def _pdf_engine(args):
     return args.pdf_engine or os.environ.get("ENS_EVIDENCE_PDF_ENGINE") or None
 
 
+HTML_PDF_ENGINES = ("weasyprint", "prince", "wkhtmltopdf", "pagedjs-cli")
+
+
+def _is_html_pdf_engine(engine):
+    """`--css` only reaches an engine that renders HTML. Passing it to a LaTeX engine is
+    at best ignored, so the check is by name — the same names pandoc documents."""
+    return engine is not None and Path(engine).name in HTML_PDF_ENGINES
+
+
 def _pdf_note(reason):
     return (
         f"No se ha generado la versión PDF: {reason}. El contenido de este documento "
@@ -757,6 +766,8 @@ def cmd_report(args):
         engine = _pdf_engine(args)
         if engine:
             cmd.append(f"--pdf-engine={engine}")
+        if _is_html_pdf_engine(engine):
+            cmd.append(f"--css={TEMPLATE_DIR / 'report.css'}")
         proc = subprocess.run(cmd, capture_output=True, text=True)
         if proc.returncode == 0:
             written.append(str(report_pdf))

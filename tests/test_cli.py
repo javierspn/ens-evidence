@@ -331,6 +331,46 @@ def test_converter_present_but_unable_degrades_in_auto(tmp_path, monkeypatch):
     assert "pdflatex" in report
 
 
+def _capture_pandoc(monkeypatch, seen):
+    monkeypatch.setattr(shutil, "which", lambda name: "/usr/bin/" + name)
+    monkeypatch.setattr(
+        run.subprocess,
+        "run",
+        lambda *a, **k: seen.append(a[0]) or subprocess.CompletedProcess(a[0], 0, "", ""),
+    )
+
+
+@pytest.mark.parametrize("engine", ["weasyprint", "/opt/homebrew/bin/weasyprint", "prince"])
+def test_html_pdf_engine_gets_the_stylesheet(tmp_path, monkeypatch, engine):
+    """Without it the finding tables run past the right margin and clip the `Id` column —
+    the id is how a reader cross-references a finding, so a clipped one is unusable."""
+    run_dir = tmp_path / "run"
+    shutil.copytree(FIXTURE_RUN, run_dir)
+    seen = []
+    _capture_pandoc(monkeypatch, seen)
+    assert (
+        run.main(["report", "--run", str(run_dir), "--format", "pdf", "--pdf-engine", engine]) == 0
+    )
+    css = [arg for arg in seen[0] if arg.startswith("--css=")]
+    assert len(css) == 1
+    assert Path(css[0].removeprefix("--css=")).is_file()
+
+
+@pytest.mark.parametrize("engine", ["pdflatex", None])
+def test_a_non_html_engine_gets_no_stylesheet(tmp_path, monkeypatch, engine):
+    """`--css` means nothing to a LaTeX engine, and nothing is what pandoc's own default
+    engine is: passing it would be noise in the command line for no rendering effect."""
+    run_dir = tmp_path / "run"
+    shutil.copytree(FIXTURE_RUN, run_dir)
+    seen = []
+    _capture_pandoc(monkeypatch, seen)
+    argv = ["report", "--run", str(run_dir), "--format", "pdf"]
+    if engine:
+        argv += ["--pdf-engine", engine]
+    assert run.main(argv) == 0
+    assert not [arg for arg in seen[0] if arg.startswith("--css=")]
+
+
 def test_converter_present_but_unable_fails_when_pdf_is_explicit(tmp_path, monkeypatch):
     run_dir = tmp_path / "run"
     shutil.copytree(FIXTURE_RUN, run_dir)

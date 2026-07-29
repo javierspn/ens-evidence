@@ -1,0 +1,56 @@
+/* Print styling for the PDF, applied only by the HTML-based pandoc engines
+   (weasyprint, prince, wkhtmltopdf). The Markdown report is the document of record;
+   this file decides nothing about content.
+
+   Its whole job is the finding tables. Pandoc's default sizes a table by its content,
+   so the per-measure tables — six columns, one of them a long rule id — ran past the
+   right margin and clipped the `Id` column. The id is how a reader cross-references a
+   finding against findings.jsonl, so a clipped id is an unusable one. */
+
+@page {
+  size: A4;
+  margin: 2cm 1.6cm;
+}
+
+/* `--css` REPLACES pandoc's own stylesheet rather than adding to it, so the horizontal
+   rules that make a table readable have to be restated here. */
+table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+  margin: 0.6em 0;
+  border-top: 1px solid #000;
+  border-bottom: 1px solid #000;
+}
+
+thead th {
+  border-bottom: 1px solid #000;
+  text-align: left;
+}
+
+th,
+td {
+  padding: 2pt 4pt;
+  vertical-align: top;
+  /* Rule ids, paths and CVE ids have no spaces to break at; without this a single
+     long token widens its column until the last one leaves the page. */
+  overflow-wrap: break-word;
+  word-break: break-all;
+}
+
+/* Prose keeps its own measure — only tables are squeezed. */
+p,
+li {
+  word-break: normal;
+}
+
+/* Also pandoc's, also lost with its stylesheet: the quoted engine messages are fenced
+   blocks of repository-controlled text with no line breaks of their own. Unwrapped, they
+   run off the page and the evidence is cut mid-sentence. */
+pre,
+pre code {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}

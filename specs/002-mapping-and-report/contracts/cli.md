@@ -44,6 +44,12 @@ quickstart §8, not by design. `--pdf-engine` (or `ENS_EVIDENCE_PDF_ENGINE`) nam
 engine; it is never auto-detected, because the tool would then pick a different engine
 per machine and silently change how the PDF looks.
 
+An HTML-rendering engine (`weasyprint`, `prince`, `wkhtmltopdf`, `pagedjs-cli`) also gets
+`--css=templates/report.css`; a LaTeX engine gets nothing, since `--css` means nothing to
+it. The stylesheet governs presentation only — without it the finding tables overflow the
+page and clip the `Id` column, which is what a reader cross-references against
+`findings.jsonl`.
+
 Never silent: an absent PDF is disclosed in the document itself, not only on a stream a
 CI log may discard.
 
