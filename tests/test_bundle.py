@@ -57,6 +57,27 @@ def stored_run(tmp_path):
     return tmp_path, dest
 
 
+# --- structure ---------------------------------------------------------------
+
+
+def test_section_order_matches_the_contract(bundle):
+    """The report has this test; the bundle did not, so a bundle that lost its coverage
+    disclosure — the section principle IV exists to keep — would still pass CI."""
+    expected = [
+        "# Evidencias ENS — resumen pegable",
+        "## Cobertura — leer antes de interpretar la ausencia de hallazgos",
+        "## Por dónde empezar",
+        "## Recuento por medida",
+        "## Vigencia de las entradas",
+    ]
+    positions = []
+    for heading in expected:
+        idx = bundle.find(heading)
+        assert idx != -1, f"missing section: {heading}"
+        positions.append(idx)
+    assert positions == sorted(positions), "sections out of contract order"
+
+
 # --- required content --------------------------------------------------------
 
 
