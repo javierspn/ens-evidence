@@ -499,6 +499,16 @@ def _new_run_dir(out_dir, run_date, short_sha):
     return candidate
 
 
+def _write_out_gitignore(out_dir):
+    """Run directories are scan output, not source. Without this the first `scan` in a
+    consumer's repository leaves a directory they are likely to commit — findings, paths
+    and all. Written once; a file the user has edited is left alone."""
+    marker = out_dir / ".gitignore"
+    if marker.exists():
+        return
+    marker.write_text("# Written by ens-compliance-tool: scan output, never source.\n*\n")
+
+
 def _swap_latest(out_dir, run_dir):
     tmp_link = out_dir / f".latest-{os.getpid()}"
     if tmp_link.is_symlink():
@@ -564,6 +574,7 @@ def cmd_scan(args):
             return 0
 
     out_dir.mkdir(parents=True, exist_ok=True)
+    _write_out_gitignore(out_dir)
     tmp = Path(tempfile.mkdtemp(prefix=".tmp-run-", dir=out_dir))
     try:
         try:

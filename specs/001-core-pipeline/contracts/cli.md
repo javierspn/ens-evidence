@@ -16,6 +16,8 @@ ens-evidence baseline update [PATH]
 - `--force`: ignore skip key, re-run, MUST byte-reproduce `findings.jsonl` (SC-001).
 - `baseline update`: rewrites `.ens-baseline.yml` from `out/latest` findings; refuses
   (exit 2) when no run exists.
+- `scan` writes `<out_dir>/.gitignore` (`*`) when the file is absent: run directories are
+  output, not source. An existing file — the user's — is never rewritten.
 
 ## Exit codes
 

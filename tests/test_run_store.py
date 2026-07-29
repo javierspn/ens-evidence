@@ -89,6 +89,29 @@ def test_coverage_lockfile_detection(tmp_path, monkeypatch):
     assert latest_run_json(repo)["coverage"]["dependency_analysis"] == "done"
 
 
+# --- out/ is scan output, not source -----------------------------------------
+
+
+def test_scan_marks_its_output_directory_as_ignored(tmp_path, monkeypatch):
+    """A consumer runs `scan` and gets a directory of findings and paths sitting in their
+    working tree; without this they commit it."""
+    repo = make_repo(tmp_path)
+    fake_engines(monkeypatch)
+    assert scan(repo) == 0
+    marker = repo / "out" / ".gitignore"
+    assert marker.is_file()
+    assert marker.read_text().splitlines()[-1] == "*"
+
+
+def test_an_edited_gitignore_is_left_alone(tmp_path, monkeypatch):
+    repo = make_repo(tmp_path)
+    fake_engines(monkeypatch)
+    (repo / "out").mkdir()
+    (repo / "out" / ".gitignore").write_text("mine\n")
+    assert scan(repo) == 0
+    assert (repo / "out" / ".gitignore").read_text() == "mine\n"
+
+
 # --- T031 skip key + immutability -------------------------------------------
 
 
