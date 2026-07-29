@@ -126,9 +126,13 @@ jobs:
           ast-grep --version
 
       - name: Scan files changed in this PR
+        env:
+          # Through the environment, never interpolated into the script: an expression
+          # expanded into a `run:` block is shell source, so a ref name is code.
+          BASE_REF: ${{ github.base_ref }}
         run: |
           changed=$(git diff --name-only --diff-filter=ACM \
-            "origin/${{ github.base_ref }}...HEAD" \
+            "origin/${BASE_REF}...HEAD" \
             | grep -E '^src/.*\.py$' \
             | grep -vE '(^|/)tests?/|/test_|_test\.py$' || true)
           if [ -z "$changed" ]; then
@@ -181,11 +185,14 @@ jobs:
 
       - name: Did the pinned rules SHA change?
         id: pin
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
+          if [ "$EVENT_NAME" != "pull_request" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          if git diff --name-only "origin/${{ github.base_ref }}...HEAD" \
+          if git diff --name-only "origin/${BASE_REF}...HEAD" \
                | grep -qx '.github/semgrep-rules.sha'; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
