@@ -7,7 +7,7 @@ Real output, not a mock-up — this repository scanning itself.
 | `informe-ejemplo.pdf` | the evidence report, rendered from Markdown with `--pdf-engine weasyprint` |
 | `bundle-ejemplo.md` | the paste-anywhere summary of the same run |
 
-Produced on 2026-07-28 from commit `55e9b2e`, with Semgrep 1.171.0 and Trivy 0.72.0 and the
+Produced on 2026-07-29 from commit `5deaea5`, with Semgrep 1.171.0 and Trivy 0.72.0 and the
 rules pinned at `81634cfc9e68dc5f238a8062909a60ba34500648` (`.github/semgrep-rules.sha`):
 
 ```bash
@@ -25,10 +25,14 @@ decorative and the run is not reproducible. The recipe lacked them until 2026-07
 first committed sample was produced in registry mode despite this file naming a SHA; these
 files are the regenerated, genuinely pinned run (`"mode": "local"`).
 
-The totals did not move: 75 findings, 62 mapped and security-tagged, 13 not tagged as
-security, 0 unmapped, before and after. The pin changes what is *provable* about the run,
-not what this repository contains — worth saying plainly, because "we fixed the rules
-source" reads like "the numbers were wrong", and they were not.
+The pin changes what is *provable* about the run, not what this repository contains — worth
+saying plainly, because "we fixed the rules source" reads like "the numbers were wrong", and
+they were not: the pinning fix on 2026-07-28 left the totals exactly where they were.
+
+This run is 74 findings, 61 mapped and security-tagged, 13 not tagged as security, 0
+unmapped. One fewer than the 2026-07-28 sample: the tool's own `run-shell-injection` finding
+on `.github/workflows/ci.yaml` is gone, because the workflow now passes `github.base_ref`
+through `env:` instead of interpolating it into a `run:` block.
 
 ## Two things to know before reading the numbers
 
