@@ -122,7 +122,7 @@ language; a clean-venv install from the tag runs the console command.
 - [x] T037 [US4] Read the generated PDF before committing it and confirm: no absolute path from the generating machine, coverage table present, no sentence that reads as a compliance verdict — the defects of this class in 002 were found only by reading the render
 - [x] T038 [US4] Update `samples/README.md` to state which run produced the sample, on what date, and that it was rendered with `--pdf-engine weasyprint`
 - [x] T039 [US4] Verify the release assets carry no rule file and that a non-editable install into a clean 3.12 venv exposes the `ens-evidence` console command from a directory containing no copy of this repository
-- [ ] T040 [US4] Tag the release once phases 3–5 are green, with release notes naming the verbs that ship and the six measures in scope by reference, not by restating the list
+- [x] T040 [US4] Tag the release once phases 3–5 are green, with release notes naming the verbs that ship and the six measures in scope by reference, not by restating the list
 
 ### Found by reading the sample render (phase 6), fixed here
 
@@ -139,9 +139,9 @@ language; a clean-venv install from the tag runs the console command.
 - [x] T041 [P] Update `SKILL.md` (FR-013): `bundle` and the `rules` group now exist — remove the "not implemented" marker on `bundle`, document the real `rules fetch|status` surface, and keep the status banner accurate
 - [x] T042 [P] Update `README.md` Uso and English summary to the shipped five-verb + `rules` surface, replacing the manual-clone instructions with `rules fetch`
 - [x] T043 [P] Update `AGENTS.md` where it describes obtaining rules, so it names the verb rather than a manual clone
-- [ ] T044 Update `tests/test_packaging.py` to assert `bundle.md.j2` is present in an installed copy, alongside the existing template and mapping assertions
+- [x] T044 Update `tests/test_packaging.py` to assert `bundle.md.j2` is present in an installed copy, alongside the existing template and mapping assertions
 - [ ] T045 Run the full quickstart in [quickstart.md](quickstart.md) end to end and record any divergence between it and the shipped behaviour, fixing the code or the document
-- [ ] T046 Reconcile the working plan and write the session session notes once 003 is merged
+- [x] T046 Reconcile the working plan and write the session session notes once 003 is merged
 
 ---
 

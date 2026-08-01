@@ -4,7 +4,7 @@
 
 **Created**: 2026-07-26
 
-**Status**: Draft
+**Status**: Implemented
 
 **Input**: User description: "002-mapping-and-report: mapping semantics, Spanish evidence report, top-10 triage, and the `explain` verb."
 

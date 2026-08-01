@@ -4,7 +4,7 @@
 
 **Created**: 2026-07-25
 
-**Status**: Draft
+**Status**: Implemented
 
 **Input**: User description: "001-core-pipeline: core scan pipeline. Requirements from the working plan 'Now' section: (1) canonicalise rule ids; (2) split security from non-security findings on the engines' `security` tag; (3) hermetic engine invocation; (4) dedupe on (normalised path, defect class), never rule id; (5) coverage table in every report; (6) sort findings before writing JSONL."
 
