@@ -42,6 +42,7 @@ Installed 2026-07-25 and each one verified to actually bite, not just run:
 | bandit + pip-audit + gitleaks | `.claude/hooks/sec-scan-commit.sh` + `security` CI job | insecure code, dependency CVEs, secrets in history | staged `subprocess(shell=True)` → hook exited **2** (B602) |
 | ruff | `lint` CI job | style/imports, `select` pinned to `["E","F","I","N","W"]` | `ruff check src/ tests/` clean |
 | **mapping contract** | `tests/test_mapping_contract.py` + `test` CI job | the data files — regexes that stop matching, off-scope measures, scope-list divergence | 11 tests, all passing |
+| sample freshness | `tests/test_sample_contract.py` + `test` CI job | `samples/README.md`'s hand-written commit, date, engine versions, rules SHA and counts, against the generated `bundle-ejemplo.md` and the pin in force | probes: bumped `.github/semgrep-rules.sha`, drifted a count, named a commit not in history → each failed the matching test |
 
 The mapping contract is the gate that matters here: `src/` is all stubs, so lint and bandit
 have almost nothing to read, while the mapping and the six-measure scope list are the actual
