@@ -241,7 +241,6 @@ Las especificaciones 001–003 están implementadas. Lo que sostiene y lo que no
 | **[CHANGELOG.md](CHANGELOG.md)** | Qué cambió en cada versión, para quien usa la herramienta |
 | **[DESIGN.md](DESIGN.md)** | El porqué: arquitectura, contrato CLI, reglas del proyecto |
 | **[.specify/memory/constitution.md](.specify/memory/constitution.md)** | Reglas no negociables |
-| **[the working plan](the working plan)** | El plan de trabajo abierto |
 | **[AGENTS.md](AGENTS.md)** | Para agentes que trabajen **en** este repositorio |
 | **[SKILL.md](SKILL.md)** | Para agentes que **usen** la herramienta |
 

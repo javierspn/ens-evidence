@@ -13,7 +13,8 @@
 #
 # PROVENANCE: authored 2026-07-25 from real scans with Semgrep 1.171.0 `p/default` and
 # Trivy 0.72.0 `--scanners vuln,misconfig,secret`:
-#   * three private repos (repo-a, repo-b, repo-c) — 179 findings, 28 rule ids;
+#   * three private repos (repo-a, repo-b, repo-c — anonymised, see docs/scan-baseline.md)
+#     — 179 findings, 28 rule ids;
 #   * two lockfile repos (repo-d, repo-e) — 34 CVE findings, 44 SBOM components;
 #   * three public vulnerable web apps (pygoat, Vulnerable-Flask-App, juice-shop) —
 #     453 findings, 218 rule ids, which is where the web-service and secret rules come from.

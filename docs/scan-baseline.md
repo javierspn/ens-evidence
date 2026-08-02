@@ -12,6 +12,10 @@ Engines: **Semgrep 1.171.0** `--config=p/default --sarif --metrics=off` ·
 `--format cyclonedx` run for the SBOM. Raw SARIF is not committed (it contains findings for
 private repos — see the trust-boundary rule); the inventory below is.
 
+The repositories are named `repo-a` … `repo-e` throughout. They are private repositories of
+the author's, and the counts below are all that is published about them: what an engine
+emitted, never a path, a finding or a name.
+
 ## Totals
 
 | Repo | Character | Semgrep | Trivy | SBOM components |

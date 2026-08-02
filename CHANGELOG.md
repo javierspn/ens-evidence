@@ -1,8 +1,7 @@
 # Changelog
 
 Cambios visibles para quien **usa** la herramienta: comandos, salidas y lo que el informe
-afirma. La reconciliación interna del proyecto vive en [the working plan](the working plan) y el rastro
-completo está en `git log`.
+afirma. El rastro completo está en `git log`.
 
 Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 Versionado: [SemVer](https://semver.org/lang/es/).

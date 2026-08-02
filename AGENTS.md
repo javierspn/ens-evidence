@@ -64,7 +64,7 @@ gitleaks detect --source . --no-banner --redact --config .gitleaks.toml
 **Deliberately NOT installed: the spec-kit gates** (`scripts/spec_*.py`,
 `.github/workflows/spec-*.yaml`) from the `repo-gates` skill. `spec_lint.py` globs
 `specs/**/*.md`, which here means four README placeholders with no frontmatter — it would be
-red from day one, and its `VALID_WORKERS` set is repo-a-specific (`auth`, `portal`, `iso`…).
+red from day one, and its `VALID_WORKERS` set is specific to one private repo (`auth`, `portal`, `iso`…).
 Revisit once `/speckit-specify` generates real `spec.md` files, either adapting the worker list
 or letting Spec Kit's own artefacts carry the check.
 

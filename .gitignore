@@ -18,3 +18,7 @@ uv.lock          # deps live in requirements-dev.txt; uv is only a local runner 
 # Build artefacts. Committed by accident in #4; untracked in the phase-6 change.
 build/
 *.egg-info/
+
+# Notas internas de trabajo: no forman parte del producto publicado.
+the working plan
+session notes-*.md

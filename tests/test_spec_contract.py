@@ -6,7 +6,7 @@ release, and 003 carried four unticked tasks that were in fact done. A spec that
 describes the repo incorrectly is worse than no spec, because it is read as current.
 
 The `repo-gates` skill ships a `spec_lint.py` for a different convention entirely (YAML
-frontmatter, a `worker` field, repo-a worker names). It cannot read these files, so
+frontmatter, a `worker` field, worker names from another repo). It cannot read these files, so
 this is a repo-local check in the idiom the rest of the gates already use — a contract
 test in the `test` job rather than a script behind a new CI job.
 """

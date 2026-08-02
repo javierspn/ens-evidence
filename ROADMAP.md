@@ -2,9 +2,9 @@
 
 Qué cubre `ens-evidence` hoy, qué podría cubrir, y qué no va a cubrir nunca.
 
-Este documento se mueve despacio y no lleva fechas: es la vista pública. El plan de trabajo
-—lo que está abierto ahora mismo— vive en [the working plan](the working plan), y las razones de diseño
-en [DESIGN.md](DESIGN.md). Si los dos se contradicen, manda the working plan.
+Este documento se mueve despacio y no lleva fechas: es la vista pública. Las razones de
+diseño están en [DESIGN.md](DESIGN.md). El plan de trabajo abierto se lleva fuera de este
+repositorio.
 
 ## Límites permanentes
 
@@ -77,4 +77,4 @@ gated on its rules being mapped first.
 
 The standing limits are not a working plan: six of roughly 75 measures, static analysis only,
 evidence and never a verdict, nothing leaving your infrastructure, and no redistribution of
-Semgrep's rule content. The working plan lives in [the working plan](the working plan).
+Semgrep's rule content. The working plan is kept outside this repository.
