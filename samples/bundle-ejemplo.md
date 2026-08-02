@@ -14,11 +14,11 @@ documento.
 |---|---|
 | Fecha del análisis | 2026-08-02 |
 | Repositorio | `ens-compliance-tool` |
-| Revisión | `e521356` |
-| Hallazgos | 74 |
+| Revisión | `b0e21d9` |
+| Hallazgos | 73 |
 | Con correspondencia y de seguridad | 61 |
 | Sin correspondencia | 0 |
-| No marcados como seguridad | 13 |
+| No marcados como seguridad | 12 |
 
 **Alcance** — seis medidas del RD 311/2022 (Anexo II), de unas 75:
 
@@ -30,7 +30,7 @@ documento.
 |---|---|
 | dockerfile | 3 |
 | elixir | 1 |
-| python | 26 |
+| python | 27 |
 | shell | 9 |
 | yaml | 18 |
 
@@ -79,7 +79,7 @@ Realizado.
 ### 1. Entrada no confiable manejada sin validar en código de integración con IA — high
 - **Regla:** `ai.ai-best-practices.hooks-path-traversal.hooks-path-traversal-python`
 
-- **Fichero:** `src/ens_evidence/normalise.py` (línea 216)
+- **Fichero:** `src/ens_evidence/normalise.py` (línea 274)
 - **Motor:** semgrep
 - **Medidas:** mp.sw.1
 - **Identificador:** `b6d047e5`

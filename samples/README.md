@@ -7,7 +7,7 @@ Real output, not a mock-up — this repository scanning itself.
 | `informe-ejemplo.pdf` | the evidence report, rendered from Markdown with `--pdf-engine weasyprint` |
 | `bundle-ejemplo.md` | the paste-anywhere summary of the same run |
 
-Produced on 2026-08-02 from commit `58d2122`, with Semgrep 1.171.0 and Trivy 0.72.0 and the
+Produced on 2026-08-02 from commit `b0e21d9`, with Semgrep 1.171.0 and Trivy 0.72.0 and the
 rules pinned at `81634cfc9e68dc5f238a8062909a60ba34500648` (`.github/semgrep-rules.sha`):
 
 ```bash
@@ -29,12 +29,11 @@ The pin changes what is *provable* about the run, not what this repository conta
 saying plainly, because "we fixed the rules source" reads like "the numbers were wrong", and
 they were not: the pinning fix on 2026-07-28 left the totals exactly where they were.
 
-This run is 74 findings, 61 mapped and security-tagged, 13 not tagged as security, 0
-unmapped — the same four numbers as the 2026-07-29 sample. What changed is the document,
-not what was found: the report's sections are now numbered, and section 5 writes each
-finding out in Spanish, with our own title and explanation and its ENS measure, instead of
-heading it with the engine's rule id and quoting the engine's English message. Regenerated
-because the committed PDF still showed the old structure.
+This run is 73 findings, 61 mapped and security-tagged, 12 not tagged as security, 0
+unmapped. The security count is unchanged from the 2026-07-29 sample; the one finding that
+left was a non-security one, from stripping the rule prose out of the SARIF test fixtures
+before publication. Regenerated because the repository's history was rewritten before going
+public, so the commit the previous sample named no longer exists.
 
 Two later corrections are also in this render. Section 3's rule counts are the catalogue's,
 so each row now says whether the repository holds that language at all — a run over five
