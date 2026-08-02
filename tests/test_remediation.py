@@ -74,6 +74,23 @@ def test_references_are_deduplicated_capped_and_ordered():
     assert len(refs) == normalise.REF_MAX
 
 
+def test_the_semgrep_pro_banner_is_not_a_reference():
+    """Semgrep opens every rule's help text with a "Enable Pro rules for free" banner.
+    Its link is an advertisement, and taken literally it is the first reference on every
+    semgrep finding — one of the three slots, ahead of the rule's own documentation."""
+    rule = {
+        "id": "r",
+        "help": {
+            "markdown": (
+                "#### 💎 Enable cross-file analysis and Pro rules for free at "
+                "<a href='https://sg.run/pro'>sg.run/pro</a>\n\n<b>References:</b>\n"
+                " - [https://semgrep.dev/r/r](https://semgrep.dev/r/r)\n"
+            )
+        },
+    }
+    assert normalise._references(rule) == ["https://semgrep.dev/r/r"]
+
+
 def test_a_rule_with_no_documentation_yields_no_reference():
     assert normalise._references({"id": "r"}) == []
 

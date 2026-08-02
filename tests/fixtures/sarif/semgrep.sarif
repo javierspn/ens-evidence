@@ -193,7 +193,7 @@
                 "level": "error"
               },
               "help": {
-                "markdown": " - [https://sg.run/pro'](https://sg.run/pro')\n - [https://semgrep.dev/r/dockerfile.security.missing-user.missing-user](https://semgrep.dev/r/dockerfile.security.missing-user.missing-user)\n - [https://owasp.org/Top10/A04_2021-Insecure_Design](https://owasp.org/Top10/A04_2021-Insecure_Design)\n"
+                "markdown": " - [https://sg.run/pro](https://sg.run/pro)\n - [https://semgrep.dev/r/dockerfile.security.missing-user.missing-user](https://semgrep.dev/r/dockerfile.security.missing-user.missing-user)\n - [https://owasp.org/Top10/A04_2021-Insecure_Design](https://owasp.org/Top10/A04_2021-Insecure_Design)\n"
               },
               "helpUri": "https://semgrep.dev/r/dockerfile.security.missing-user.missing-user",
               "id": "dockerfile.security.missing-user.missing-user",
@@ -214,7 +214,7 @@
                 "level": "warning"
               },
               "help": {
-                "markdown": " - [https://sg.run/pro'](https://sg.run/pro')\n - [https://semgrep.dev/r/python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected](https://semgrep.dev/r/python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected)\n - [https://cwe.mitre.org/data/definitions/939.html](https://cwe.mitre.org/data/definitions/939.html)\n"
+                "markdown": " - [https://sg.run/pro](https://sg.run/pro)\n - [https://semgrep.dev/r/python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected](https://semgrep.dev/r/python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected)\n - [https://cwe.mitre.org/data/definitions/939.html](https://cwe.mitre.org/data/definitions/939.html)\n"
               },
               "helpUri": "https://semgrep.dev/r/python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected",
               "id": "python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected",
@@ -234,7 +234,7 @@
                 "level": "warning"
               },
               "help": {
-                "markdown": " - [https://sg.run/pro'](https://sg.run/pro')\n - [https://semgrep.dev/r/python.lang.security.audit.exec-detected.exec-detected](https://semgrep.dev/r/python.lang.security.audit.exec-detected.exec-detected)\n - [https://owasp.org/Top10/A03_2021-Injection](https://owasp.org/Top10/A03_2021-Injection)\n"
+                "markdown": " - [https://sg.run/pro](https://sg.run/pro)\n - [https://semgrep.dev/r/python.lang.security.audit.exec-detected.exec-detected](https://semgrep.dev/r/python.lang.security.audit.exec-detected.exec-detected)\n - [https://owasp.org/Top10/A03_2021-Injection](https://owasp.org/Top10/A03_2021-Injection)\n"
               },
               "helpUri": "https://semgrep.dev/r/python.lang.security.audit.exec-detected.exec-detected",
               "id": "python.lang.security.audit.exec-detected.exec-detected",
@@ -255,7 +255,7 @@
                 "level": "warning"
               },
               "help": {
-                "markdown": " - [https://sg.run/pro'](https://sg.run/pro')\n - [https://semgrep.dev/r/yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag](https://semgrep.dev/r/yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag)\n - [https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions)\n"
+                "markdown": " - [https://sg.run/pro](https://sg.run/pro)\n - [https://semgrep.dev/r/yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag](https://semgrep.dev/r/yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag)\n - [https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-third-party-actions)\n"
               },
               "helpUri": "https://semgrep.dev/r/yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag",
               "id": "yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag",
@@ -277,7 +277,7 @@
                 "level": "warning"
               },
               "help": {
-                "markdown": " - [https://sg.run/pro'](https://sg.run/pro')\n - [https://semgrep.dev/r/yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext](https://semgrep.dev/r/yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext)\n - [https://kubernetes.io/docs/concepts/policy/pod-security-policy/#privilege-escalation](https://kubernetes.io/docs/concepts/policy/pod-security-policy/#privilege-escalation)\n - [https://kubernetes.io/docs/tasks/configure-pod-container/security-context/](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/)\n - [https://www.kernel.org/doc/Documentation/prctl/no_new_privs.txt](https://www.kernel.org/doc/Documentation/prctl/no_new_privs.txt)\n - [https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html#rule-4-add-no-new-privileges-flag](https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html#rule-4-add-no-new-privileges-flag)\n"
+                "markdown": " - [https://sg.run/pro](https://sg.run/pro)\n - [https://semgrep.dev/r/yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext](https://semgrep.dev/r/yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext)\n - [https://kubernetes.io/docs/concepts/policy/pod-security-policy/#privilege-escalation](https://kubernetes.io/docs/concepts/policy/pod-security-policy/#privilege-escalation)\n - [https://kubernetes.io/docs/tasks/configure-pod-container/security-context/](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/)\n - [https://www.kernel.org/doc/Documentation/prctl/no_new_privs.txt](https://www.kernel.org/doc/Documentation/prctl/no_new_privs.txt)\n - [https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html#rule-4-add-no-new-privileges-flag](https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html#rule-4-add-no-new-privileges-flag)\n"
               },
               "helpUri": "https://semgrep.dev/r/yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext",
               "id": "yaml.kubernetes.security.allow-privilege-escalation-no-securitycontext.allow-privilege-escalation-no-securitycontext",
@@ -299,7 +299,7 @@
                 "level": "note"
               },
               "help": {
-                "markdown": " - [https://sg.run/pro'](https://sg.run/pro')\n - [https://semgrep.dev/r/yaml.kubernetes.security.run-as-non-root.run-as-non-root](https://semgrep.dev/r/yaml.kubernetes.security.run-as-non-root.run-as-non-root)\n - [https://kubernetes.io/blog/2016/08/security-best-practices-kubernetes-deployment/](https://kubernetes.io/blog/2016/08/security-best-practices-kubernetes-deployment/)\n - [https://kubernetes.io/docs/concepts/policy/pod-security-policy/](https://kubernetes.io/docs/concepts/policy/pod-security-policy/)\n - [https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html#rule-2-set-a-user](https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html#rule-2-set-a-user)\n"
+                "markdown": " - [https://sg.run/pro](https://sg.run/pro)\n - [https://semgrep.dev/r/yaml.kubernetes.security.run-as-non-root.run-as-non-root](https://semgrep.dev/r/yaml.kubernetes.security.run-as-non-root.run-as-non-root)\n - [https://kubernetes.io/blog/2016/08/security-best-practices-kubernetes-deployment/](https://kubernetes.io/blog/2016/08/security-best-practices-kubernetes-deployment/)\n - [https://kubernetes.io/docs/concepts/policy/pod-security-policy/](https://kubernetes.io/docs/concepts/policy/pod-security-policy/)\n - [https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html#rule-2-set-a-user](https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html#rule-2-set-a-user)\n"
               },
               "helpUri": "https://semgrep.dev/r/yaml.kubernetes.security.run-as-non-root.run-as-non-root",
               "id": "yaml.kubernetes.security.run-as-non-root.run-as-non-root",

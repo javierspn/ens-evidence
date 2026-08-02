@@ -232,6 +232,10 @@ def is_test_code(path):
 
 _URL = re.compile(r"https?://[^\s)\]>\"']+")
 REF_MAX = 3
+# Semgrep prefixes every rule's help text with a "Enable Pro rules for free" banner whose
+# link is not documentation. Left in, it is the first reference on every semgrep finding and
+# spends one of the three slots on an advertisement.
+_REF_DENY = ("sg.run/pro",)
 
 
 def _references(rule):
@@ -247,12 +251,15 @@ def _references(rule):
     writes them as Markdown links inside `help.markdown` instead (verified 2026-08-02 on
     both engines' output), so the links are read out of that text. Capped and
     order-preserving: three addresses are as much as a person follows, and the order is
-    the engine's, which is stable for a given rule.
+    the engine's, which is stable for a given rule — minus `_REF_DENY`, which is an
+    advertisement rather than a reference.
     """
     found = []
     for text in (rule.get("helpUri", ""), rule.get("help", {}).get("markdown", "")):
         for match in _URL.finditer(text or ""):
             url = match.group(0).rstrip(".,")
+            if any(deny in url for deny in _REF_DENY):
+                continue
             if url not in found:
                 found.append(url)
     return found[:REF_MAX]
