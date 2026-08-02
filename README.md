@@ -238,6 +238,7 @@ Las especificaciones 001–003 están implementadas. Lo que sostiene y lo que no
 | Documento | Para qué |
 |---|---|
 | **[ROADMAP.md](ROADMAP.md)** | Qué cubre v1, qué vendría después, y los límites permanentes |
+| **[CHANGELOG.md](CHANGELOG.md)** | Qué cambió en cada versión, para quien usa la herramienta |
 | **[DESIGN.md](DESIGN.md)** | El porqué: arquitectura, contrato CLI, reglas del proyecto |
 | **[.specify/memory/constitution.md](.specify/memory/constitution.md)** | Reglas no negociables |
 | **[the working plan](the working plan)** | El plan de trabajo abierto |
