@@ -35,6 +35,6 @@
   appear via DESIGN.md references — they are product-defining domain terms in this
   repo, not implementation choices; constitution's "spec the hard parts" overrides
   generic stakeholder-language guidance where they conflict.
-- Every requirement traces to a scan-proven working plan item or a constitution
+- Every requirement traces to a scan-proven requirement or a constitution
   constraint; no [NEEDS CLARIFICATION] needed — DESIGN.md 2026-07-25 resolved all
   open decisions.

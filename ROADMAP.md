@@ -75,6 +75,6 @@ v1.0.0 ships the full cycle: `scan`, `baseline update`, `report` (Markdown, PDF 
 engines through the same subprocess seam — gitleaks for secrets and Checkov for IaC — each
 gated on its rules being mapped first.
 
-The standing limits are not a working plan: six of roughly 75 measures, static analysis only,
+The standing limits are not pending work: six of roughly 75 measures, static analysis only,
 evidence and never a verdict, nothing leaving your infrastructure, and no redistribution of
 Semgrep's rule content. The working plan is kept outside this repository.

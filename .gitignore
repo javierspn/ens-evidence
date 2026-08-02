@@ -19,6 +19,5 @@ uv.lock          # deps live in requirements-dev.txt; uv is only a local runner 
 build/
 *.egg-info/
 
-# Notas internas de trabajo: no forman parte del producto publicado.
-the working plan
-session notes-*.md
+# Working notes, not part of the published product.
+.internal/

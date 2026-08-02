@@ -34,7 +34,7 @@
 - Jinja2/PDF/Markdown are named only in the Assumptions section, to bound what the
   acceptance criteria depend on (Markdown is the source of truth). The requirements
   themselves stay format-agnostic — "the report MUST carry…", not "the template MUST…".
-- Every requirement traces to a constitution principle, a working plan item, or a fact
+- Every requirement traces to a constitution principle, a planned requirement, or a fact
   measured from the real 28-finding fixture run. The "What the real output says" table
   records the measurements, per the constitution's rule that 002's acceptance criteria
   are written from real scanner output.
