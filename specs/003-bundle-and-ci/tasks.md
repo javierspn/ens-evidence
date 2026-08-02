@@ -140,7 +140,7 @@ language; a clean-venv install from the tag runs the console command.
 - [x] T042 [P] Update `README.md` Uso and English summary to the shipped five-verb + `rules` surface, replacing the manual-clone instructions with `rules fetch`
 - [x] T043 [P] Update `AGENTS.md` where it describes obtaining rules, so it names the verb rather than a manual clone
 - [x] T044 Update `tests/test_packaging.py` to assert `bundle.md.j2` is present in an installed copy, alongside the existing template and mapping assertions
-- [ ] T045 Run the full quickstart in [quickstart.md](quickstart.md) end to end and record any divergence between it and the shipped behaviour, fixing the code or the document
+- [x] T045 Run the full quickstart in [quickstart.md](quickstart.md) end to end and record any divergence between it and the shipped behaviour, fixing the code or the document
 - [x] T046 Reconcile the working plan and write the session session notes once 003 is merged
 
 ---

@@ -4,7 +4,7 @@
 
 **Created**: 2026-07-26
 
-**Status**: Draft
+**Status**: Implemented
 
 **Input**: The last spec for v1. Owns the `bundle` verb, the `rules` bootstrap group, the
 injection fixture, the self-scan workflow, the rules-bump loop and a tagged release carrying a
