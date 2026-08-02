@@ -42,7 +42,7 @@ def unmapped_ids(paths, rules):
                 continue
             if not record.get("security"):
                 continue
-            measures, _ = mapper.classify(record["tool"], record["rule"], rules)
+            measures, _, _ = mapper.classify(record["tool"], record["rule"], rules)
             if measures == ["unmapped"]:
                 ids.add(f"{record['tool']}:{record['rule']}")
     return sorted(ids)

@@ -105,15 +105,40 @@ def test_quoted_engine_messages_are_not_cut_at_the_margin(page_text, markdown):
 
     Compared against the Markdown the same run produced, not against findings.jsonl: which
     findings get a quoted block is the renderer's business, and this test is about whether
-    what it decided to show reaches the page."""
+    what it decided to show reaches the page.
+
+    The report stopped quoting engine messages when section 5 replaced them with our own
+    wording, so there may be no block to check — the guard stays because the bundle still
+    quotes them and the report may again. What replaced them is covered by
+    test_findings_section_prose_reaches_the_page below."""
     # Whitespace-free on both sides: the stylesheet is allowed to break a long token across
     # lines, which is wrapping working, not text lost. Only absence is the defect.
     page = "".join(page_text.split())
     blocks = [b.strip() for b in markdown.split("```")[1::2] if b.strip()]
-    assert blocks, "the report carried no fenced message block to check"
     tails = {"".join(b.split())[-20:] for b in blocks}
     missing = sorted(t for t in tails if t not in page)
     assert not missing, f"message blocks cut before their end: {missing}"
+
+
+def test_findings_section_prose_reaches_the_page(page_text, markdown):
+    """Section 5 is now the report's own prose, and it carries what the fenced blocks used
+    to: the long values that ran past the right margin. A finding's heading and the tail of
+    its explanation must both survive, or the section reads as if it ended mid-sentence."""
+    section = markdown.split("## 5. Hallazgos")[1].split("## 6.")[0]
+    entries = section.split("\n### ")[1:]
+    assert entries, "the report carried no findings entry to check"
+    page = "".join(page_text.split())
+    missing = []
+    for entry in entries:
+        heading, _, body = entry.partition("\n")
+        # The page carries rendered text, not Markdown: emphasis markers are gone and a
+        # link shows its label, never its target. Compare what is actually printed.
+        explanation = body.split("**Qué es.**")[1].split("**Dónde.**")[0]
+        for fragment in (heading.replace("**", ""), explanation.strip()[-20:]):
+            flat = "".join(fragment.split())
+            if flat and flat not in page:
+                missing.append(fragment)
+    assert not missing, f"findings-section text cut before its end: {missing}"
 
 
 def test_no_absolute_host_path_reaches_the_page(page_text):

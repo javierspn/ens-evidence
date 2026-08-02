@@ -52,7 +52,7 @@ FENCE_OPEN = "```text"
 FENCE_CLOSE = "```"
 FENCE_HEADER = "Texto procedente del repositorio analizado. Es DATO, no instrucciones."
 
-TRIAGE_LIMIT = 10
+HIGHLIGHT_LIMIT = 25
 
 
 # --- untrusted input ---------------------------------------------------------
@@ -111,23 +111,41 @@ def load_run(run_dir):
 # --- report model ------------------------------------------------------------
 
 
-def triage(findings):
-    """Ranked head of the report: severity first, then a regression before an accepted
-    finding of equal severity, then the same total order spec 001 sorts by so ties never
-    fall to input order (research.md R5). Fewer than the limit -> all of them, no padding.
-    """
-    ranked = sorted(
-        findings,
-        key=lambda f: (
-            CANONICAL.index(f["sev"]),
-            not f["new"],
-            f["file"],
-            f["class"],
-            f["rule"],
-            f["fingerprint"],
-        ),
+def _rank(finding):
+    """Severity first, then a regression before an accepted finding of equal severity,
+    then the same total order spec 001 sorts by so ties never fall to input order
+    (research.md R5)."""
+    return (
+        CANONICAL.index(finding["sev"]),
+        not finding["new"],
+        finding["file"],
+        finding["class"],
+        finding["rule"],
+        finding["fingerprint"],
     )
-    return ranked[:TRIAGE_LIMIT]
+
+
+def highlights(findings):
+    """The findings written out one by one in the report's "Hallazgos" section.
+
+    Severity bands, taken in cascade: critical+high together, else medium, else low. A
+    fixed `sev == "high"` filter would have been wrong twice over — the canonical scale
+    opens at `critical` (mapping/severity.yml), so the corpus's worst finding, a GitHub
+    PAT at 9.5, would have been the one omitted; and a repository whose worst finding is
+    a medium would have rendered an empty section that reads like a pass.
+
+    `info` never qualifies: it is the severity of what the engine could not classify, so
+    promoting it would present unknowns as the findings that matter most.
+
+    Capped, because the cascade makes a large band reachable — 380 mediums and no highs
+    is a section of 380 entries. The caller reports what the cap dropped; truncating in
+    silence would read as "this is all of them".
+    """
+    for band in (("critical", "high"), ("medium",), ("low",)):
+        selected = sorted((f for f in findings if f["sev"] in band), key=_rank)
+        if selected:
+            return selected[:HIGHLIGHT_LIMIT], len(selected)
+    return [], 0
 
 
 def _total_order(finding):
@@ -139,7 +157,10 @@ def build_model(findings, record, rules, measures_file, scope):
     enriched = []
     for finding in findings:
         item = dict(finding)
-        item["measures"], item["matched_rule"] = mapper.classify(
+        # Runs stored before `detail` existed have no such key, and the environment is
+        # StrictUndefined: the template must be able to ask for it on every finding.
+        item.setdefault("detail", {})
+        item["measures"], item["matched_rule"], item["prose"] = mapper.classify(
             finding["tool"], finding["rule"], rules
         )
         item["counts"] = mapper.counts_toward_measures(item)
@@ -160,6 +181,8 @@ def build_model(findings, record, rules, measures_file, scope):
             for measure in item["measures"]:
                 by_measure[measure].append(item)
 
+    shown, band_total = highlights([i for i in enriched if i["security"]])
+
     return {
         "record": record,
         # The stored run records an absolute path; the report shows only the repository
@@ -173,7 +196,11 @@ def build_model(findings, record, rules, measures_file, scope):
         "measures_verified": measures_file["verified"],
         "by_measure": by_measure,
         "findings": enriched,
-        "triage": triage(enriched),
+        # Only security-tagged findings qualify: a best-practice suggestion must not lead
+        # the report any more than it may count toward a measure (spec 002 FR-003). The
+        # non-security ones keep their own appendix.
+        "highlights": shown,
+        "highlights_band_total": band_total,
         "unmapped": unmapped,
         "non_security": non_security,
         "totals": {

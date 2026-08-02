@@ -178,6 +178,35 @@ def _severity(tool, rule, policy):
 # --- pipeline ----------------------------------------------------------------
 
 
+_DETAIL_KEYS = {
+    "Package": "package",
+    "Installed Version": "installed",
+    "Fixed Version": "fixed",
+}
+
+
+def _detail(msg):
+    """Trivy's dependency findings -> {package, installed, fixed}; everything else -> {}.
+
+    Trivy writes the SARIF message as fixed "Key: value" lines, so this reads named keys
+    rather than guessing at prose (observed on tests/fixtures/sarif/trivy.sarif: all five
+    CVE results carry all three keys, the twenty misconfiguration results carry none).
+    Without it the report can say a dependency is vulnerable but not WHICH one — the file
+    is `requirements.txt` and the package name lives only in this message.
+
+    `fixed` is absent whenever the engine reports no fix, so the report must render it
+    conditionally: a missing key means no correction was offered, never that none exists.
+    The values come from the scanned repository's lockfile and stay untrusted — the report
+    passes them through `inline_untrusted` like any other scanned-repo string.
+    """
+    found = {}
+    for line in msg.splitlines():
+        key, sep, value = line.partition(":")
+        if sep and key.strip() in _DETAIL_KEYS and value.strip():
+            found[_DETAIL_KEYS[key.strip()]] = value.strip()
+    return found if "package" in found else {}
+
+
 def _tool_name(driver):
     return driver["name"].split()[0].lower()
 
@@ -209,6 +238,7 @@ def _extract(sarif_path, severity_policy, rules_root, target_root=None):
                     "line": region.get("startLine", 0),
                     "col": region.get("startColumn", 0),
                     "msg": result.get("message", {}).get("text", ""),
+                    "detail": _detail(result.get("message", {}).get("text", "")),
                     "snippet": _normalise_snippet(region.get("snippet", {}).get("text", "")),
                 }
             )

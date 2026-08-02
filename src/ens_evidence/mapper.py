@@ -27,27 +27,37 @@ import yaml
 
 
 def load_rules(path):
-    """-> [(compiled pattern, measures)], in file order, with the default last.
+    """-> [(compiled pattern, measures, prose)], in file order, with the default last.
 
     Patterns are compiled once here so lookup never recompiles.
+
+    `prose` is the entry's own Spanish `title`/`why`, carried through so the report can
+    head a finding with wording of ours instead of the engine's rule id. It is data from
+    the same file, not scanned-repo text: the report's fencing rules do not apply to it,
+    and nothing here may describe a specific finding — the same two strings serve every
+    finding the pattern matches.
     """
     data = yaml.safe_load(Path(path).read_text())
-    rules = [(re.compile(r["match"]), list(r["measures"])) for r in data["rules"]]
-    rules.append((None, list(data["default"]["measures"])))
+    rules = [(re.compile(r["match"]), list(r["measures"]), _prose(r)) for r in data["rules"]]
+    rules.append((None, list(data["default"]["measures"]), _prose(data["default"])))
     return rules
 
 
+def _prose(entry):
+    return {"title": entry.get("title"), "why": entry.get("why")}
+
+
 def classify(tool, rule_id, rules):
-    """-> (measures, matching pattern) — the pattern is what `explain` reports.
+    """-> (measures, matching pattern, prose) — the pattern is what `explain` reports.
 
     `None` as the pattern means nothing matched and the file's default applied.
     """
     key = f"{tool}:{rule_id}"
-    for pattern, measures in rules:
+    for pattern, measures, prose in rules:
         if pattern is None:  # the default, always last
-            return list(measures), None
+            return list(measures), None, dict(prose)
         if pattern.search(key):
-            return list(measures), pattern.pattern
+            return list(measures), pattern.pattern, dict(prose)
     raise AssertionError("rules must end with the file's default")
 
 

@@ -23,6 +23,22 @@
 # Rules are matched FIRST-TO-LAST against the string "<tool>:<rule-id>"; the first match
 # wins, so specific patterns precede catch-alls. Unmatched findings take `default`
 # (`unmapped`) and surface in the report appendix for human review.
+#
+# TITLE / WHY: the report's "Hallazgos" section heads each finding with `title` and
+# explains it with `why`, in Spanish, instead of printing the engine's rule id and its
+# English message. Two constraints, both load-bearing:
+#
+#   * They describe the CLASS of defect the pattern matches, NEVER a specific finding —
+#     one pair of strings serves every finding the pattern ever matches. So no "there is a
+#     fix available", no "this is exploitable", no "affects production": the report would
+#     assert, uniformly and sometimes falsely, something it did not observe. Anything
+#     specific to one finding comes from data instead (the location, and the package and
+#     versions Trivy reports).
+#   * They state what the defect IS and what it lets happen — not whether the repository
+#     complies with anything (principle II), and not BOE or CCN-STIC wording (principle V).
+#
+# A rule without them still renders: the report says so plainly rather than inventing a
+# description. tests/test_mapping_contract.py pins that every rule carries both.
 
 version: 1
 framework: ENS RD 311/2022
@@ -39,58 +55,156 @@ rules:
   # though p/secrets found nothing in the private corpus — hence the broader patterns.
   - match: "trivy:.*(-pat|-token|-secret|-api-key|-private-key|-password)$"
     measures: [mp.sw.1]
+    title: Credencial almacenada en el repositorio
+    why: >-
+      Se ha detectado en el código un valor con forma de credencial: una contraseña, una
+      clave de API, un token o una clave privada escritos directamente en un fichero.
+      Quien pueda leer el repositorio, o su historial de versiones, puede leerla, y
+      borrarla en un commit posterior no la retira del historial.
   - match: "trivy:(github|gitlab|aws|gcp|azure|slack|stripe|private)-.*"
     measures: [mp.sw.1]
+    title: Credencial de un servicio externo almacenada en el repositorio
+    why: >-
+      Se ha detectado un valor con forma de credencial de un proveedor externo escrito
+      directamente en el código. Da acceso a un sistema ajeno al repositorio, de modo que
+      su alcance no termina en este proyecto, y el historial de versiones la conserva
+      aunque se borre después.
   - match: "semgrep:generic\\.secrets\\..*"
     measures: [mp.sw.1]
+    title: Valor con forma de secreto escrito en el código
+    why: >-
+      Una cadena del código tiene la forma de un secreto — clave, token o contraseña —
+      en lugar de leerse de una fuente externa en tiempo de ejecución. Un secreto en el
+      código se distribuye con él: llega a cada copia, cada rama y cada despliegue.
   - match: "semgrep:.*\\.(jwt|jsonwebtoken)\\..*"
     measures: [mp.sw.1]
+    title: Manejo inseguro de tokens JWT
+    why: >-
+      El código crea, firma o valida tokens JWT de una forma que debilita la garantía que
+      el token debe dar: claves escritas en el código, algoritmo de firma no verificado o
+      validación omitida. El token deja de probar lo que dice probar.
 
   # --- known vulnerabilities in dependencies -----------------------------------------
   # Observed on repo-d, repo-e and the public apps (219 findings). GHSA/DLA/DSA/RUSTSEC
   # remain unobserved — kept because the id shapes are stable and documented.
   - match: "trivy:CVE-.*"
     measures: [op.exp.4, mp.sw.2]
+    title: Dependencia con vulnerabilidad conocida
+    why: >-
+      El repositorio declara una versión de una biblioteca externa a la que se le ha
+      publicado una vulnerabilidad. El defecto no está en el código propio sino en el
+      componente que se incorpora, y se hereda al desplegar. Los datos del paquete y de
+      las versiones acompañan a este hallazgo.
   - match: "trivy:(GHSA|DLA|DSA|RUSTSEC)-.*"
     measures: [op.exp.4, mp.sw.2]
+    title: Dependencia con aviso de seguridad publicado
+    why: >-
+      Una biblioteca externa declarada por el repositorio tiene un aviso de seguridad
+      publicado por su ecosistema o su distribución. Como en el caso anterior, el defecto
+      llega con el componente incorporado, no con el código propio.
 
   # --- web application defects (SAST, web-facing) ------------------------------------
   # Web frameworks: a defect here is both an application-development defect and a web
   # service exposure. Observed: flask xss/jinja2, django-no-csrf-token.
   - match: "semgrep:python\\.(flask|django|fastapi|aiohttp|tornado)\\..*"
     measures: [mp.sw.1, mp.s.2]
+    title: Defecto de seguridad en el código de un servicio web
+    why: >-
+      El código que atiende peticiones web maneja de forma insegura los datos que recibe
+      o la respuesta que devuelve. Al estar en la superficie expuesta del servicio, el
+      defecto es alcanzable por quien pueda enviarle una petición.
   - match: "semgrep:javascript\\.(express|nextjs)\\..*"
     measures: [mp.sw.1, mp.s.2]
+    title: Defecto de seguridad en el código de un servicio web
+    why: >-
+      El código que atiende peticiones web maneja de forma insegura los datos que recibe
+      o la respuesta que devuelve. Al estar en la superficie expuesta del servicio, el
+      defecto es alcanzable por quien pueda enviarle una petición.
   # Java web tiers: Spring controllers, servlets. Observed on WebGoat — unrestricted
   # request mappings, insecure cookies, tainted SQL/URL/path.
   - match: "semgrep:java\\.(spring|servlets|jsp|jax-rs)\\..*"
     measures: [mp.sw.1, mp.s.2]
+    title: Defecto de seguridad en el código de un servicio web
+    why: >-
+      El código que atiende peticiones web maneja de forma insegura los datos que recibe,
+      la sesión que mantiene o la respuesta que devuelve. Al estar en la superficie
+      expuesta del servicio, el defecto es alcanzable desde fuera.
   # Go web tiers.
   - match: "semgrep:go\\.(gin|echo|net-http|beego|fiber)\\..*"
     measures: [mp.sw.1, mp.s.2]
+    title: Defecto de seguridad en el código de un servicio web
+    why: >-
+      El código que atiende peticiones web maneja de forma insegura los datos que recibe
+      o la respuesta que devuelve. Al estar en la superficie expuesta del servicio, el
+      defecto es alcanzable por quien pueda enviarle una petición.
   # PHP and Ruby web tiers. PHP injection/CORS/XSS rules live under php.lang.security.*
   # rather than a framework namespace, so the injection subtree is called out explicitly.
   - match: "semgrep:php\\.lang\\.security\\.injection\\..*"
     measures: [mp.sw.1, mp.s.2]
+    title: Datos recibidos que llegan sin filtrar a una operación sensible
+    why: >-
+      Un valor que entra desde fuera alcanza una operación que lo interpreta —una
+      consulta, un comando, una ruta o una plantilla— sin filtrarlo ni separarlo de la
+      instrucción. Quien controle ese valor influye en lo que la operación ejecuta.
   - match: "semgrep:php\\.lang\\.security\\..*cors.*"
     measures: [mp.sw.1, mp.s.2]
+    title: Política de origen cruzado (CORS) demasiado permisiva
+    why: >-
+      El servicio declara qué orígenes web pueden invocarlo de forma más amplia de lo que
+      requiere su función, por ejemplo aceptando cualquiera. Esa declaración es lo que
+      impide que una página ajena haga peticiones en nombre de quien la visita.
   - match: "semgrep:php\\.(laravel|symfony|wordpress)\\..*"
     measures: [mp.sw.1, mp.s.2]
+    title: Defecto de seguridad en el código de un servicio web
+    why: >-
+      El código que atiende peticiones web maneja de forma insegura los datos que recibe
+      o la respuesta que devuelve. Al estar en la superficie expuesta del servicio, el
+      defecto es alcanzable por quien pueda enviarle una petición.
   - match: "semgrep:ruby\\.(rails|rack|sinatra)\\..*"
     measures: [mp.sw.1, mp.s.2]
+    title: Defecto de seguridad en el código de un servicio web
+    why: >-
+      El código que atiende peticiones web maneja de forma insegura los datos que recibe
+      o la respuesta que devuelve. Al estar en la superficie expuesta del servicio, el
+      defecto es alcanzable por quien pueda enviarle una petición.
   # Transport headers on served content (HSTS and friends), whatever language emits them.
   - match: "semgrep:.*(missing-hsts-header|insecure-transport|cleartext).*"
     measures: [mp.sw.1, mp.s.2]
+    title: Comunicación sin cifrar o sin exigir cifrado
+    why: >-
+      El servicio transmite por un canal sin cifrar, o no declara las cabeceras que
+      obligan al navegador a usar siempre el canal cifrado. Quien pueda observar la red
+      entre las dos partes ve o altera lo que circula.
   - match: "semgrep:csharp\\.(dotnet|aspnet)\\..*"
     measures: [mp.sw.1, mp.s.2]
+    title: Defecto de seguridad en el código de un servicio web
+    why: >-
+      El código que atiende peticiones web maneja de forma insegura los datos que recibe
+      o la respuesta que devuelve. Al estar en la superficie expuesta del servicio, el
+      defecto es alcanzable por quien pueda enviarle una petición.
   # Served-content defects: cleartext links, missing subresource integrity. Web-service
   # transport/integrity concerns rather than code defects.
   - match: "semgrep:html\\.security\\..*"
     measures: [mp.s.2]
+    title: Contenido servido que no garantiza su origen o su integridad
+    why: >-
+      Una página servida por el proyecto enlaza o carga recursos sin cifrar el canal o
+      sin comprobar que el recurso recibido sea el esperado. El navegador de quien la
+      visita ejecuta lo que llegue.
   - match: "semgrep:.*\\.xss\\..*"
     measures: [mp.sw.1, mp.s.2]
+    title: Datos insertados en una página sin escapar (XSS)
+    why: >-
+      Un valor que procede de fuera se inserta en el HTML que se devuelve sin convertirlo
+      antes en texto inerte. Deja de ser contenido y pasa a ser marcado: se ejecuta en el
+      navegador de quien recibe la página, con su sesión.
   - match: "semgrep:.*(sql-injection|execute-raw-query|sqlalchemy).*"
     measures: [mp.sw.1, mp.s.2]
+    title: Consulta a base de datos construida concatenando datos externos
+    why: >-
+      La consulta se arma uniendo texto en lugar de pasar los valores como parámetros,
+      de modo que un dato recibido puede cambiar la estructura de la consulta y no solo
+      su contenido. Es la vía por la que se leen o alteran datos fuera de lo previsto.
 
   # --- application code defects (SAST, not specifically web) -------------------------
   # Invisible and bidirectional characters in source: the code a reviewer reads is not the
@@ -100,22 +214,58 @@ rules:
   # which is why it appears only in pinned mode.
   - match: "semgrep:generic\\.unicode\\..*"
     measures: [mp.sw.1]
+    title: Caracteres invisibles o de reordenación en el código fuente
+    why: >-
+      El fichero contiene caracteres que no se ven al leerlo o que alteran el orden en
+      que se muestra el texto. El código que una persona revisa deja de coincidir con el
+      que el intérprete ejecuta, de modo que la revisión humana ya no cubre lo que corre.
   # Prompt-injection and tool-poisoning patterns in agent/LLM code. Upstream's `ai.*`
   # namespace, new to us in pinned mode; a defect in the software being developed, not in
   # its deployment, so mp.sw.1. OBSERVED 2026-07-26 on the same fixture corpus.
   - match: "semgrep:ai\\..*"
     measures: [mp.sw.1]
+    # El espacio de nombres `ai.*` va más allá de la inyección de prompt: incluye
+    # validación de entrada, rutas y entrecomillado en los hooks de agentes. Un título que
+    # dijera "inyección de prompt" afirmaría de más en la mayoría de los hallazgos que
+    # este patrón captura — observado en el análisis del propio repositorio.
+    title: Entrada no confiable manejada sin validar en código de integración con IA
+    why: >-
+      El código que integra un agente o un modelo de lenguaje toma datos que vienen de
+      fuera —la entrada de un hook, la salida del modelo, el argumento de una
+      herramienta— y los usa sin validarlos ni separarlos de lo que son instrucciones.
+      Quien controle esos datos influye en lo que el componente hace.
   - match: "semgrep:python\\.lang\\.security\\..*"
     measures: [mp.sw.1]
+    title: Uso inseguro del lenguaje o de su biblioteca estándar
+    why: >-
+      El código emplea una construcción del lenguaje de forma insegura: ejecutar cadenas,
+      lanzar procesos a través del intérprete de órdenes, deserializar datos no
+      confiables, usar algoritmos criptográficos obsoletos o desactivar la verificación
+      de certificados.
   # JS/TS outside a web framework: browser eval, sanitisation audits, language rules.
   - match: "semgrep:javascript\\.(browser|audit|lang)\\..*"
     measures: [mp.sw.1]
+    title: Uso inseguro del lenguaje o de las API del navegador
+    why: >-
+      El código emplea de forma insegura una construcción del lenguaje o una API del
+      navegador: evaluar cadenas como código, escribir directamente en el documento o
+      desactivar comprobaciones que existen para contener datos no confiables.
   - match: "semgrep:typescript\\..*"
     measures: [mp.sw.1]
+    title: Uso inseguro del lenguaje o de sus bibliotecas
+    why: >-
+      El código emplea una construcción del lenguaje o de sus bibliotecas de una forma
+      que debilita una garantía de seguridad —validación, escapado o comprobación de
+      tipos en el límite con datos externos.
   # Mobile app components. Observed on InsecureShop and ovaa: exported Android activities.
   # Mobile is not a web service, so mp.sw.1 only.
   - match: "semgrep:(java|kotlin)\\.android\\..*"
     measures: [mp.sw.1]
+    title: Componente de aplicación móvil expuesto o con almacenamiento inseguro
+    why: >-
+      Un componente de la aplicación móvil queda accesible para otras aplicaciones del
+      dispositivo, o guarda datos sin la protección que el sistema ofrece. El límite entre
+      la aplicación y el resto del dispositivo es más amplio de lo que su función exige.
 
   # Other languages outside a web framework. OBSERVED: php (md5-loose-equality, exec-use,
   # eval-use), ruby (weak-hashes-md5, ssl-mode-no-verify), scala (insecure-random).
@@ -125,22 +275,52 @@ rules:
   # absence of defects (docs/scan-baseline.md, round 7).
   - match: "semgrep:(php|ruby|rust|csharp|kotlin|scala|swift|c|cpp|elixir)\\.lang\\..*"
     measures: [mp.sw.1]
+    title: Uso inseguro del lenguaje o de su biblioteca estándar
+    why: >-
+      El código emplea una construcción del lenguaje de forma insegura: ejecutar cadenas
+      como órdenes, usar funciones de resumen o de aleatoriedad no aptas para seguridad,
+      o desactivar la verificación de certificados en una conexión cifrada.
   - match: "semgrep:(php|ruby|rust|csharp)\\..*\\.security\\..*"
     measures: [mp.sw.1]
+    title: Defecto de seguridad en el código de la aplicación
+    why: >-
+      Una regla de seguridad del motor ha señalado una construcción del código que
+      debilita una garantía de seguridad de la aplicación. El defecto está en el código
+      propio, no en la configuración de su despliegue.
   # Language-wide fallback: rule namespaces are NOT always "<lang>.lang.*". Observed:
   # swift.sqllite.swift-potential-sqlite-injection, which the .lang. patterns missed
   # entirely. Placed after the web-framework rules above so those keep their mp.s.2 pairing.
   - match: "semgrep:(php|ruby|rust|csharp|kotlin|scala|swift|c|cpp|elixir|dart|perl)\\..*"
     measures: [mp.sw.1]
+    title: Defecto de seguridad en el código de la aplicación
+    why: >-
+      Una regla de seguridad del motor ha señalado una construcción del código que
+      debilita una garantía de seguridad de la aplicación. El defecto está en el código
+      propio, no en la configuración de su despliegue.
 
   # Java and Go outside a web framework. Observed: httpservlet-path-traversal (java.lang),
   # raw-html-format (go.lang).
   - match: "semgrep:java\\.lang\\..*"
     measures: [mp.sw.1]
+    title: Uso inseguro del lenguaje o de su biblioteca estándar
+    why: >-
+      El código emplea una construcción del lenguaje de forma insegura: componer rutas o
+      salidas con datos externos, deserializar contenido no confiable o usar algoritmos
+      criptográficos obsoletos.
   - match: "semgrep:go\\.lang\\..*"
     measures: [mp.sw.1]
+    title: Uso inseguro del lenguaje o de su biblioteca estándar
+    why: >-
+      El código emplea una construcción del lenguaje de forma insegura: componer salidas
+      o rutas con datos externos, lanzar procesos a partir de ellos o usar primitivas
+      criptográficas no aptas para el uso que se les da.
   - match: "semgrep:.*\\.security\\.audit\\..*"
     measures: [mp.sw.1]
+    title: Construcción marcada para revisión de seguridad
+    why: >-
+      El motor señala una construcción que suele acompañar a un defecto de seguridad y
+      cuya corrección depende del contexto en que se usa. Requiere que una persona decida
+      si en este caso lo es.
 
   # --- CI/CD pipeline and supply chain -----------------------------------------------
   # Mutable action tags, shell injection in workflow steps, missing Renovate release-age
@@ -149,12 +329,29 @@ rules:
   # one: the same workflow file resolves to different code over time.
   - match: "semgrep:yaml\\.github-actions\\.security\\.github-actions-mutable-action-tag.*"
     measures: [mp.sw.2, op.exp.3]
+    title: Paso de la cadena de construcción referenciado por una etiqueta mutable
+    why: >-
+      El flujo de trabajo invoca un componente externo por una etiqueta que su autor
+      puede reasignar, en lugar de por una revisión fija. El mismo fichero, sin cambiar,
+      pasa a ejecutar código distinto, de modo que lo que se construyó no queda
+      determinado por lo que el repositorio declara.
   - match: "semgrep:yaml\\.github-actions\\..*"
     measures: [mp.sw.2]
+    title: Defecto de seguridad en el flujo de integración continua
+    why: >-
+      El flujo que construye o publica el software maneja de forma insegura sus entradas,
+      sus permisos o sus credenciales. Afecta a cómo se produce y se promociona el
+      software, no al código del producto.
   # Any package-manager policy rule: Renovate release-age floors, npm equivalents. Both a
   # promotion-gate and an update-policy concern.
   - match: "semgrep:package_managers\\..*"
     measures: [mp.sw.2, op.exp.4]
+    title: Política de gestión de dependencias sin restricción declarada
+    why: >-
+      La configuración que gobierna cómo se incorporan o actualizan las dependencias no
+      declara una restricción que la limite, por ejemplo un tiempo mínimo desde la
+      publicación de una versión antes de adoptarla. Es lo que decide qué código de
+      terceros entra en el producto y cuándo.
 
   # --- configuration management: which artefact is actually deployed -----------------
   # op.exp.3 is the lifecycle measure — knowing and controlling what configuration is in
@@ -163,8 +360,19 @@ rules:
   # hardening-setting failure. Must precede the generic KSV-* rule below.
   - match: "trivy:KSV-0013$"          # image tag ":latest"
     measures: [op.exp.3]
+    title: Imagen de contenedor referenciada por una etiqueta mutable
+    why: >-
+      El manifiesto pide la imagen por una etiqueta que puede reasignarse a otro
+      contenido, en lugar de por un identificador fijo. Dos despliegues del mismo
+      manifiesto pueden ejecutar código distinto, y el manifiesto deja de decir qué está
+      en funcionamiento.
   - match: "trivy:KSV-0125$"          # image from an untrusted registry
     measures: [op.exp.3]
+    title: Imagen de contenedor procedente de un registro no declarado como confiable
+    why: >-
+      El manifiesto obtiene la imagen de un origen que no figura entre los aprobados para
+      el entorno. El control sobre qué artefacto se despliega queda fuera del ámbito que
+      el proyecto gobierna.
 
   # --- cloud and IaC configuration ---------------------------------------------------
   # Trivy's cloud checks (AWS-*, AZU-*, GCP-* …) and Semgrep's IaC namespaces. Same nature
@@ -172,27 +380,70 @@ rules:
   # Observed on terragoat: 277 findings across 186 ids that were previously invisible.
   - match: "trivy:(AWS|AZU|GCP|DIG|GITHUB|OPNSTK|CLDSTK|NIF|AVD)-.*"
     measures: [op.exp.2]
+    title: Recurso de infraestructura declarado con una configuración insegura
+    why: >-
+      La definición de infraestructura declara un recurso con un ajuste de seguridad
+      débil: acceso más abierto de lo necesario, cifrado o registro de actividad sin
+      activar, o permisos más amplios que la función del recurso. Lo que se despliegue a
+      partir de esta definición lo hereda.
   - match: "semgrep:terraform\\..*"
     measures: [op.exp.2]
+    title: Recurso de infraestructura declarado con una configuración insegura
+    why: >-
+      La definición de infraestructura declara un recurso con un ajuste de seguridad
+      débil: acceso más abierto de lo necesario, cifrado o registro de actividad sin
+      activar, o permisos más amplios que la función del recurso. Lo que se despliegue a
+      partir de esta definición lo hereda.
   - match: "semgrep:(cloudformation|ansible|helm|bicep)\\..*"
     measures: [op.exp.2]
+    title: Definición de despliegue con una configuración de seguridad débil
+    why: >-
+      La plantilla o el manifiesto que describe el despliegue fija un ajuste de seguridad
+      por debajo de lo que la función del componente requiere. El entorno que se cree a
+      partir de él nace con ese ajuste.
 
   # --- container image and orchestration configuration -------------------------------
   # Trivy KSV-* (Kubernetes) and DS-* (Dockerfile), plus Semgrep's overlapping
   # dockerfile/kubernetes rules. Runtime hardening posture -> security configuration.
   - match: "trivy:KSV-.*"
     measures: [op.exp.2]
+    title: Carga de trabajo de Kubernetes sin una restricción de ejecución
+    why: >-
+      El manifiesto no fija una restricción que acote lo que el contenedor puede hacer en
+      el nodo: ejecución sin privilegios, sistema de ficheros de solo lectura, límites de
+      recursos o capacidades del sistema. Sin ella, el contenedor dispone de más de lo
+      que su función necesita.
   - match: "trivy:DS-.*"
     measures: [op.exp.2]
+    title: Imagen de contenedor construida sin una restricción de ejecución
+    why: >-
+      El fichero de construcción de la imagen omite un ajuste que acota lo que el
+      contenedor puede hacer, como declarar un usuario sin privilegios. Toda instancia
+      que se ejecute a partir de esta imagen arranca con esa holgura.
   - match: "semgrep:dockerfile\\..*"
     measures: [op.exp.2]
+    title: Imagen de contenedor construida sin una restricción de ejecución
+    why: >-
+      El fichero de construcción de la imagen omite un ajuste que acota lo que el
+      contenedor puede hacer, o incorpora contenido de un origen que no fija. Toda
+      instancia que se ejecute a partir de esta imagen lo hereda.
   - match: "semgrep:yaml\\.kubernetes\\..*"
     measures: [op.exp.2]
+    title: Carga de trabajo de Kubernetes sin una restricción de ejecución
+    why: >-
+      El manifiesto no fija una restricción que acote lo que el contenedor puede hacer en
+      el nodo, o le concede permisos sobre el clúster más amplios que su función. Sin esa
+      acotación, el alcance de un fallo no queda contenido en la carga de trabajo.
   # docker-compose was excluded as "deliberate, we scan k8s and Dockerfiles" — govwa proved
   # that wrong: compose files carry the same hardening settings (no-new-privileges,
   # writable filesystem).
   - match: "semgrep:yaml\\.docker-compose\\..*"
     measures: [op.exp.2]
+    title: Servicio de docker-compose sin una restricción de ejecución
+    why: >-
+      La definición del servicio omite un ajuste que acota lo que el contenedor puede
+      hacer en el anfitrión: impedir la elevación de privilegios, montar el sistema de
+      ficheros como solo lectura o limitar los volúmenes que expone.
 
 default:
   measures: [unmapped]

@@ -77,9 +77,14 @@ Realizado.
 
 ## Por dónde empezar
 
-{% if triage %}
-{% for f in triage %}
-### {{ loop.index }}. `{{ f.rule | inline_untrusted }}` — {{ f.sev }}{% if f.new %} · nuevo{% endif %}
+{% if highlights %}
+{% for f in highlights %}
+{# Nuestra redacción encabeza, y el id de la regla baja a una viñeta: el bundle se pega en
+   ventanas de chat, donde un id de 70 caracteres como titular no dice nada. Sin línea base
+   no se marca nada como nuevo — todo lo sería. #}
+### {{ loop.index }}. {% if f.prose.title %}{{ f.prose.title }}{% else %}Hallazgo sin descripción redactada{% endif %} — {{ f.sev }}{% if f.new and record.baseline_sha256 %} · nuevo{% endif %}
+
+- **Regla:** `{{ f.rule | inline_untrusted }}`
 
 {# `+%}` on the closing tags: trim_blocks would otherwise swallow the newline after an
    inline conditional and glue the next bullet onto this one. #}

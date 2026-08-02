@@ -127,3 +127,54 @@ def test_severity_policy_covers_both_engines(severity):
     assert severity["engines"]["trivy"]["strategy"] == "severity_tag_then_bands"
     assert severity["engines"]["semgrep"]["strategy"] == "sarif_level_with_confidence"
     assert severity["default"] in severity["canonical"]
+
+
+# --- report prose ------------------------------------------------------------
+
+# Wording that asserts something about a SPECIFIC finding. `title`/`why` are per rule and
+# are reused by every finding the pattern ever matches, so any of these would make the
+# report state, uniformly and sometimes falsely, something it never observed. The one that
+# prompted this list: "existe corrección en una versión posterior", which is untrue for
+# every CVE that has no fix. Per-finding facts come from data — the location, and the
+# package and versions Trivy reports — never from these strings.
+CASE_SPECIFIC = [
+    r"\bexiste (una )?correcci[oó]n\b",
+    r"\bes explotable\b",
+    r"\bha sido explotad",
+    r"\ben producci[oó]n\b",
+    r"\besta versi[oó]n\b",
+    r"\beste fichero\b",
+    r"\beste paquete\b",
+    r"\bactualice a\b",
+]
+
+# Principle II, applied to the wording that now heads every finding.
+VERDICT_SHAPED = [r"\bcumple\b", r"\bconforme\b", r"\bcertifica\b", r"\bes seguro\b"]
+
+
+def test_every_rule_carries_title_and_why(mapping):
+    """The report heads each finding with this wording instead of the engine's rule id.
+    A rule without it still renders — the report says so plainly rather than inventing a
+    description — but shipping one is an authoring oversight, not a design state."""
+    missing = [r["match"] for r in mapping["rules"] if not r.get("title") or not r.get("why")]
+    assert not missing, f"mapping rules without title/why: {missing}"
+
+
+def test_rule_prose_never_describes_a_specific_finding(mapping):
+    """One pair of strings serves every finding the pattern matches, so it may only
+    describe the CLASS of defect."""
+    hits = []
+    for rule in mapping["rules"]:
+        text = f"{rule.get('title', '')} {rule.get('why', '')}".lower()
+        hits += [(rule["match"], p) for p in CASE_SPECIFIC if re.search(p, text)]
+    assert not hits, f"case-specific wording in rule prose: {hits}"
+
+
+def test_rule_prose_states_no_verdict(mapping):
+    """Principle II reaches the mapping file the moment its wording is what the report
+    prints: these strings are report text, and the report never states compliance."""
+    hits = []
+    for rule in mapping["rules"]:
+        text = f"{rule.get('title', '')} {rule.get('why', '')}".lower()
+        hits += [(rule["match"], p) for p in VERDICT_SHAPED if re.search(p, text)]
+    assert not hits, f"verdict-shaped wording in rule prose: {hits}"

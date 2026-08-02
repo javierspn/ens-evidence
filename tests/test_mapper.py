@@ -61,7 +61,7 @@ def test_patterns_are_compiled_once(rules):
     import re  # noqa: PLC0415
 
     *patterns, default = rules
-    assert all(isinstance(pattern, re.Pattern) for pattern, _ in patterns)
+    assert all(isinstance(pattern, re.Pattern) for pattern, _, _ in patterns)
     assert default[0] is None
 
 
@@ -70,19 +70,30 @@ def test_rules_are_data_not_code(rules):
     raw = yaml.safe_load(MAPPING.read_text())
     from_file = {m for rule in raw["rules"] for m in rule["measures"]}
     from_file |= set(raw["default"]["measures"])
-    emitted = {m for _, measures in rules for m in measures}
+    emitted = {m for _, measures, _ in rules for m in measures}
     assert emitted <= from_file
 
 
 def test_matched_rule_is_reported(rules):
     """`explain` needs the pattern that matched, not only the measures."""
-    measures, pattern = mapper.classify("trivy", "KSV-0013", rules)
+    measures, pattern, _ = mapper.classify("trivy", "KSV-0013", rules)
     assert measures == ["op.exp.3"]
     assert "KSV-0013" in pattern
 
-    measures, pattern = mapper.classify("mysteryengine", "SOME-RULE-1", rules)
+    measures, pattern, _ = mapper.classify("mysteryengine", "SOME-RULE-1", rules)
     assert measures == ["unmapped"]
     assert pattern is None
+
+
+def test_classify_carries_the_entrys_own_prose(rules):
+    """The report heads a finding with our Spanish wording, so the matching entry's
+    `title`/`why` must travel with the measures — a second matching pass to fetch them
+    could disagree with the first about which entry won."""
+    _, _, prose = mapper.classify("trivy", "KSV-0013", rules)
+    assert prose["title"] and prose["why"]
+
+    _, _, prose = mapper.classify("mysteryengine", "SOME-RULE-1", rules)
+    assert prose == {"title": None, "why": None}
 
 
 # --- T023 fall-through probes ------------------------------------------------

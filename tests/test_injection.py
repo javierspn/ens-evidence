@@ -99,10 +99,18 @@ def test_no_injection_appears_as_document_prose(documents, doc):
 
 @pytest.mark.parametrize("doc", ["bundle", "report"])
 def test_scanner_messages_are_fenced(documents, doc):
-    """Every rendered message sits in a block whose header says it is data."""
+    """Every rendered message sits in a block whose header says it is data.
+
+    The report stopped rendering engine messages when section 5 replaced the engine's
+    prose with our own: its scanned-repo text is now paths and rule ids, which take
+    `inline_untrusted` instead and are covered by the code-span test below. So the count
+    may legitimately be zero there — but never a fence without its header, and the bundle
+    still quotes messages and must still fence them.
+    """
     document = documents[doc]
     assert document.count(render.FENCE_OPEN) == document.count(render.FENCE_HEADER)
-    assert document.count(render.FENCE_OPEN) > 0
+    if doc == "bundle":
+        assert document.count(render.FENCE_OPEN) > 0
 
 
 def test_the_fence_cannot_be_closed_early():
@@ -149,7 +157,7 @@ def test_a_path_cannot_escape_its_span_or_cell(model, doc):
     for bucket in poisoned["by_measure"].values():
         for item in bucket:
             item["file"] = hostile
-    for item in poisoned["triage"] + poisoned["unmapped"] + poisoned["non_security"]:
+    for item in poisoned["highlights"] + poisoned["unmapped"] + poisoned["non_security"]:
         item["file"] = hostile
     render_fn = render.render_bundle if doc == "bundle" else render.render_report
     document = render_fn(poisoned, TEMPLATE_DIR)

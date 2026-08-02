@@ -64,14 +64,16 @@ def test_rendered_report_carries_scope_list(report):
 def test_section_order_matches_the_contract(report):
     expected = [
         "# Informe de evidencias",
-        "## Qué es y qué no es este informe",
-        "## Cobertura del análisis",
-        "## Vigencia de las entradas",
-        "## Triage",
-        "## Evidencia por medida",
-        "## Tabla completa de hallazgos",
-        "## Apéndice: hallazgos sin correspondencia asignada",
-        "## Apéndice: hallazgos no marcados como seguridad",
+        "## 1. Alcance",
+        "## 2. Descripción",
+        "## 3. Cobertura",
+        "## 4. Vigencia",
+        "## 5. Hallazgos",
+        "## 6. Evidencia por medida",
+        "## 7. Anexos",
+        "### 7.1 · Tabla completa de hallazgos",
+        "### 7.2 · Hallazgos sin correspondencia asignada",
+        "### 7.3 · Hallazgos no marcados como seguridad",
     ]
     positions = []
     for heading in expected:
@@ -81,16 +83,20 @@ def test_section_order_matches_the_contract(report):
     assert positions == sorted(positions), "sections out of contract order"
 
 
-def test_every_scope_measure_has_its_own_section(report):
+def test_every_scope_measure_is_accounted_for(report):
+    """Section 6 numbers only the measures that have evidence and gathers the rest under
+    one "sin evidencia recogida" heading — six near-identical empty sections filled a
+    page. Either way every measure in scope must be named somewhere in that section."""
+    section = report.split("## 6. Evidencia por medida")[1].split("## 7. Anexos")[0]
     for measure in SCOPE:
-        assert f"### {measure} — " in report
+        assert measure in section, f"measure absent from section 6: {measure}"
 
 
 # --- T011 coverage -----------------------------------------------------------
 
 
 def test_coverage_renders_all_four_fields(report):
-    assert "## Cobertura del análisis" in report
+    assert "## 3. Cobertura" in report
     assert "Lenguajes detectados" in report
     assert "Reglas ejecutadas por lenguaje" in report
     assert "Lenguajes detectados sin analizar" in report
@@ -197,9 +203,10 @@ def test_report_states_no_verdict_anywhere(report):
 def test_empty_measure_says_so_explicitly(report):
     """The fixture files zero findings under mp.s.2, so this branch renders every run.
     An empty section reads as a pass to a human; saying otherwise is the whole point."""
-    section = report.split("### mp.s.2 — ")[1].split("###")[0]
+    section = report.split("· Medidas sin evidencia recogida")[1].split("## 7.")[0]
+    assert "mp.s.2" in section
     assert "Sin evidencia recogida" in section
-    assert "no significa que la medida se cumpla" in section
+    assert "no significa que estas medidas se cumplan" in prose(section)
 
 
 def test_report_declares_what_it_is_not(report):
@@ -275,41 +282,104 @@ def test_no_scanned_repo_text_escapes_a_fence(report):
             assert head not in outside, f"scanned-repo text outside a fence: {head!r}"
 
 
-# --- T020/T021 triage --------------------------------------------------------
+# --- T020/T021 findings section ----------------------------------------------
 
 
-def test_triage_is_capped_and_severity_ordered(model):
-    entries = model["triage"]
-    assert len(entries) == render.TRIAGE_LIMIT
-    severities = [render.CANONICAL.index(f["sev"]) for f in entries]
-    assert severities == sorted(severities)
+def severities(findings, sev):
+    out = copy.deepcopy(findings)
+    for finding in out:
+        finding["sev"] = sev
+        finding["security"] = True
+    return out
 
 
-def test_triage_prefers_new_at_equal_severity():
+def test_highlights_are_severity_ordered(model):
+    entries = model["highlights"]
+    assert entries
+    ranks = [render.CANONICAL.index(f["sev"]) for f in entries]
+    assert ranks == sorted(ranks)
+
+
+def test_highlights_carry_critical_not_only_high():
+    """The canonical scale opens at `critical`, so a section that filtered on `high`
+    would drop the worst findings in the run — the corpus's top finding is a leaked
+    credential Trivy scores 9.5, i.e. critical."""
+    findings, record = render.load_run(RUN)
+    findings = severities(findings, "high")
+    findings[0] = copy.deepcopy(findings[0])
+    findings[0]["sev"] = "critical"
+    entries = build(record, findings)["highlights"]
+    assert entries[0]["sev"] == "critical"
+    assert {f["sev"] for f in entries} == {"critical", "high"}
+
+
+def test_highlights_fall_to_the_next_band_when_the_top_is_empty():
+    """A repository whose worst finding is a medium must not render an empty section:
+    silence reads as a pass, which principle II forbids."""
+    findings, record = render.load_run(RUN)
+    entries = build(record, severities(findings, "medium"))["highlights"]
+    assert entries and all(f["sev"] == "medium" for f in entries)
+
+    entries = build(record, severities(findings, "low"))["highlights"]
+    assert entries and all(f["sev"] == "low" for f in entries)
+
+
+def test_highlights_never_promote_info():
+    """`info` is the severity of what the engine could not classify. Promoting it would
+    present unknowns as the findings that matter most."""
+    findings, record = render.load_run(RUN)
+    model = build(record, severities(findings, "info"))
+    assert model["highlights"] == []
+    assert model["highlights_band_total"] == 0
+
+
+def test_highlights_exclude_non_security_findings():
+    """A best-practice suggestion must not lead the report any more than it may count
+    toward a measure (FR-003)."""
     findings, record = render.load_run(RUN)
     findings = copy.deepcopy(findings)
     for finding in findings:
-        finding["sev"] = "high"  # collapse severity so newness decides
+        finding["sev"] = "critical"
+        finding["security"] = False
+    model = build(record, findings)
+    assert model["highlights"] == []
+
+
+def test_highlights_are_capped_and_the_cap_is_disclosed():
+    """Truncating in silence would read as "these are all of them"."""
+    findings, record = render.load_run(RUN)
+    findings = severities(findings, "high")
+    assert len(findings) > render.HIGHLIGHT_LIMIT, "fixture too small to exercise the cap"
+    model = build(record, findings)
+    assert len(model["highlights"]) == render.HIGHLIGHT_LIMIT
+    assert model["highlights_band_total"] == len(findings)
+    out = render.render_report(model, TEMPLATES)
+    assert f"Se detallan {render.HIGHLIGHT_LIMIT} de {len(findings)}" in out
+
+
+def test_highlights_prefer_new_at_equal_severity():
+    findings, record = render.load_run(RUN)
+    findings = severities(findings, "high")  # collapse severity so newness decides
+    for finding in findings:
         finding["new"] = False
     findings[-1]["new"] = True
-    entries = build(record, findings)["triage"]
+    entries = build(record, findings)["highlights"]
     assert entries[0]["fingerprint"] == findings[-1]["fingerprint"]
 
 
-def test_triage_takes_all_when_fewer_than_the_limit():
+def test_highlights_take_all_when_fewer_than_the_limit():
     findings, record = render.load_run(RUN)
-    entries = build(record, findings[:3])["triage"]
+    entries = build(record, severities(findings[:3], "high"))["highlights"]
     assert len(entries) == 3
 
 
-def test_triage_ties_break_deterministically():
+def test_highlights_ties_break_deterministically():
     findings, record = render.load_run(RUN)
-    findings = copy.deepcopy(findings)
+    findings = severities(findings, "high")
     for finding in findings:
-        finding["sev"] = "high"
         finding["new"] = True
-    first = [f["fingerprint"] for f in build(record, findings)["triage"]]
-    second = [f["fingerprint"] for f in build(record, list(reversed(findings)))["triage"]]
+    first = [f["fingerprint"] for f in build(record, findings)["highlights"]]
+    second = [f["fingerprint"] for f in build(record, list(reversed(findings)))["highlights"]]
     assert first == second
 
 
@@ -320,7 +390,7 @@ def test_unmapped_finding_reaches_its_appendix(model, report):
     assert len(model["unmapped"]) == 1
     entry = model["unmapped"][0]
     assert entry["tool"] == "mysteryengine"
-    appendix = report.split("## Apéndice: hallazgos sin correspondencia asignada")[1]
+    appendix = report.split("### 7.2 · Hallazgos sin correspondencia asignada")[1]
     assert entry["id"] in appendix
     for measure in SCOPE:
         assert entry not in model["by_measure"][measure]
@@ -333,7 +403,7 @@ def test_non_security_finding_counts_toward_nothing(model, report):
     assert not entry["counts"]
     for measure in SCOPE:
         assert entry not in model["by_measure"][measure]
-    appendix = report.split("## Apéndice: hallazgos no marcados como seguridad")[1]
+    appendix = report.split("### 7.3 · Hallazgos no marcados como seguridad")[1]
     assert entry["id"] in appendix
 
 
