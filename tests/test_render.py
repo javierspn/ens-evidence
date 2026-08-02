@@ -98,7 +98,7 @@ def test_every_scope_measure_is_accounted_for(report):
 def test_coverage_renders_all_four_fields(report):
     assert "## 3. Cobertura" in report
     assert "Lenguajes detectados" in report
-    assert "Reglas ejecutadas por lenguaje" in report
+    assert "Reglas del catálogo, por lenguaje" in report
     assert "Lenguajes detectados sin analizar" in report
     assert "Análisis de dependencias" in report
 
@@ -116,6 +116,21 @@ def test_counted_rules_render_when_the_ruleset_is_pinned():
     out = render.render_report(build(record=record), TEMPLATES)
     assert "| python | 456 |" in out
     assert "no es reproducible" not in out.lower()
+
+
+def test_rule_counts_do_not_claim_a_language_the_repository_lacks():
+    """The catalogue ships rules for 30 languages; the 2026-08-02 sample printed all of
+    them under "reglas ejecutadas" for a repository holding five. Each row now declares
+    whether its language is present — an absent one evaluated nothing (principle IV)."""
+    _, record = render.load_run(RUN)
+    record = copy.deepcopy(record)
+    record["coverage"]["languages_detected"] = {"python": 26, "shell": 9}
+    record["coverage"]["rules_per_language"] = {"python": 337, "bash": 6, "terraform": 364}
+    out = render.render_report(build(record=record), TEMPLATES)
+    assert "| python | 337 | sí |" in out
+    assert "| bash | 6 | sí |" in out, "the shell -> bash alias must survive the table"
+    assert "| terraform | 364 | no |" in out
+    assert "reglas ejecutadas por lenguaje" not in prose(out)
 
 
 def test_missing_lockfile_is_stated_not_implied():
@@ -322,6 +337,49 @@ def test_highlights_fall_to_the_next_band_when_the_top_is_empty():
 
     entries = build(record, severities(findings, "low"))["highlights"]
     assert entries and all(f["sev"] == "low" for f in entries)
+
+
+def test_findings_sharing_a_description_render_as_one_entry(model, report):
+    """The 2026-08-02 sample printed the same Kubernetes paragraph four times, differing
+    only in file and line. One entry per description now, with every location under it —
+    nothing dropped: the report is evidence, so each finding keeps its own fingerprint."""
+    groups = model["highlight_groups"]
+    assert sum(len(g["hits"]) for g in groups) == len(model["highlights"])
+    titles = [g["lead"]["prose"].get("title") for g in groups]
+    assert len(titles) == len(set(titles)) or None in titles, "a description repeats"
+    for group in groups:
+        for hit in group["hits"]:
+            assert f"`{hit['id']}`" in report, "a grouped finding lost its fingerprint"
+
+
+def test_grouping_keys_on_the_description_not_the_rule():
+    """KSV-0014 and KSV-0118 map to one description: keying on the rule would still
+    print it twice."""
+
+    def finding(rule, file):
+        return {
+            "sev": "high",
+            "rule": rule,
+            "file": file,
+            "measures": ["op.exp.2"],
+            "prose": {"title": "Carga de trabajo sin restricción", "why": "..."},
+        }
+
+    groups = render.group_highlights(
+        [finding("KSV-0014", "a/k8s.yaml"), finding("KSV-0118", "b/k8s.yaml")]
+    )
+    assert len(groups) == 1
+    assert [h["file"] for h in groups[0]["hits"]] == ["a/k8s.yaml", "b/k8s.yaml"]
+
+
+def test_a_differing_measure_keeps_findings_apart():
+    """Same wording, different assigned measure: merging them would attach one location
+    to a measure it was never mapped to."""
+    base = {"sev": "high", "rule": "R", "file": "f", "prose": {"title": "T", "why": "w"}}
+    groups = render.group_highlights(
+        [{**base, "measures": ["op.exp.2"]}, {**base, "measures": ["mp.sw.1"]}]
+    )
+    assert len(groups) == 2
 
 
 def test_highlights_never_promote_info():

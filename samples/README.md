@@ -36,7 +36,15 @@ finding out in Spanish, with our own title and explanation and its ENS measure, 
 heading it with the engine's rule id and quoting the engine's English message. Regenerated
 because the committed PDF still showed the old structure.
 
-The eight entries in section 5 are all `high`; this repository's run produces no
+Two later corrections are also in this render. Section 3's rule counts are the catalogue's,
+so each row now says whether the repository holds that language at all — a run over five
+languages was listing 364 terraform rules under "reglas ejecutadas". And section 5 groups
+the findings that share a description: the same Kubernetes paragraph was printed four times
+over, differing only in file and line. Every finding is still there, each with its own
+location, rule and fingerprint.
+
+The eight `high` findings in section 5 render as three entries; this repository's run
+produces no
 `critical`, and no CVE findings at all, so the sample does not exercise either the
 cascade's lower bands or the package-and-version line that dependency findings carry.
 

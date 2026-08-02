@@ -17,3 +17,8 @@ __version__ = "1.0.0"
 PACKAGE_DIR = Path(__file__).resolve().parent
 MAPPING_DIR = PACKAGE_DIR / "mapping"
 TEMPLATE_DIR = PACKAGE_DIR / "templates"
+
+# Our census language name -> the upstream rules directory that covers it. Lives here and
+# not in run.py because the renderer needs it too — run.py imports render, so the arrow
+# cannot point back — and two copies would let the coverage table disagree with itself.
+RULE_DIR_ALIASES = {"shell": "bash"}

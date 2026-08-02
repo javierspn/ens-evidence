@@ -36,7 +36,7 @@ from pathlib import Path
 import jinja2
 import yaml
 
-from ens_evidence import mapper
+from ens_evidence import RULE_DIR_ALIASES, mapper
 from ens_evidence.normalise import CANONICAL
 
 SNIPPET_MAX_CHARS = 200
@@ -148,6 +148,51 @@ def highlights(findings):
     return [], 0
 
 
+def rules_catalogue_rows(coverage):
+    """The rules-per-language table, with each row marked as to whether the repository
+    actually contains that language.
+
+    The count is the catalogue's, not the run's: the 2026-08-02 sample listed 364
+    terraform rules under "reglas ejecutadas" for a repository with no terraform file.
+    A rule directory whose language was never detected evaluated nothing, and the table
+    has to say so — Principle IV forbids claiming coverage that did not happen.
+
+    The rows stay, none is dropped: directories that are not one language (`ai`,
+    `generic`) do run against the detected files, and filtering by detected language
+    would have hidden the very ruleset that produced this run's high-severity finding.
+    """
+    per_language = coverage["rules_per_language"]
+    if per_language == "registry-uncounted":
+        return []
+    detected = {RULE_DIR_ALIASES.get(lang, lang) for lang in coverage["languages_detected"]}
+    return [
+        {"lang": lang, "count": count, "detected": lang in detected}
+        for lang, count in sorted(per_language.items())
+    ]
+
+
+def group_highlights(shown):
+    """The highlighted findings, grouped by what the report would print about them.
+
+    Two findings whose severity, description and assigned measures are identical render
+    as the same three paragraphs — the 2026-08-02 sample repeated one Kubernetes text
+    four times over, differing only in file and line. Grouping keeps every finding (each
+    one keeps its own location and fingerprint) and prints the prose once.
+
+    The key is the prose, not the rule: KSV-0014 and KSV-0118 map to one description, so
+    keying on the rule would still repeat it.
+    """
+    groups = []
+    index = {}
+    for f in shown:
+        key = (f["sev"], f["prose"].get("title"), f["prose"].get("why"), tuple(f["measures"]))
+        if key not in index:
+            index[key] = len(groups)
+            groups.append({"lead": f, "hits": []})
+        groups[index[key]]["hits"].append(f)
+    return groups
+
+
 def _total_order(finding):
     return (finding["file"], finding["class"], finding["rule"], finding["fingerprint"])
 
@@ -191,6 +236,7 @@ def build_model(findings, record, rules, measures_file, scope):
         # it would make two machines produce different reports for the same repository.
         "target_name": Path(record["run"]["target"]).resolve().name or record["run"]["target"],
         "coverage": record["coverage"],
+        "rules_catalogue": rules_catalogue_rows(record["coverage"]),
         "scope": scope,
         "measures_meta": measures_file["measures"],
         "measures_verified": measures_file["verified"],
@@ -200,6 +246,7 @@ def build_model(findings, record, rules, measures_file, scope):
         # the report any more than it may count toward a measure (spec 002 FR-003). The
         # non-security ones keep their own appendix.
         "highlights": shown,
+        "highlight_groups": group_highlights(shown),
         "highlights_band_total": band_total,
         "unmapped": unmapped,
         "non_security": non_security,

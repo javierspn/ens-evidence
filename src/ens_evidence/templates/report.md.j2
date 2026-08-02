@@ -79,7 +79,7 @@ descripciones de los hallazgos, en cambio, son redacción de esta herramienta.
 | {{ lang | inline_untrusted }} | {{ count }} |
 {% endfor %}
 
-**Reglas ejecutadas por lenguaje:**
+**Reglas del catálogo, por lenguaje:**
 {% if coverage.rules_per_language == "registry-uncounted" %}
 No es posible contarlas. El análisis usó el catálogo remoto de reglas, que no está fijado
 a una versión: el conjunto de reglas puede cambiar entre ejecuciones sin que cambie
@@ -87,10 +87,16 @@ ninguna entrada de este análisis. Este informe **no es reproducible** en ese se
 que lo sea, fije las reglas a un commit concreto.
 {% else %}
 
-| Lenguaje | Reglas |
-|---|---|
-{% for lang, count in coverage.rules_per_language | dictsort %}
-| {{ lang | inline_untrusted }} | {{ count }} |
+Es el recuento del catálogo de reglas, no el de las reglas que llegaron a evaluar algo:
+una regla escrita para un lenguaje que no se ha detectado en este repositorio no ha
+examinado nada. La columna lo indica por fila. Los directorios que no son un lenguaje
+concreto figuran como no detectados y aun así pueden producir hallazgos, porque sus
+reglas declaran sobre qué lenguajes se aplican.
+
+| Lenguaje | Reglas | Detectado en el repositorio |
+|---|---|---|
+{% for row in rules_catalogue %}
+| {{ row.lang | inline_untrusted }} | {{ row.count }} | {% if row.detected %}sí{% else %}no{% endif %} |
 {% endfor %}
 {% endif %}
 
@@ -161,12 +167,16 @@ Los hallazgos no marcados como seguridad por el motor quedan fuera de esta secci
 registran en el [anexo 7.3](#73--hallazgos-no-marcados-como-seguridad) y no cuentan como
 evidencia de ninguna medida.
 
-{% for f in highlights %}
+{# Agrupados por descripción: varios hallazgos con la misma redacción y la misma medida
+   se imprimían como bloques idénticos que solo cambiaban en fichero y línea. Ninguno se
+   pierde — cada uno conserva su ubicación y su huella en "Dónde". #}
+{% for g in highlight_groups %}
+{% set f = g.lead %}
 {% set unmapped_here = f.measures == ['unmapped'] %}
 {# Dos ausencias distintas, y confundirlas hace mentir al informe: un hallazgo SIN
    correspondencia no tiene medida asignada, mientras que uno mapeado al que le falte
    `title` sí la tiene y solo carece de redacción. #}
-### 5.{{ loop.index }} · {% if f.prose.title %}{{ f.prose.title }}{% elif unmapped_here %}Hallazgo sin correspondencia asignada{% else %}Hallazgo sin descripción redactada{% endif %} — **[{{ SEV_ES[f.sev] }}]**{% if f.new and record.baseline_sha256 %} · nuevo{% endif +%}
+### 5.{{ loop.index }} · {% if f.prose.title %}{{ f.prose.title }}{% elif unmapped_here %}Hallazgo sin correspondencia asignada{% else %}Hallazgo sin descripción redactada{% endif %} — **[{{ SEV_ES[f.sev] }}]**{% if g.hits | length > 1 %} · {{ g.hits | length }} hallazgos{% elif f.new and record.baseline_sha256 %} · nuevo{% endif +%}
 
 **Qué es.** {% if f.prose.why %}{{ f.prose.why }}{% elif unmapped_here %}Ninguna regla de correspondencia de este proyecto cubre este hallazgo, así que no hay
 descripción propia ni medida asignada. Requiere revisión humana: el nombre de la regla,
@@ -176,12 +186,24 @@ lleva descripción redactada. El nombre de la regla, abajo, es lo único que lo 
 {# `.get()`, no acceso por atributo: el entorno es StrictUndefined y una clave ausente
    —lo normal, porque solo los hallazgos de dependencia de Trivy traen estos campos—
    abortaría el render en vez de omitir la frase. #}
+{% if g.hits | length > 1 %}
+**Dónde.** {{ g.hits | length }} ubicaciones:
+
+{% for i in g.hits %}
+- `{{ i.file | inline_untrusted }}`{% if i.line %}, línea {{ i.line }}{% endif %}{% if i.detail.get('package') %} · paquete `{{ i.detail.get('package') | inline_untrusted }}`{% if i.detail.get('installed') %}, versión instalada `{{ i.detail.get('installed') | inline_untrusted }}`{% endif %}{% if i.detail.get('fixed') %}, corregido en `{{ i.detail.get('fixed') | inline_untrusted }}`{% else %}. El motor no indica versión corregida{% endif %}{% endif %} — {{ i.tool | inline_untrusted }} · regla `{{ i.rule | inline_untrusted }}` · huella `{{ i.id }}`{% if i.new and record.baseline_sha256 %} · nuevo{% endif +%}
+{% endfor %}
+{% else %}
 **Dónde.** `{{ f.file | inline_untrusted }}`{% if f.line %}, línea {{ f.line }}{% endif %}{% if f.detail.get('package') %}
 · paquete `{{ f.detail.get('package') | inline_untrusted }}`{% if f.detail.get('installed') %}, versión instalada `{{ f.detail.get('installed') | inline_untrusted }}`{% endif %}{% if f.detail.get('fixed') %}, corregido en `{{ f.detail.get('fixed') | inline_untrusted }}`{% else %}. El motor no indica versión corregida{% endif %}{% endif +%}
+{% endif %}
 
 **{% if f.measures | length > 1 %}Medidas ENS.{% else %}Medida ENS.{% endif %}** {% if unmapped_here %}Sin correspondencia asignada — requiere revisión humana.{% else %}{% for m in f.measures %}`{{ m }}` — {{ measures_meta[m].title }}.{% if not loop.last %} {% endif %}{% endfor %}{% endif +%}
 
+{% if g.hits | length == 1 %}
 **Trazabilidad.** {{ f.tool | inline_untrusted }} · huella `{{ f.id }}` (regla completa en el {% if unmapped_here %}[anexo 7.2](#72--hallazgos-sin-correspondencia-asignada){% else %}[anexo 7.1](#71--tabla-completa-de-hallazgos){% endif %})
+{% else %}
+**Trazabilidad.** Reglas completas en el {% if unmapped_here %}[anexo 7.2](#72--hallazgos-sin-correspondencia-asignada){% else %}[anexo 7.1](#71--tabla-completa-de-hallazgos){% endif %}.
+{% endif %}
 
 {% endfor %}
 {% else %}

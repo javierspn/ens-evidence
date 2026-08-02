@@ -35,7 +35,14 @@ from pathlib import Path
 
 import yaml
 
-from ens_evidence import MAPPING_DIR, TEMPLATE_DIR, mapper, normalise, render
+from ens_evidence import (
+    MAPPING_DIR,
+    RULE_DIR_ALIASES,
+    TEMPLATE_DIR,
+    mapper,
+    normalise,
+    render,
+)
 from ens_evidence.normalise import CANONICAL, SCHEMA, dumps_line
 
 CONFIG_DEFAULTS = {
@@ -75,11 +82,11 @@ FILENAME_LANGUAGES = {"Dockerfile": "dockerfile"}
 # Analysed by Trivy misconfig even when the Semgrep rules root has no rules for them.
 TRIVY_ANALYSED = {"dockerfile", "yaml", "terraform"}
 
-# Our census language name -> the upstream rules directory that covers it. Without this the
-# coverage table declared "shell — no rules ran" while 6 bash rules had just run against it
-# (observed 2026-07-26 in the sample render). Principle IV cuts both ways: the table must not
-# claim a gap it does not have, or the honest gaps stop being believed.
-RULE_DIR_ALIASES = {"shell": "bash"}
+# RULE_DIR_ALIASES (imported above) maps our census language name to the upstream rules
+# directory that covers it. Without it the coverage table declared "shell — no rules ran"
+# while 6 bash rules had just run against it (observed 2026-07-26 in the sample render).
+# Principle IV cuts both ways: the table must not claim a gap it does not have, or the
+# honest gaps stop being believed.
 
 LOCKFILE_NAMES = {
     "Cargo.lock",
