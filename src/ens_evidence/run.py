@@ -766,7 +766,12 @@ def cmd_report(args):
         reason = f"el conversor «{PDF_CONVERTER}» no estaba disponible"
     report_md = _write(_pdf_note(reason) if reason else None)
 
-    written = [str(report_md)]
+    # Written next to the report, never inside it: evidence and advice are different
+    # claims, and only one of the two is what an auditor is handed.
+    remediation_md = run_dir / "remediation.md"
+    remediation_md.write_text(render.render_remediation(model, TEMPLATE_DIR), "utf-8")
+
+    written = [str(report_md), str(remediation_md)]
     if want_pdf and converter is not None:
         report_pdf = run_dir / "report.pdf"
         cmd = [converter, str(report_md), "-o", str(report_pdf)]

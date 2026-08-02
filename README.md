@@ -32,7 +32,7 @@ subida de datos, no hay cuenta.
 ```
 ens-evidence scan [PATH]        # escaneo → normalización → baseline → run almacenado
 ens-evidence baseline update    # acepta los hallazgos del último run
-ens-evidence report [PATH]      # renderiza el informe desde un run, sin re-escanear
+ens-evidence report [PATH]      # informe + remediation.md desde un run, sin re-escanear
 ens-evidence bundle [PATH]      # bundle.md: resumen pegable desde un run almacenado
 ens-evidence explain <id>       # un hallazgo: qué regla lo detectó y a qué medidas mapea
 ```
@@ -75,6 +75,7 @@ mismos hallazgos.
 |---|---|---|
 | `findings.jsonl` | Todos los hallazgos, uno por línea. La fuente de verdad | sí |
 | `report.md` / `report.pdf` | El informe para el auditor | sí |
+| `remediation.md` | La cola de trabajo: hallazgos agrupados por regla | sí |
 | `bundle.md` | Resumen pegable en un chat | sí |
 | `run.json` | Versiones de motores, SHA de reglas, fecha — la trazabilidad | sí |
 | `sbom.cdx.json` | Inventario de dependencias (CycloneDX) | sí |
@@ -96,16 +97,22 @@ El informe tiene dos lectores con recorridos distintos.
    permite exigir "esto estaba en marzo y no en agosto: enséñame el cambio". Tras
    `baseline update`, la columna **Nuevo** marca las regresiones.
 
-**Equipo — arreglar.**
+**Equipo — arreglar: `remediation.md`, no el informe.**
 
-1. **§5 Hallazgos** trae solo crítica y alta, agrupados: es la cola de trabajo por orden.
-2. **Dónde** da `fichero:línea`; **Trazabilidad** da motor e id de regla (`DS-0002`,
-   `KSV-0014`, un CVE). El *cómo se arregla* está en la documentación de esa regla — este
-   informe no lo incluye.
+`report` escribe los dos documentos. El informe registra lo encontrado; `remediation.md`
+lo reordena como cola de trabajo — agrupado por regla, de más grave a menos, con las
+ubicaciones, la versión corregida cuando el motor la da y los enlaces de la regla.
+
+1. Se arregla una regla, se cierran todas sus ubicaciones de golpe.
+2. El *cómo* concreto está en la referencia de la regla. No lo reescribimos: el catálogo lo
+   mantiene al día y su licencia no permite copiarlo.
 3. Arreglar, volver a escanear, comprobar que la huella desaparece. El informe siguiente es
    la prueba del cierre.
 4. No hay supresiones: un hallazgo que se decide aceptar seguirá saliendo en cada run. Su
-   justificación vive fuera de este informe.
+   justificación vive fuera de estos documentos.
+
+Solo entran hallazgos marcados como seguridad por el motor: lo demás no es deuda de
+seguridad. Y arreglarlo todo no es cumplir el ENS — eso lo dice una auditoría.
 
 Dos avisos al leerlo:
 

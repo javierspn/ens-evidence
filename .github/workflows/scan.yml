@@ -107,7 +107,7 @@ jobs:
       - name: Stage the artifact
         run: |
           mkdir -p upload
-          for f in findings.jsonl run.json report.md bundle.md sbom.cdx.json; do
+          for f in findings.jsonl run.json report.md remediation.md bundle.md sbom.cdx.json; do
             cp "out/latest/$f" upload/
           done
 
@@ -137,7 +137,8 @@ jobs:
           # of a pinned run. Everything else describes findings, and a finding about the
           # rules checkout means the scan target was wrong.
           if grep -IlF -e "$RULES_DIR" -e '.ens-rules' \
-               upload/findings.jsonl upload/report.md upload/bundle.md upload/sbom.cdx.json; then
+               upload/findings.jsonl upload/report.md upload/remediation.md \
+               upload/bundle.md upload/sbom.cdx.json; then
             echo "::error::staged evidence refers to the rules checkout (files listed above) — the scan included $RULES_DIR instead of only the repository" >&2
             exit 1
           fi

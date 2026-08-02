@@ -193,6 +193,49 @@ def group_highlights(shown):
     return groups
 
 
+def remediation_groups(findings):
+    """The security findings, grouped by rule, for the remediation document.
+
+    A separate document, not a section of the report: the report is evidence and says so
+    in its own second section, while this is advice, which is a different claim with a
+    different lifetime. Both render from one model so they cannot disagree about what was
+    found.
+
+    Grouped by rule rather than by the report's prose, because what a person fixes is one
+    rule at a time and the references are the rule's. Ordered worst-first, then by rule id
+    so the file is deterministic.
+
+    We write no remediation prose of our own beyond the template's framing, and copy none
+    out of the catalogue: a group carries the rule's documentation links, whatever fixed
+    version the engine reported, and the locations. The instruction
+    is to read the reference — anything more would be either invented or redistributed.
+    """
+    groups = {}
+    for f in findings:
+        if not f["security"]:
+            continue
+        key = (f["tool"], f["rule"])
+        group = groups.get(key)
+        if group is None:
+            group = groups[key] = {
+                "tool": f["tool"],
+                "rule": f["rule"],
+                "sev": f["sev"],
+                "title": f["prose"].get("title"),
+                "measures": f["measures"],
+                "refs": f.get("refs") or [],
+                "fixed": {},
+                "hits": [],
+            }
+        if CANONICAL.index(f["sev"]) < CANONICAL.index(group["sev"]):
+            group["sev"] = f["sev"]
+        detail = f.get("detail") or {}
+        if detail.get("package") and detail.get("fixed"):
+            group["fixed"][detail["package"]] = detail["fixed"]
+        group["hits"].append(f)
+    return sorted(groups.values(), key=lambda g: (CANONICAL.index(g["sev"]), g["rule"]))
+
+
 def _total_order(finding):
     return (finding["file"], finding["class"], finding["rule"], finding["fingerprint"])
 
@@ -205,6 +248,7 @@ def build_model(findings, record, rules, measures_file, scope):
         # Runs stored before `detail` existed have no such key, and the environment is
         # StrictUndefined: the template must be able to ask for it on every finding.
         item.setdefault("detail", {})
+        item.setdefault("refs", [])
         item["measures"], item["matched_rule"], item["prose"] = mapper.classify(
             finding["tool"], finding["rule"], rules
         )
@@ -250,6 +294,7 @@ def build_model(findings, record, rules, measures_file, scope):
         "highlights_band_total": band_total,
         "unmapped": unmapped,
         "non_security": non_security,
+        "remediation": remediation_groups(enriched),
         "totals": {
             "total": len(enriched),
             "counted": sum(1 for i in enriched if i["counts"]),
@@ -288,6 +333,13 @@ def render_report(model, template_dir, pdf_note=None):
     that the PDF could not be produced (never only on stderr)."""
     env = _environment(template_dir)
     return env.get_template("report.md.j2").render(pdf_note=pdf_note, **model)
+
+
+def render_remediation(model, template_dir):
+    """-> the remediation Markdown: the same model, read as a work queue instead of as
+    evidence. Kept out of the report on purpose — see remediation_groups()."""
+    env = _environment(template_dir)
+    return env.get_template("remediation.md.j2").render(**model)
 
 
 def render_bundle(model, template_dir):

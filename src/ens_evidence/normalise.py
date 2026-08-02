@@ -207,6 +207,34 @@ def _detail(msg):
     return found if "package" in found else {}
 
 
+_URL = re.compile(r"https?://[^\s)\]>\"']+")
+REF_MAX = 3
+
+
+def _references(rule):
+    """The rule's own documentation links — the only remediation input we take.
+
+    LICENCE: rule *text* may not be redistributed (Semgrep Rules License v1.0), which is
+    why the raw SARIF is never published. A URL is an address, not the rule, so
+    remediation.md carries links and our own wording and copies no description, no
+    message and no fix snippet from the catalogue. Do not widen this to `help.markdown`
+    itself.
+
+    Trivy puts one link in `helpUri`; Semgrep has no references field in its SARIF and
+    writes them as Markdown links inside `help.markdown` instead (verified 2026-08-02 on
+    both engines' output), so the links are read out of that text. Capped and
+    order-preserving: three addresses are as much as a person follows, and the order is
+    the engine's, which is stable for a given rule.
+    """
+    found = []
+    for text in (rule.get("helpUri", ""), rule.get("help", {}).get("markdown", "")):
+        for match in _URL.finditer(text or ""):
+            url = match.group(0).rstrip(".,")
+            if url not in found:
+                found.append(url)
+    return found[:REF_MAX]
+
+
 def _tool_name(driver):
     return driver["name"].split()[0].lower()
 
@@ -239,6 +267,7 @@ def _extract(sarif_path, severity_policy, rules_root, target_root=None):
                     "col": region.get("startColumn", 0),
                     "msg": result.get("message", {}).get("text", ""),
                     "detail": _detail(result.get("message", {}).get("text", "")),
+                    "refs": _references(rule),
                     "snippet": _normalise_snippet(region.get("snippet", {}).get("text", "")),
                 }
             )
