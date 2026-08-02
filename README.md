@@ -119,9 +119,10 @@ Dos avisos al leerlo:
 - **Los anexos no cuentan como evidencia.** §7.2 son hallazgos sin medida asignada y §7.3
   los que el motor no marcó como seguridad. Están para que nada quede oculto, no para
   sostener una medida.
-- **El informe no distingue código de producto de fixtures de prueba.** Un repositorio con
-  ficheros deliberadamente vulnerables bajo `tests/` los verá contados como hallazgos altos.
-  Míralo por ruta antes de priorizar.
+- **El código de prueba va marcado, no excluido.** Un hallazgo bajo `tests/`, `fixtures/` o
+  similar se cuenta igual, se etiqueta «código de prueba» y, en `remediation.md`, baja al
+  final de su gravedad. Filtrarlo haría que el informe afirmara una cobertura que no tuvo;
+  decidir si un fixture vulnerable a propósito es deuda no le toca a la herramienta.
 
 ## Documentación
 

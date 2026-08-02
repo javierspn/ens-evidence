@@ -32,6 +32,10 @@ análisis; su justificación vive fuera de estos documentos.
 Solo entran los hallazgos que el motor marcó como de seguridad. Los demás quedan en el
 anexo del informe y no son deuda de seguridad.
 
+Lo que está en ficheros de prueba va marcado «código de prueba» y baja al final de su
+gravedad: un repositorio puede guardar ahí material vulnerable a propósito. No se elimina
+—decidirlo no le corresponde a la herramienta—, solo deja de encabezar la cola.
+
 {% if not remediation %}
 Sin hallazgos de seguridad en este análisis. Léelo junto a la sección de cobertura del
 informe: donde no se ejecutaron reglas, la ausencia significa que no se buscó.
@@ -39,7 +43,7 @@ informe: donde no se ejecutaron reglas, la ausencia significa que no se buscó.
 | Gravedad | Regla | Ubicaciones | Medidas |
 |---|---|---|---|
 {% for g in remediation %}
-| {{ SEV_ES[g.sev] | lower }} | `{{ g.rule | inline_untrusted }}` | {{ g.hits | length }} | {{ g.measures | join(", ") }} |
+| {{ SEV_ES[g.sev] | lower }} | `{{ g.rule | inline_untrusted }}`{% if g.test_only %} · código de prueba{% endif %} | {{ g.hits | length }} | {{ g.measures | join(", ") }} |
 {% endfor %}
 
 {% for g in remediation %}
@@ -58,7 +62,7 @@ informe: donde no se ejecutaron reglas, la ausencia significa que no se buscó.
 **Dónde ({{ g.hits | length }}):**
 
 {% for f in g.hits %}
-- `{{ f.file | inline_untrusted }}`, línea {{ f.line }} — huella `{{ f.id }}`
+- `{{ f.file | inline_untrusted }}`, línea {{ f.line }} — huella `{{ f.id }}`{% if f.test_code %} · código de prueba{% endif %}
 {% endfor %}
 
 {% if g.refs %}

@@ -37,7 +37,7 @@ import jinja2
 import yaml
 
 from ens_evidence import RULE_DIR_ALIASES, mapper
-from ens_evidence.normalise import CANONICAL
+from ens_evidence.normalise import CANONICAL, is_test_code
 
 SNIPPET_MAX_CHARS = 200
 INLINE_MAX_CHARS = 120
@@ -233,7 +233,16 @@ def remediation_groups(findings):
         if detail.get("package") and detail.get("fixed"):
             group["fixed"][detail["package"]] = detail["fixed"]
         group["hits"].append(f)
-    return sorted(groups.values(), key=lambda g: (CANONICAL.index(g["sev"]), g["rule"]))
+    for group in groups.values():
+        # A group whose every location is test material sinks below product code of the
+        # same severity: the queue is read top-down, and four highs in a deliberately
+        # vulnerable fixture must not be the first four things anyone works on. It is
+        # ordering, not filtering — the group is still there, still counted, still marked.
+        group["test_only"] = all(f["test_code"] for f in group["hits"])
+    return sorted(
+        groups.values(),
+        key=lambda g: (CANONICAL.index(g["sev"]), g["test_only"], g["rule"]),
+    )
 
 
 def _total_order(finding):
@@ -249,6 +258,9 @@ def build_model(findings, record, rules, measures_file, scope):
         # StrictUndefined: the template must be able to ask for it on every finding.
         item.setdefault("detail", {})
         item.setdefault("refs", [])
+        # Derived from the path, so a run stored before the field existed gets the same
+        # answer as a fresh one rather than silently reading as product code.
+        item.setdefault("test_code", is_test_code(item["file"]))
         item["measures"], item["matched_rule"], item["prose"] = mapper.classify(
             finding["tool"], finding["rule"], rules
         )
@@ -300,6 +312,10 @@ def build_model(findings, record, rules, measures_file, scope):
             "counted": sum(1 for i in enriched if i["counts"]),
             "unmapped": len(unmapped),
             "non_security": len(non_security),
+            # Disclosed, never filtered: a repository with deliberately vulnerable
+            # fixtures otherwise reports highs that no operator can act on, and dropping
+            # them would claim a coverage the run did not have (principle IV).
+            "test_code": sum(1 for i in enriched if i["test_code"]),
         },
     }
 

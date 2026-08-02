@@ -199,3 +199,77 @@ def test_report_writes_it_beside_the_report(tmp_path):
     assert run.main(["report", str(tmp_path), "--format", "md"]) == 0
     written = (dest / "remediation.md").read_text()
     assert written.startswith("# Remediación sugerida")
+
+
+# --- test material -----------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "tests/fixtures/vulnerable-app/Dockerfile",
+        "test/helpers.py",
+        "app/testdata/seed.yaml",
+        "pkg/__tests__/login.js",
+        "api/test_views.py",
+        "api/views_test.go",
+        "web/login.spec.ts",
+    ],
+)
+def test_paths_recognised_as_test_material(path):
+    assert normalise.is_test_code(path)
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "src/ens_evidence/render.py",
+        "specs/003-bundle-and-ci/plan.md",
+        "app/latest.py",
+        "deploy/k8s.yaml",
+        "protest/main.py",
+    ],
+)
+def test_product_paths_are_not_test_material(path):
+    """`specs/` is documentation here, and a directory that merely contains the letters
+    of a test directory is not one — the flag rides on whole path segments."""
+    assert not normalise.is_test_code(path)
+
+
+def test_nothing_is_dropped_for_being_test_material(model):
+    """Principle IV: marked, never filtered. Excluding a path would make the report claim
+    a coverage the run did not have."""
+    assert model["totals"]["total"] == len(model["findings"])
+    listed = {f["fingerprint"] for g in model["remediation"] for f in g["hits"]}
+    for f in model["findings"]:
+        if f["security"]:
+            assert f["fingerprint"] in listed
+
+
+def test_test_only_groups_sink_below_product_code_of_equal_severity():
+    findings, record = render.load_run(RUN)
+    findings[0]["file"] = "tests/fixtures/app.py"
+    model = render.build_model(
+        findings,
+        record,
+        mapper.load_rules(MAPPING_DIR / "ens_rd311.yml"),
+        render.load_measures(MAPPING_DIR / "measures_es.yml"),
+        SCOPE,
+    )
+    order = [(normalise.CANONICAL.index(g["sev"]), g["test_only"]) for g in model["remediation"]]
+    assert order == sorted(order)
+
+
+def test_the_document_marks_test_material():
+    findings, record = render.load_run(RUN)
+    findings[0]["file"] = "tests/fixtures/app.py"
+    findings[0]["security"] = True
+    model = render.build_model(
+        findings,
+        record,
+        mapper.load_rules(MAPPING_DIR / "ens_rd311.yml"),
+        render.load_measures(MAPPING_DIR / "measures_es.yml"),
+        SCOPE,
+    )
+    assert "código de prueba" in render.render_remediation(model, TEMPLATE_DIR)
+    assert model["totals"]["test_code"] >= 1

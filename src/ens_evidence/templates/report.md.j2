@@ -43,7 +43,17 @@ redacción propia, verificados contra el texto consolidado del BOE el {{ measure
 | Hallazgos con correspondencia y marcados de seguridad | {{ totals.counted }} |
 | Hallazgos sin correspondencia asignada | {{ totals.unmapped }} |
 | Hallazgos no marcados como seguridad | {{ totals.non_security }} |
+| Hallazgos en código de prueba | {{ totals.test_code }} |
 | **Total** | **{{ totals.total }}** |
+{% if totals.test_code %}
+
+{{ totals.test_code }} de los {{ totals.total }} hallazgos están en ficheros de prueba del
+repositorio —directorios como `tests/` o `fixtures/`—, no en lo que se despliega. Se
+cuentan igual y aparecen marcados «(código de prueba)» allí donde se listan: un repositorio
+puede guardar ahí material vulnerable a propósito, y esta herramienta no puede decidir por
+nadie si eso es deuda. Lo que no hace es excluirlos, porque entonces el informe afirmaría
+una cobertura que no tuvo.
+{% endif %}
 
 ## 2. Descripción
 
@@ -190,10 +200,10 @@ lleva descripción redactada. El nombre de la regla, abajo, es lo único que lo 
 **Dónde.** {{ g.hits | length }} ubicaciones:
 
 {% for i in g.hits %}
-- `{{ i.file | inline_untrusted }}`{% if i.line %}, línea {{ i.line }}{% endif %}{% if i.detail.get('package') %} · paquete `{{ i.detail.get('package') | inline_untrusted }}`{% if i.detail.get('installed') %}, versión instalada `{{ i.detail.get('installed') | inline_untrusted }}`{% endif %}{% if i.detail.get('fixed') %}, corregido en `{{ i.detail.get('fixed') | inline_untrusted }}`{% else %}. El motor no indica versión corregida{% endif %}{% endif %} — {{ i.tool | inline_untrusted }} · regla `{{ i.rule | inline_untrusted }}` · huella `{{ i.id }}`{% if i.new and record.baseline_sha256 %} · nuevo{% endif +%}
+- `{{ i.file | inline_untrusted }}`{% if i.line %}, línea {{ i.line }}{% endif %}{% if i.detail.get('package') %} · paquete `{{ i.detail.get('package') | inline_untrusted }}`{% if i.detail.get('installed') %}, versión instalada `{{ i.detail.get('installed') | inline_untrusted }}`{% endif %}{% if i.detail.get('fixed') %}, corregido en `{{ i.detail.get('fixed') | inline_untrusted }}`{% else %}. El motor no indica versión corregida{% endif %}{% endif %} — {{ i.tool | inline_untrusted }} · regla `{{ i.rule | inline_untrusted }}` · huella `{{ i.id }}`{% if i.test_code %} · código de prueba{% endif %}{% if i.new and record.baseline_sha256 %} · nuevo{% endif +%}
 {% endfor %}
 {% else %}
-**Dónde.** `{{ f.file | inline_untrusted }}`{% if f.line %}, línea {{ f.line }}{% endif %}{% if f.detail.get('package') %}
+**Dónde.** `{{ f.file | inline_untrusted }}`{% if f.line %}, línea {{ f.line }}{% endif %}{% if f.test_code %} · código de prueba{% endif %}{% if f.detail.get('package') %}
 · paquete `{{ f.detail.get('package') | inline_untrusted }}`{% if f.detail.get('installed') %}, versión instalada `{{ f.detail.get('installed') | inline_untrusted }}`{% endif %}{% if f.detail.get('fixed') %}, corregido en `{{ f.detail.get('fixed') | inline_untrusted }}`{% else %}. El motor no indica versión corregida{% endif %}{% endif +%}
 {% endif %}
 

@@ -207,6 +207,29 @@ def _detail(msg):
     return found if "package" in found else {}
 
 
+_TEST_DIRS = {"test", "tests", "testdata", "fixtures", "__tests__", "__fixtures__", "testing"}
+_TEST_FILE = re.compile(r"(^test_.*|.*_test\.[^.]+$|.*\.(test|spec)\.[^.]+$)")
+
+
+def is_test_code(path):
+    """Does this path belong to the repository's test material?
+
+    A finding in a fixture is real — the file says what it says — but it is not the same
+    debt as a finding in what ships, and a repository that keeps deliberately vulnerable
+    fixtures (this one does) reports highs that no operator can act on. The report marks
+    them; it does NOT drop them. Excluding paths would make the tool claim coverage it did
+    not have, which is the one thing principle IV forbids, and no heuristic is good enough
+    to silence a finding on its say-so.
+
+    Directory names and the two common test-file spellings, nothing cleverer: a guess that
+    is wrong only mislabels a line, while a guess that filtered would hide one.
+    """
+    parts = path.split("/")
+    if any(part in _TEST_DIRS for part in parts[:-1]):
+        return True
+    return bool(parts and _TEST_FILE.match(parts[-1]))
+
+
 _URL = re.compile(r"https?://[^\s)\]>\"']+")
 REF_MAX = 3
 
@@ -256,13 +279,15 @@ def _extract(sarif_path, severity_policy, rules_root, target_root=None):
             loc = result["locations"][0]["physicalLocation"]
             region = loc.get("region", {})
             tags = rule.get("properties", {}).get("tags", [])
+            path = _relative_path(loc["artifactLocation"]["uri"], bases)
             out.append(
                 {
                     "tool": tool,
                     "rule": canonical_rule_id(result["ruleId"], rules_root),
                     "sev": _severity(tool, rule, severity_policy),
                     "security": "security" in tags,
-                    "file": _relative_path(loc["artifactLocation"]["uri"], bases),
+                    "file": path,
+                    "test_code": is_test_code(path),
                     "line": region.get("startLine", 0),
                     "col": region.get("startColumn", 0),
                     "msg": result.get("message", {}).get("text", ""),
