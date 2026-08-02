@@ -7,7 +7,7 @@ Real output, not a mock-up — this repository scanning itself.
 | `informe-ejemplo.pdf` | the evidence report, rendered from Markdown with `--pdf-engine weasyprint` |
 | `bundle-ejemplo.md` | the paste-anywhere summary of the same run |
 
-Produced on 2026-07-29 from commit `5deaea5`, with Semgrep 1.171.0 and Trivy 0.72.0 and the
+Produced on 2026-08-02 from commit `e521356`, with Semgrep 1.171.0 and Trivy 0.72.0 and the
 rules pinned at `81634cfc9e68dc5f238a8062909a60ba34500648` (`.github/semgrep-rules.sha`):
 
 ```bash
@@ -30,9 +30,15 @@ saying plainly, because "we fixed the rules source" reads like "the numbers were
 they were not: the pinning fix on 2026-07-28 left the totals exactly where they were.
 
 This run is 74 findings, 61 mapped and security-tagged, 13 not tagged as security, 0
-unmapped. One fewer than the 2026-07-28 sample: the tool's own `run-shell-injection` finding
-on `.github/workflows/ci.yaml` is gone, because the workflow now passes `github.base_ref`
-through `env:` instead of interpolating it into a `run:` block.
+unmapped — the same four numbers as the 2026-07-29 sample. What changed is the document,
+not what was found: the report's sections are now numbered, and section 5 writes each
+finding out in Spanish, with our own title and explanation and its ENS measure, instead of
+heading it with the engine's rule id and quoting the engine's English message. Regenerated
+because the committed PDF still showed the old structure.
+
+The eight entries in section 5 are all `high`; this repository's run produces no
+`critical`, and no CVE findings at all, so the sample does not exercise either the
+cascade's lower bands or the package-and-version line that dependency findings carry.
 
 ## Two things to know before reading the numbers
 
