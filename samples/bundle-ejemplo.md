@@ -14,7 +14,7 @@ documento.
 |---|---|
 | Fecha del análisis | 2026-08-02 |
 | Repositorio | `ens-compliance-tool` |
-| Revisión | `b0e21d9` |
+| Revisión | `8dcc67d` |
 | Hallazgos | 73 |
 | Con correspondencia y de seguridad | 61 |
 | Sin correspondencia | 0 |
