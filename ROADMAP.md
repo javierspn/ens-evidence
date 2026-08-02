@@ -33,7 +33,9 @@ Publicada como `v1.0.0`. Cubre el ciclo completo sobre un repositorio:
 - `explain` — por qué un hallazgo acabó bajo una medida concreta.
 - `rules fetch` / `rules status` — copia propia de las reglas, fijada a un SHA.
 
-Motores: Semgrep y Trivy, invocados como subprocesos y fijados a una versión.
+Motores: Semgrep y Trivy, invocados como subprocesos. La herramienta usa el binario que
+encuentre y anota su versión en la ejecución; quien fija la versión es tu CI, como hace el
+flujo de trabajo de este repositorio.
 
 ## Siguiente — más motores
 
