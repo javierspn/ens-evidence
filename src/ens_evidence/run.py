@@ -513,7 +513,7 @@ def _write_out_gitignore(out_dir):
     marker = out_dir / ".gitignore"
     if marker.exists():
         return
-    marker.write_text("# Written by ens-compliance-tool: scan output, never source.\n*\n")
+    marker.write_text("# Written by ens-evidence: scan output, never source.\n*\n")
 
 
 def _swap_latest(out_dir, run_dir):
