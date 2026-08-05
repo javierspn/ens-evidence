@@ -152,11 +152,11 @@ El informe tiene dos lectores con recorridos distintos.
 
 **Auditor — verificar el alcance y el rastro.**
 
-1. **§1 Alcance** y **§3 Cobertura** — qué se analizó de verdad. Donde no se ejecutaron
+1. **«1. Alcance»** y **«3. Cobertura»** — qué se analizó de verdad. Donde no se ejecutaron
    reglas, cero hallazgos significa *no se buscó*; la tabla lo dice lenguaje a lenguaje.
-2. **§4 Vigencia** — antigüedad de la evidencia: versiones de motor, base de vulnerabilidades,
+2. **«4. Vigencia»** — antigüedad de la evidencia: versiones de motor, base de vulnerabilidades,
    SHA de reglas, fecha de verificación contra el BOE.
-3. **§6 Evidencia por medida** — la vista que se cruza contra el Anexo II: cada medida con
+3. **«6. Evidencia por medida»** — la vista que se cruza contra el Anexo II: cada medida con
    los hallazgos que la sostienen.
 4. **Huella** (p. ej. `b6d047e5`) — identificador estable del hallazgo entre runs. Es lo que
    permite exigir "esto estaba en marzo y no en agosto: enséñame el cambio". Tras
@@ -180,7 +180,7 @@ Solo entran hallazgos marcados como seguridad por el motor: lo demás no es deud
 seguridad. Y arreglarlo todo no es cumplir el ENS — eso lo dice una auditoría.
 
 > [!WARNING]
-> **Los anexos no cuentan como evidencia.** §7.2 son hallazgos sin medida asignada y §7.3
+> **Los anexos no cuentan como evidencia.** «7.2» son hallazgos sin medida asignada y «7.3»
 > los que el motor no marcó como seguridad. Están para que nada quede oculto, no para
 > sostener una medida.
 
