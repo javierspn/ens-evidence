@@ -125,7 +125,9 @@ def test_no_absolute_host_path_leaks(bundle):
     only — the same defect that reached an auditor-facing report in spec 002."""
     assert "/Users/" not in bundle
     assert str(ROOT) not in bundle
-    assert "`ens-compliance-tool`" in bundle
+    # The fixture records `target: "."`, which resolves against the working directory, so the
+    # expected name is that directory's — never a literal, which only holds until a rename.
+    assert f"`{Path.cwd().name}`" in bundle
 
 
 # --- determinism -------------------------------------------------------------
