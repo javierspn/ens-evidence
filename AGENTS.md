@@ -38,8 +38,8 @@ Installed 2026-07-25 and each one verified to actually bite, not just run:
 
 | Gate | Where | Subject | Verified by |
 |---|---|---|---|
-| `ast-grep` structural | `.claude/hooks/ast-grep-commit.sh` + `structural` CI job | discarded exceptions, failures logged as routine, silently-defaulted seams | staged a known-bad probe → hook exited **2** with both rules firing |
-| bandit + pip-audit + gitleaks | `.claude/hooks/sec-scan-commit.sh` + `security` CI job | insecure code, dependency CVEs, secrets in history | staged `subprocess(shell=True)` → hook exited **2** (B602) |
+| `ast-grep` structural | `structural` CI job, over `sgconfig.yml` + `.ast-grep/rules/` | discarded exceptions, failures logged as routine, silently-defaulted seams | staged a known-bad probe → both rules fired, exit **2** |
+| bandit + pip-audit + gitleaks | `security` CI job | insecure code, dependency CVEs, secrets in history | staged `subprocess(shell=True)` → exit **2** (B602) |
 | ruff | `lint` CI job | style/imports, `select` pinned to `["E","F","I","N","W"]` | `ruff check src/ tests/` clean |
 | **mapping contract** | `tests/test_mapping_contract.py` + `test` CI job | the data files — regexes that stop matching, off-scope measures, scope-list divergence | 11 tests, all passing |
 | spec freshness | `tests/test_spec_contract.py` + `test` CI job | `specs/NNN-*/` — a `Feature Branch` field naming another feature, an unknown `Status`, a spec set missing `plan.md`/`tasks.md`, and `Status` disagreeing with whether tasks remain open | probes: reverted a shipped spec to `Draft`, pointed one spec at another's branch, reopened a ticked task → each failed the matching test |

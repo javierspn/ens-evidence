@@ -21,3 +21,10 @@ build/
 
 # Working notes, not part of the published product.
 .internal/
+
+# Agent tooling: local development aids, not part of the published product. CI reimplements
+# every gate they run (see AGENTS.md "Gates"), so nothing here is load-bearing — except the
+# constitution, which a test reads and which is force-added.
+.claude/
+.specify/
+!.specify/memory/constitution.md
