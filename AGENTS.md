@@ -62,6 +62,19 @@ uv run --with pytest --with pyyaml python -m pytest tests/ -q -m engines   # nee
 since the move to Forgejo (2026-11-01): they need `ubuntu-latest` with sudo, which no
 Forgejo runner offers. Porting them to the bellatrix runner is in the ai-tools backlog.
 
+## Landing a change
+
+`main` is protected (no direct push, required checks, no admin bypass — a bypass
+for javier is a bypass for any agent holding his token). Nobody opens PRs or
+merges by hand:
+
+```bash
+git push origin HEAD:refs/for/main -o topic=<short-name>
+```
+
+That one push (Agit flow) opens the PR; when every check is green the `gates`
+workflow merges it. A red PR stays open with the finding. `git pull` afterwards.
+
 **Deliberately NOT installed: the spec-kit gates** (`scripts/spec_*.py`,
 `.github/workflows/spec-*.yaml`) from the `repo-gates` skill. `spec_lint.py` globs
 `specs/**/*.md`, which here means four README placeholders with no frontmatter — it would be
