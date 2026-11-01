@@ -24,26 +24,6 @@ jobs:
       - name: gates.sh all
         run: scripts/gates.sh all
 
-  # Lands the PR once EVERY required check is green (Forgejo's "merge when checks
-  # succeed"), with the forgejo-ci bot's token (CI_MERGE_TOKEN repo secret), never
-  # javier's. Only PRs javier pushed (Agit: git push origin HEAD:refs/for/main): a
-  # PR from another account (hermes, a fork) waits for a human. ADR 0001 phase 6.
-  land:
-    if: github.event_name == 'pull_request' && github.event.pull_request.user.login == 'javier'
-    runs-on: [self-hosted, bellatrix]
-    steps:
-      - name: merge when checks succeed
-        env:
-          TOKEN: ${{ secrets.CI_MERGE_TOKEN }}
-          API: ${{ github.api_url }}/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/merge
-        run: |
-          printf 'header = "Authorization: token %s"\n' "$TOKEN" > "$RUNNER_TEMP/auth.curl"
-          code=$(curl -s -o "$RUNNER_TEMP/merge.out" -w '%{http_code}' -K "$RUNNER_TEMP/auth.curl" -H 'Content-Type: application/json' \
-            -X POST "$API" -d '{"Do":"merge","merge_when_checks_succeed":true,"delete_branch_after_merge":true}')
-          rm -f "$RUNNER_TEMP/auth.curl"
-          echo "merge request: HTTP $code"; cat "$RUNNER_TEMP/merge.out"; echo
-          case "$code" in 200|201|204) ;; 405) echo "already scheduled or not mergeable yet — Forgejo decides" ;; *) exit 1 ;; esac
-
   # Secrets in history: outside gates.sh because it needs the full history, not
   # the working tree. The gitleaks ACTION posts to the PR API and 403s; the binary just scans.
   gitleaks:
