@@ -18,6 +18,7 @@ jobs:
           python3 -m venv .venv && echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
           .venv/bin/pip install -q ruff bandit pip-audit pytest ast-grep-cli
           [ -f requirements-dev.txt ] && .venv/bin/pip install -q -r requirements-dev.txt || true
+          [ -f pyproject.toml ] && .venv/bin/pip install -q -e . || true   # tests that run the installed CLI
       - name: gates.sh all
         run: scripts/gates.sh all
 

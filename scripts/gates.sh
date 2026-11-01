@@ -94,6 +94,14 @@ if [ ${#targets[@]} -gt 0 ]; then
   fi
 
   if [ -f sgconfig.yml ] && need ast-grep "structural scan"; then
+    # Canary first, if the repo keeps one (.ast-grep/canary/*.py, deliberately defective):
+    # ast-grep exits 0 on an unreadable ruleDir, so "no findings" and "scanner dead" look
+    # identical without a file that MUST produce a finding.
+    if ls .ast-grep/canary/*.py >/dev/null 2>&1; then
+      if ! ast-grep scan -c sgconfig.yml --json=compact .ast-grep/canary/*.py 2>/dev/null | grep -q '"ruleId"'; then
+        block "ast-grep canary" "the known-dirty canary produced no finding: the scanner or its rules are dead"
+      fi
+    fi
     ast-grep scan -c sgconfig.yml --json=compact "${scan[@]}" > "$shim/hits.json" 2>/dev/null
     out=$(python3 - "$shim/hits.json" <<'PY'
 import json, sys
@@ -101,7 +109,7 @@ try:
     hits = json.load(open(sys.argv[1]))
 except Exception:
     print("ast-grep: unreadable report - refusing to pass silently"); sys.exit(1)
-warn = [h for h in hits if h.get("severity") == "warning"]
+warn = [h for h in hits if h.get("severity") in ("warning", "error")]
 for h in warn:
     print(f'{h["file"]}:{h["range"]["start"]["line"] + 1} [{h["ruleId"]}] {h["message"]}')
 sys.exit(1 if warn else 0)
