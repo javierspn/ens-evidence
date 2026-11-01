@@ -36,6 +36,6 @@ jobs:
             echo "PR #$n @ ${sha:0:7}: checks $state"
             [ "$state" = success ] || continue
             code=$(curl -s -o "$RUNNER_TEMP/merge.out" -w '%{http_code}' -K "$RUNNER_TEMP/auth.curl" -H 'Content-Type: application/json' \
-              -X POST "$API/pulls/$n/merge" -d '{"Do":"merge","delete_branch_after_merge":true}')
+              -X POST "$API/pulls/$n/merge" -d '{"Do":"merge"}')   # no delete_branch: an Agit PR has no branch and Forgejo answers 500 after merging
             echo "  merge: HTTP $code $(cat "$RUNNER_TEMP/merge.out")"
           done < "$RUNNER_TEMP/todo"

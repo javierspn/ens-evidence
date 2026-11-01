@@ -72,8 +72,8 @@ merges by hand:
 git push origin HEAD:refs/for/main -o topic=<short-name>
 ```
 
-That one push (Agit flow) opens the PR; when every check is green the `gates`
-workflow merges it. A red PR stays open with the finding. `git pull` afterwards.
+That one push (Agit flow) opens the PR; when every check is green the `land`
+workflow (cron, every 5 min, the `forgejo-ci` bot) merges it. A red PR stays open with the finding. `git pull` afterwards.
 
 **Deliberately NOT installed: the spec-kit gates** (`scripts/spec_*.py`,
 `.github/workflows/spec-*.yaml`) from the `repo-gates` skill. `spec_lint.py` globs
