@@ -1,0 +1,25 @@
+# orca.yaml — repo root. Orca (onorca.dev) reads it when it creates a worktree for a worker.
+# Keys Orca 1.4 accepts: scripts.setup, scripts.archive, setupAgentStartupPolicy, issueCommand,
+# defaultTabs, environmentRecipes, worktree.sharedDirectories. Anything else is ignored.
+#
+# The setup script runs in /bin/bash with cwd = the new worktree, once, when the worktree is
+# created (`--setup run`, or the repo's setup policy). Worktrees share .git with the primary
+# checkout, so `core.hooksPath` set here holds for every worker: the gate (ADR 0001) fires on
+# every commit whatever agent made it.
+scripts:
+  setup: |
+    set -euo pipefail
+    scripts/gates.sh install
+    if [ -f requirements-dev.txt ] && [ ! -d .venv ]; then
+      python3 -m venv .venv && .venv/bin/pip install -q -r requirements-dev.txt
+      [ -f pyproject.toml ] && .venv/bin/pip install -q -e . || true
+    fi
+    scripts/gates.sh all || echo "setup: gates.sh all reported findings; fix them before landing"
+
+# The agent waits for setup to finish before it gets the prompt (the hook installs the gate).
+setupAgentStartupPolicy: wait-for-setup
+
+# Gitignored trees shared (symlinked) between worktrees instead of rebuilt per worker.
+worktree:
+  sharedDirectories:
+    - .venv
