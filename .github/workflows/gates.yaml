@@ -13,6 +13,8 @@ jobs:
     runs-on: [self-hosted, bellatrix]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # tests may read history (a named commit must be reachable)
       - name: python venv + gate tools
         run: |
           python3 -m venv .venv && echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
