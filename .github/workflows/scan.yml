@@ -10,9 +10,9 @@
 # enforcement; it must stay, and it must run before the upload.
 name: self-scan
 
+# Dispatch-only since the move to Forgejo 2026-11-01: needs ubuntu-latest (sudo, engines),
+# a label no Forgejo runner has. Port to the bellatrix runner to bring it back on push.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:

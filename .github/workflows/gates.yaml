@@ -1,0 +1,38 @@
+name: gates
+
+# The same gate git runs on commit (scripts/gates.sh), repeated where --no-verify
+# cannot reach it. Forgejo Actions on the host-mode runners (cosmos docs/apps/forgejo.md):
+# nothing is preinstalled there but python3 and node, so the job builds a venv.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  gates:
+    runs-on: [self-hosted, bellatrix]
+    steps:
+      - uses: actions/checkout@v4
+      - name: python venv + gate tools
+        run: |
+          python3 -m venv .venv && echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+          .venv/bin/pip install -q ruff bandit pip-audit pytest ast-grep-cli
+          [ -f requirements-dev.txt ] && .venv/bin/pip install -q -r requirements-dev.txt || true
+      - name: gates.sh all
+        run: scripts/gates.sh all
+
+  # Secrets in history: outside gates.sh because it needs the full history, not
+  # the working tree. The gitleaks ACTION posts to the PR API and 403s; the binary just scans.
+  gitleaks:
+    runs-on: [self-hosted, bellatrix]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks detect
+        env:
+          GITLEAKS_VERSION: 8.24.3
+        run: |
+          arch=$(uname -m); case "$arch" in x86_64) a=x64 ;; aarch64|arm64) a=arm64 ;; esac
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_${a}.tar.gz" | tar xz -C /tmp gitleaks
+          /tmp/gitleaks detect --source . --no-banner --redact --config .gitleaks.toml

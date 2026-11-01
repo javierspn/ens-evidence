@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+# Installed by `scripts/gates.sh install` (git config core.hooksPath .githooks).
+# The gate is the script, not this file.
+exec "$(git rev-parse --show-toplevel)/scripts/gates.sh" staged

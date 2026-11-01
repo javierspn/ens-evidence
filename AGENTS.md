@@ -38,9 +38,8 @@ Installed 2026-07-25 and each one verified to actually bite, not just run:
 
 | Gate | Where | Subject | Verified by |
 |---|---|---|---|
-| `ast-grep` structural | `structural` CI job, over `sgconfig.yml` + `.ast-grep/rules/` | discarded exceptions, failures logged as routine, silently-defaulted seams | staged a known-bad probe → both rules fired, exit **2** |
-| bandit + pip-audit + gitleaks | `security` CI job | insecure code, dependency CVEs, secrets in history | staged `subprocess(shell=True)` → exit **2** (B602) |
-| ruff | `lint` CI job | style/imports, `select` pinned to `["E","F","I","N","W"]` | `ruff check src/ tests/` clean |
+| `scripts/gates.sh` — ruff, bandit (medium+), ast-grep rules, pip-audit, pytest `-m "not engines and not rendering"` | `.githooks/pre-commit` on every commit (`scripts/gates.sh install` once per clone), `gates.yaml` CI job on the bellatrix runner, Claude Code edit/commit hooks calling the same script | style/imports (`select` pinned), insecure code, discarded exceptions / failures logged as routine / silently-defaulted seams, dependency CVEs, unit tests | planted `subprocess(shell=True)` → `git commit` refused with exit 2 (B602) (ADR 0001 phase 5, 2026-11-01) |
+| gitleaks | `gitleaks` job in `gates.yaml` | secrets in history | binary, not the action (the action 403s on the PR API) |
 | **mapping contract** | `tests/test_mapping_contract.py` + `test` CI job | the data files — regexes that stop matching, off-scope measures, scope-list divergence | 11 tests, all passing |
 | spec freshness | `tests/test_spec_contract.py` + `test` CI job | `specs/NNN-*/` — a `Feature Branch` field naming another feature, an unknown `Status`, a spec set missing `plan.md`/`tasks.md`, and `Status` disagreeing with whether tasks remain open | probes: reverted a shipped spec to `Draft`, pointed one spec at another's branch, reopened a ticked task → each failed the matching test |
 | sample freshness | `tests/test_sample_contract.py` + `test` CI job | `samples/README.md`'s hand-written commit, date, engine versions, rules SHA and counts, against the generated `bundle-ejemplo.md` and the pin in force | probes: bumped `.github/semgrep-rules.sha`, drifted a count, named a commit not in history → each failed the matching test |
@@ -54,12 +53,14 @@ header as a fourth case when `templates/` gains one.
 Run everything locally before pushing:
 
 ```bash
-uv run --with pytest --with pyyaml python -m pytest tests/ -q
-uv run --with ruff ruff check src/ tests/
-uv run --with bandit bandit -ll -r src/
-uv run --with pip-audit pip-audit -r requirements-dev.txt
+scripts/gates.sh all
 gitleaks detect --source . --no-banner --redact --config .gitleaks.toml
+uv run --with pytest --with pyyaml python -m pytest tests/ -q -m engines   # needs pinned engines; see ci.yaml
 ```
+
+`ci.yaml` (engine, rendering and rules-bump suites) and `scan.yml` are **dispatch-only**
+since the move to Forgejo (2026-11-01): they need `ubuntu-latest` with sudo, which no
+Forgejo runner offers. Porting them to the bellatrix runner is in the ai-tools backlog.
 
 **Deliberately NOT installed: the spec-kit gates** (`scripts/spec_*.py`,
 `.github/workflows/spec-*.yaml`) from the `repo-gates` skill. `spec_lint.py` globs
