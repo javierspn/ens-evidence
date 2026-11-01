@@ -15,9 +15,6 @@ name: self-scan
 on:
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 env:
   SEMGREP_VERSION: '1.171.0'
   TRIVY_VERSION: '0.72.0'
