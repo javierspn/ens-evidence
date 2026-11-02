@@ -146,7 +146,9 @@ jobs:
           echo "staged for upload:"
           find upload -type f | sort
 
-      - uses: actions/upload-artifact@v4
+      # v3, not v4: Forgejo's artifact server speaks the v3 protocol only (v4 fails with
+      # "GHESNotSupportedError", verified 2026-11-02).
+      - uses: actions/upload-artifact@v3
         with:
           name: ens-evidence-self-scan
           # The staged copy of out/latest/ ONLY. Never '.', never out/, never .ens-rules/.
