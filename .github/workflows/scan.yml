@@ -43,9 +43,12 @@ jobs:
       # engine makes the published evidence non-reproducible (principle I). The script also
       # warms Trivy's databases, which the scan's --skip-db-update needs.
       - name: Install pinned engines
-        run: |
-          bash .github/ci-engines.sh
-          trivy version --format json
+        run: bash .github/ci-engines.sh
+
+      # Its own step: the engines' dir reaches PATH through GITHUB_PATH, which only the
+      # steps after the one that wrote it see.
+      - name: Engine versions
+        run: trivy version --format json
 
       # Fetched at run time at the SHA tracked in .github/semgrep-rules.sha. Deliberately
       # not cached: a cache of rule content is a mirror we would be maintaining.
