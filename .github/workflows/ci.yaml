@@ -1,11 +1,19 @@
 name: ci
 
-# Moved to Forgejo 2026-11-01. These jobs install engines (semgrep, trivy, pandoc,
-# weasyprint) with sudo on ubuntu-latest, a label no Forgejo runner has, so they are
-# dispatch-only until ported to the bellatrix host runner (ai-tools backlog). The gate
-# that runs on every PR and push is gates.yaml (scripts/gates.sh all + gitleaks).
+# Runs on the bellatrix host-mode runner (cosmos docs/apps/forgejo.md): python3, pandoc and
+# poppler are on the host, nothing else. Each job builds a venv; the pinned engines come from
+# .github/ci-engines.sh (user-local, no sudo). Ported from ubuntu-latest 2026-11-02. The gate
+# that runs on every PR and push is gates.yaml (scripts/gates.sh all + gitleaks); these suites
+# are the ones that need real engines or a PDF toolchain.
 on:
+  pull_request:
+  push:
+    branches: [main]
   workflow_dispatch:
+
+env:
+  SEMGREP_VERSION: '1.171.0'
+  TRIVY_VERSION: '0.72.0'
 
 jobs:
   # Enabled once tests/test_mapping_contract.py existed. src/ is all stubs, so this
@@ -13,18 +21,16 @@ jobs:
   # measure drifting out of scope, or the canonical measure list diverging between the
   # places principle III binds. A python linter cannot see any of that.
   test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, bellatrix]
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0        # test_sample_contract.py checks the sample's commit is still reachable
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
       - name: Install dependencies
         run: |
-          pip install -r requirements-dev.txt
-          pip install -e .
+          python3 -m venv .venv && echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+          .venv/bin/pip install -q -r requirements-dev.txt
+          .venv/bin/pip install -q -e .
       - name: Verify the installed CLI works
         run: ens-evidence --help
 
@@ -38,60 +44,45 @@ jobs:
   # it renders a committed fixture offline and never starts an engine. Six of them shipped
   # under a green suite. This job is what makes tests/test_pinned_pipeline.py mean anything.
   pinned-pipeline:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, bellatrix]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
 
       - name: Install the tool and pinned engines
-        env:
-          SEMGREP_VERSION: '1.171.0'
-          TRIVY_VERSION: '0.72.0'
         run: |
-          pip install -r requirements-dev.txt
-          pip install . "semgrep==${SEMGREP_VERSION}"
-          curl -sSfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
-            | sudo tar -xz -C /usr/local/bin trivy
-          # The first run of this job met a cold cache and every engine test died on
-          # trivy's "--skip-db-update cannot be specified on the first run". That is a real
-          # defect in the tool's first-run experience, but it belongs to one assertion, not
-          # to all of them: tests/test_run_store.py covers the message offline. Here the
-          # databases are bootstrapped exactly as an operator would after reading it.
-          trivy fs --download-db-only
-          trivy fs --scanners misconfig -o /dev/null "$(mktemp -d)"
-          trivy --version
+          python3 -m venv .venv && echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+          export PATH="$PWD/.venv/bin:$PATH"
+          pip install -q -r requirements-dev.txt
+          pip install -q .
+          bash .github/ci-engines.sh
 
       # Outside the working tree: a checkout inside it becomes part of what the tests scan.
+      # runner.temp is this job's own directory, so parallel jobs on the one host never share it.
       - name: Fetch the rules at the pinned SHA
         run: |
           PIN="$(tr -d '[:space:]' < .github/semgrep-rules.sha)"
-          ens-evidence rules fetch --sha "$PIN" --rules-root "$HOME/ens-rules" --accept-rules-license
+          ens-evidence rules fetch --sha "$PIN" --rules-root "${{ runner.temp }}/ens-rules" --accept-rules-license
 
       - name: Run the engines suite
         env:
-          ENS_TEST_RULES_ROOT: /home/runner/ens-rules
+          ENS_TEST_RULES_ROOT: ${{ runner.temp }}/ens-rules
         run: pytest tests/ -v --tb=short -m engines
 
   # Every presentation defect this project has hit was invisible to the unit suite and
   # obvious on the rendered page: a leaked absolute path, a finding id clipped at the right
   # margin, a quoted engine message cut mid-sentence. Its own job because it needs a PDF
-  # toolchain the other jobs have no use for.
+  # toolchain the other jobs have no use for: pandoc and poppler are on the host, weasyprint
+  # is pip (pango and cairo are there).
   rendering:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, bellatrix]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
 
       - name: Install the tool and the PDF toolchain
         run: |
-          sudo apt-get update
-          sudo apt-get install -y pandoc poppler-utils
-          pip install -r requirements-dev.txt
-          pip install . weasyprint
+          python3 -m venv .venv && echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+          .venv/bin/pip install -q -r requirements-dev.txt
+          .venv/bin/pip install -q . weasyprint
 
       # The tests skip themselves when the toolchain is absent, which is right on a laptop
       # and wrong here: this job exists to run them.
@@ -111,7 +102,7 @@ jobs:
   # A bump that REMOVES upstream rule ids is not a failure — the mapping then has stale
   # entries, which cost nothing and cannot lose coverage. Only new unmapped ids gate.
   rules-bump:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, bellatrix]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -134,24 +125,13 @@ jobs:
             echo "pin file untouched — the mapping-coverage gate does not apply"
           fi
 
-      - uses: actions/setup-python@v5
-        if: steps.pin.outputs.changed == 'true'
-        with:
-          python-version: '3.12'
-
       - name: Install the tool and pinned engines
         if: steps.pin.outputs.changed == 'true'
-        env:
-          SEMGREP_VERSION: '1.171.0'
-          TRIVY_VERSION: '0.72.0'
         run: |
-          pip install . "semgrep==${SEMGREP_VERSION}"
-          curl -sSfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
-            | sudo tar -xz -C /usr/local/bin trivy
-          # The scan runs Trivy with --skip-db-update and --skip-check-update, which it
-          # refuses on a runner holding neither. Same warm-up as the self-scan workflow.
-          trivy fs --download-db-only
-          trivy fs --scanners misconfig -o /dev/null "$(mktemp -d)"
+          python3 -m venv .venv && echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+          export PATH="$PWD/.venv/bin:$PATH"
+          pip install -q .
+          bash .github/ci-engines.sh
 
       - name: Fetch the rules at the NEW pinned SHA
         if: steps.pin.outputs.changed == 'true'
