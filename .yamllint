@@ -1,0 +1,5 @@
+# .yamllint — the gate checks that yaml parses and has no duplicate keys; style is not the gate.
+# (ai-tools repo-gates template; owned by this repo once copied, tune it here.)
+extends: relaxed
+rules:
+  line-length: disable

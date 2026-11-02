@@ -15,11 +15,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0        # tests may read history (a named commit must be reachable)
-      - name: python venv + gate tools
+      # Every gate tool that pip can carry is in requirements-dev.txt (ruff, bandit, pip-audit,
+      # pytest, ast-grep-cli, shellcheck-py, yamllint — whichever modules the repo uses).
+      # go and node come from the runner host.
+      - name: venv + gate tools
         run: |
           python3 -m venv .venv && echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
-          .venv/bin/pip install -q ruff bandit pip-audit pytest ast-grep-cli
-          [ -f requirements-dev.txt ] && .venv/bin/pip install -q -r requirements-dev.txt || true
+          .venv/bin/pip install -q -r requirements-dev.txt
           [ -f pyproject.toml ] && .venv/bin/pip install -q -e . || true   # tests that run the installed CLI
       - name: gates.sh all
         run: scripts/gates.sh all
