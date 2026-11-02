@@ -21,15 +21,18 @@ env:
   SEMGREP_VERSION: '1.171.0'
   TRIVY_VERSION: '0.72.0'
   GITLEAKS_VERSION: '8.30.1'
-  # Deliberately outside the working tree: anything under it becomes part of `scan .`.
-  # runner.temp is this job's own directory on the shared host.
-  RULES_DIR: ${{ runner.temp }}/ens-rules
 
 jobs:
   scan:
     runs-on: [self-hosted, bellatrix]
     steps:
       - uses: actions/checkout@v4
+
+      # Deliberately outside the working tree: anything under it becomes part of `scan .`.
+      # runner.temp is this job's own directory on the shared host. Set here, not in the
+      # workflow env: Forgejo rejects the runner context there ("Unknown Variable Access").
+      - name: Rules directory
+        run: echo "RULES_DIR=${{ runner.temp }}/ens-rules" >> "$GITHUB_ENV"
 
       - name: Install the tool
         run: |
