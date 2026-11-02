@@ -10,47 +10,38 @@
 # enforcement; it must stay, and it must run before the upload.
 name: self-scan
 
-# Dispatch-only since the move to Forgejo 2026-11-01: needs ubuntu-latest (sudo, engines),
-# a label no Forgejo runner has. Port to the bellatrix runner to bring it back on push.
+# On the bellatrix host-mode runner since 2026-11-02 (ubuntu-latest + sudo before the move
+# to Forgejo): the venv is the job's, the engines come from .github/ci-engines.sh.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 env:
   SEMGREP_VERSION: '1.171.0'
   TRIVY_VERSION: '0.72.0'
+  GITLEAKS_VERSION: '8.30.1'
   # Deliberately outside the working tree: anything under it becomes part of `scan .`.
-  RULES_DIR: /home/runner/ens-rules
+  # runner.temp is this job's own directory on the shared host.
+  RULES_DIR: ${{ runner.temp }}/ens-rules
 
 jobs:
   scan:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, bellatrix]
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
       - name: Install the tool
-        run: pip install .
+        run: |
+          python3 -m venv .venv && echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+          .venv/bin/pip install -q .
 
       # Engines are pinned, not floated: their versions land in run.json, and a floating
-      # engine makes the published evidence non-reproducible (principle I).
+      # engine makes the published evidence non-reproducible (principle I). The script also
+      # warms Trivy's databases, which the scan's --skip-db-update needs.
       - name: Install pinned engines
         run: |
-          pip install "semgrep==${SEMGREP_VERSION}"
-          curl -sSfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
-            | sudo tar -xz -C /usr/local/bin trivy
-          semgrep --version
-          trivy --version
-          # The scan runs Trivy with --skip-db-update for reproducibility, and Trivy
-          # refuses that on a runner with no database ("--skip-db-update cannot be
-          # specified on the first run"). Fetch it once here so the scan stays hermetic.
-          trivy fs --download-db-only
-          # No equivalent download-only flag exists for the misconfiguration checks bundle,
-          # so fetch it by scanning an empty directory. Without it --skip-check-update leaves
-          # the misconfig scanner with no checks and run.json declares no bundle digest.
-          trivy fs --scanners misconfig -o /dev/null "$(mktemp -d)"
+          bash .github/ci-engines.sh
           trivy version --format json
 
       # Fetched at run time at the SHA tracked in .github/semgrep-rules.sha. Deliberately

@@ -58,9 +58,10 @@ gitleaks detect --source . --no-banner --redact --config .gitleaks.toml
 uv run --with pytest --with pyyaml python -m pytest tests/ -q -m engines   # needs pinned engines; see ci.yaml
 ```
 
-`ci.yaml` (engine, rendering and rules-bump suites) and `scan.yml` are **dispatch-only**
-since the move to Forgejo (2026-11-01): they need `ubuntu-latest` with sudo, which no
-Forgejo runner offers. Porting them to the bellatrix runner is in the ai-tools backlog.
+`ci.yaml` (engine, rendering and rules-bump suites, on every PR and push) and `scan.yml`
+(self-scan, on push to `main`) run on the bellatrix host runner since 2026-11-02: no sudo,
+engines from `.github/ci-engines.sh` into `~/.cache/ens-ci/bin`, pandoc and poppler on the
+host, weasyprint from pip.
 
 ## Landing a change
 
