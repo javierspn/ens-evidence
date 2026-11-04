@@ -10,9 +10,23 @@ scripts:
   setup: |
     set -euo pipefail
     scripts/gates.sh install
-    if [ -f requirements-dev.txt ] && [ ! -d .venv ]; then
+    if [ -f requirements-dev.txt ] && [ ! -d .venv ]; then   # the gate tools (and python deps)
       python3 -m venv .venv && .venv/bin/pip install -q -r requirements-dev.txt
-      [ -f pyproject.toml ] && .venv/bin/pip install -q -e . || true
+      grep -qs '^\[project\]' pyproject.toml && .venv/bin/pip install -q -e . || true
+    fi
+    # Workers run under --dangerously-skip-permissions; an `ask` rule still prompts there and
+    # nobody answers, so the worker hangs. Per-worktree, gitignored: the same commands are
+    # `deny` for workers (fail fast -> "needs javier") and stay `ask` in the primary checkout.
+    if [ ! -f .claude/settings.local.json ]; then
+      mkdir -p .claude
+      cat > .claude/settings.local.json <<'JSON'
+    {"permissions":{"deny":[
+      "Bash(rm *)","Bash(rmdir *)","Bash(git push --force*)","Bash(git push -f*)",
+      "Bash(git reset --hard*)","Bash(git clean *)","Bash(dd *)","Bash(mkfs*)","Bash(shred *)",
+      "Bash(truncate *)","Bash(kubectl delete*)","Bash(docker rm*)","Bash(docker rmi*)",
+      "Bash(docker stop*)","Bash(docker compose down*)","Bash(sudo *)","Bash(chmod -R*)","Bash(chown -R*)"
+    ]}}
+    JSON
     fi
     scripts/gates.sh all || echo "setup: gates.sh all reported findings; fix them before landing"
 
