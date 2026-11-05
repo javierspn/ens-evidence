@@ -29,3 +29,4 @@ build/
 .specify/
 !.specify/memory/constitution.md
 .claude/settings.local.json
+/opencode.json
