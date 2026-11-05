@@ -28,6 +28,23 @@ scripts:
     ]}}
     JSON
     fi
+    # Same list for opencode workers (DeepSeek, crowbot, local models): a project opencode.json
+    # merges over the user config; patterns, last match wins. Everything else is `allow` and the
+    # prompts opencode would raise on its own (external paths, its `question` tool, a doom loop)
+    # are `deny`: an unattended worker hangs on any `ask` (probe 2026-11-05: `rm /tmp/x` stalled
+    # on "Access external directory"). Gitignored.
+    if [ ! -f opencode.json ]; then
+      cat > opencode.json <<'JSON'
+    {"$schema":"https://opencode.ai/config.json","permission":{
+      "*":"allow","external_directory":"deny","question":"deny","doom_loop":"deny",
+      "bash":{"*":"allow",
+      "rm *":"deny","rmdir *":"deny","git push --force*":"deny","git push -f*":"deny",
+      "git reset --hard*":"deny","git clean *":"deny","dd *":"deny","mkfs*":"deny","shred *":"deny",
+      "truncate *":"deny","kubectl delete*":"deny","docker rm*":"deny","docker rmi*":"deny",
+      "docker stop*":"deny","docker compose down*":"deny","sudo *":"deny","chmod -R*":"deny","chown -R*":"deny"
+    }}}
+    JSON
+    fi
     scripts/gates.sh all || echo "setup: gates.sh all reported findings; fix them before landing"
 
 # The agent waits for setup to finish before it gets the prompt (the hook installs the gate).
